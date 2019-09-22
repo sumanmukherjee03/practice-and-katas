@@ -10,15 +10,13 @@ func fibonacci(num1 int64, num2 int64, limit int64, c chan int64) {
 	if num1 == 0 && num2 == 1 {
 		c <- num1
 		c <- num2
-		limit = limit - 2
 	}
-	if limit == 0 {
+	if len(c) == int(limit) {
 		close(c)
 		return
 	}
 	next := num1 + num2
 	c <- next
-	limit = limit - 1
 	go fibonacci(num2, next, limit, c)
 }
 
