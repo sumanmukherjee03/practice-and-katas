@@ -20,22 +20,23 @@ func getCharMap(str string) map[string]int {
 	return found
 }
 
+func isAnagram(str1, str2 string) bool {
+	if str1 == str2 {
+		return true
+	}
+	if len(str1) != len(str2) {
+		return false
+	}
+	found1 := getCharMap(str1)
+	found2 := getCharMap(str2)
+	return reflect.DeepEqual(found1, found2)
+}
+
 func main() {
 	str1 := os.Args[1]
 	str2 := os.Args[2]
-	if str1 == str2 {
-		fmt.Println("anagram")
-		return
-	}
-	if len(str1) != len(str2) {
-		fmt.Println("not anagram")
-		return
-	}
 
-	found1 := getCharMap(str1)
-	found2 := getCharMap(str2)
-
-	if reflect.DeepEqual(found1, found2) {
+	if isAnagram(str1, str2) {
 		fmt.Println("anagram")
 	} else {
 		fmt.Println("not anagram")
