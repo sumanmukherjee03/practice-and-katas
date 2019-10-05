@@ -1,9 +1,11 @@
-// Run : go run rowcolzero.go | column -t -s ' '
+// Run : go run rowcolzero.go 5 4 | column -t -s ' '
 package main
 
 import (
 	"fmt"
 	"math/rand"
+	"os"
+	"strconv"
 )
 
 func genSampleMatrix(rows int, cols int) [][]int {
@@ -29,7 +31,45 @@ func printMatrix(matrix [][]int) {
 	}
 }
 
+func findRowsColsWithZero(matrix [][]int) (map[int]bool, map[int]bool) {
+	var rowsWithZero = make(map[int]bool)
+	var colsWithZero = make(map[int]bool)
+	for i := range matrix {
+		if _, foundRow := rowsWithZero[i]; !foundRow {
+			for j := range matrix[i] {
+				if _, foundCol := colsWithZero[j]; !foundCol {
+					if matrix[i][j] == 0 {
+						rowsWithZero[i] = true
+						colsWithZero[j] = true
+					}
+				}
+			}
+		}
+	}
+	return rowsWithZero, colsWithZero
+}
+
 func main() {
-	matrix := genSampleMatrix(5, 4)
+	rows, err1 := strconv.ParseInt(os.Args[1], 0, 0)
+	if err1 != nil {
+		panic(err1)
+	}
+	cols, err2 := strconv.ParseInt(os.Args[2], 0, 0)
+	if err2 != nil {
+		panic(err2)
+	}
+	matrix := genSampleMatrix(int(rows), int(cols))
 	printMatrix(matrix)
+	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>")
+	rowsWithZero, colsWithZero := findRowsColsWithZero(matrix)
+	for r := range rowsWithZero {
+		fmt.Print(r)
+		fmt.Print(",")
+	}
+	fmt.Println()
+	for c := range colsWithZero {
+		fmt.Print(c)
+		fmt.Print(",")
+	}
+	fmt.Println()
 }
