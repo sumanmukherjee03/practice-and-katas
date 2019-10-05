@@ -16,18 +16,18 @@ type Tree struct {
 func New(numOfLeaves int) *Tree {
 	var t *Tree
 	for _, val := range rand.Perm(numOfLeaves) {
-		t = insert(t, val)
+		t = t.Insert(val)
 	}
 	return t
 }
 
-func insert(t *Tree, v int) *Tree {
+func (t *Tree) Insert(v int) *Tree {
 	if t == nil {
 		return &Tree{nil, v, nil}
 	} else if v < t.Value {
-		t.Left = insert(t.Left, v)
+		t.Left = t.Left.Insert(v)
 	} else if v > t.Value {
-		t.Right = insert(t.Right, v)
+		t.Right = t.Right.Insert(v)
 	}
 	return t
 }
