@@ -184,6 +184,7 @@ func (t *Tree) MaxDepth() int {
 	return int(math.Max(float64(leftDepth), float64(rightDepth)))
 }
 
+// Mirror : Mirrors a given tree. Resulting tree wont be a bst any more
 func (t *Tree) Mirror() *Tree {
 	if t == nil {
 		return nil
