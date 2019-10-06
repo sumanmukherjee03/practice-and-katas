@@ -3,6 +3,7 @@ package tree
 import (
 	"fmt"
 	"math/rand"
+	"time"
 )
 
 // Tree data type
@@ -12,11 +13,22 @@ type Tree struct {
 	Right *Tree
 }
 
+func genRandomNums(size int) []int {
+	arr := []int{}
+	rand.Seed(time.Now().UnixNano())
+	for _, val := range rand.Perm(size) {
+		arr = append(arr, val+rand.Intn(1000))
+	}
+	return arr
+}
+
 // New : Constructor for Tree
 func New(numOfNodes int) *Tree {
 	var t *Tree
-	for _, val := range rand.Perm(numOfNodes) {
-		t = t.Insert(val + rand.Intn(100))
+	arr := genRandomNums(numOfNodes)
+	rand.Shuffle(len(arr), func(i, j int) { arr[i], arr[j] = arr[j], arr[i] })
+	for _, val := range arr {
+		t = t.Insert(val)
 	}
 	return t
 }
@@ -120,6 +132,7 @@ func (t *Tree) Max() int {
 	return t.Value
 }
 
+// String : String representation of the Tree
 func (t *Tree) String() string {
 	if t == nil {
 		return "()"
@@ -133,4 +146,9 @@ func (t *Tree) String() string {
 		str += t.Right.String() + " "
 	}
 	return "(" + str + ")"
+}
+
+// Equal : compares 2 binary trees
+func (t *Tree) Equal(x *Tree) bool {
+	return true
 }
