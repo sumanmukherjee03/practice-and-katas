@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"os"
+	"strconv"
 )
 
 // Tree data type
@@ -90,7 +92,11 @@ func (t *Tree) PostOrder() []int {
 }
 
 func main() {
-	t := New(5)
+	numOfNodes, err := strconv.ParseInt(os.Args[1], 0, 0)
+	if err != nil {
+		panic(err)
+	}
+	t := New(int(numOfNodes))
 	fmt.Println(t.Inorder())
 	fmt.Println(t.PreOrder())
 	fmt.Println(t.PostOrder())
