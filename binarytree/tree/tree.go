@@ -200,18 +200,17 @@ func (t *Tree) Mirror() *Tree {
 // RootToLeafPaths : Returns an array of root -> node -> leaf paths for the Tree
 func (t *Tree) RootToLeafPaths() [][]int {
 	paths := [][]int{}
-	path := []int{}
+	path := []int{} // slice to keep mutating based on the level in dfs
 	if t == nil {
 		return paths
 	}
 
 	var dfs func(*Tree, int)
 	dfs = func(n *Tree, level int) {
-		if level >= len(path) {
-			path = append(path, n.Value)
-		} else {
-			path[level] = n.Value
+		if level < len(path) {
+			path = path[:level]
 		}
+		path = append(path, n.Value)
 		if n.Left == nil && n.Right == nil {
 			temp := make([]int, len(path))
 			copy(temp, path)
