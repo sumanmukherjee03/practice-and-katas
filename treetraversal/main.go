@@ -34,6 +34,22 @@ func (t *Tree) Insert(v int) *Tree {
 	return t
 }
 
+func (t *Tree) Search(v int) bool {
+	if t == nil {
+		return false
+	}
+	if t.Value == v {
+		return true
+	}
+	if t.Left != nil && v < t.Value {
+		return t.Left.Search(v)
+	}
+	if t.Right != nil && v > t.Value {
+		return t.Right.Search(v)
+	}
+	return false
+}
+
 func (t *Tree) Inorder() []int {
 	traversal := []int{}
 	if t == nil {
@@ -97,7 +113,10 @@ func main() {
 		panic(err)
 	}
 	t := New(int(numOfNodes))
+	t = t.Insert(21)
 	fmt.Println(t.Inorder())
 	fmt.Println(t.PreOrder())
 	fmt.Println(t.PostOrder())
+	fmt.Println("Searching for 21 : ", t.Search(21))
+	fmt.Println("Searching for 5 : ", t.Search(5))
 }
