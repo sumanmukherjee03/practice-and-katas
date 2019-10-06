@@ -198,26 +198,33 @@ func (t *Tree) Mirror() *Tree {
 }
 
 // RootToLeafPaths : Returns an array of root -> node -> leaf paths for the Tree
-func (t *Tree) RootToLeafPaths(paths [][]int, i int) [][]int {
+func (t *Tree) RootToLeafPaths() [][]int {
+	paths := [][]int{}
+	path := []int{}
 	if t == nil {
 		return paths
 	}
-	if len(paths) == 0 {
-		paths = append(paths, []int{})
+
+	var dfs func(*Tree, int)
+	dfs = func(n *Tree, level int) {
+		if level >= len(path) {
+			path = append(path, n.Value)
+		} else {
+			path[level] = n.Value
+		}
+		if n.Left == nil && n.Right == nil {
+			temp := make([]int, len(path))
+			copy(temp, path)
+			paths = append(paths, temp)
+		}
+		if n.Left != nil {
+			dfs(n.Left, level+1)
+		}
+		if n.Right != nil {
+			dfs(n.Right, level+1)
+		}
 	}
-	if len(paths[i]) == 0 {
-		paths[i] = []int{}
-	}
-	paths[i] = append(paths[i], t.Value)
-	fmt.Println(paths)
-	if t.Left == nil && t.Right == nil {
-		i++
-	}
-	if t.Left != nil {
-		return t.Left.RootToLeafPaths(paths, i)
-	}
-	if t.Right != nil {
-		return t.Right.RootToLeafPaths(paths, i)
-	}
+
+	dfs(t, 0)
 	return paths
 }
