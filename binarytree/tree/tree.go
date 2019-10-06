@@ -13,7 +13,8 @@ type Tree struct {
 	Right *Tree
 }
 
-func genRandomNums(size int) []int {
+// GenDataForTree : Generates an array of random numbers to insert in a tree
+func GenDataForTree(size int) []int {
 	arr := []int{}
 	rand.Seed(time.Now().UnixNano())
 	for _, val := range rand.Perm(size) {
@@ -23,10 +24,8 @@ func genRandomNums(size int) []int {
 }
 
 // New : Constructor for Tree
-func New(numOfNodes int) *Tree {
+func New(arr []int) *Tree {
 	var t *Tree
-	arr := genRandomNums(numOfNodes)
-	rand.Shuffle(len(arr), func(i, j int) { arr[i], arr[j] = arr[j], arr[i] })
 	for _, val := range arr {
 		t = t.Insert(val)
 	}
@@ -148,7 +147,18 @@ func (t *Tree) String() string {
 	return "(" + str + ")"
 }
 
-// Equal : compares 2 binary trees
-func (t *Tree) Equal(x *Tree) bool {
-	return true
+// Same : compares 2 binary trees
+func (t *Tree) Same(x *Tree) bool {
+	if t == nil && x == nil {
+		return true
+	}
+	if (t == nil && x != nil) || (t != nil && x == nil) {
+		return false
+	}
+	if t != nil && x != nil {
+		if t.Value == x.Value {
+			return t.Left.Same(x.Left) && t.Right.Same(x.Right)
+		}
+	}
+	return false
 }
