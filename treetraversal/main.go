@@ -13,10 +13,10 @@ type Tree struct {
 }
 
 // New : Constructor for Tree
-func New(numOfLeaves int) *Tree {
+func New(numOfNodes int) *Tree {
 	var t *Tree
-	for _, val := range rand.Perm(numOfLeaves) {
-		t = t.Insert(val)
+	for _, val := range rand.Perm(numOfNodes) {
+		t = t.Insert(val + rand.Intn(100))
 	}
 	return t
 }
