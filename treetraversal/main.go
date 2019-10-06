@@ -23,6 +23,7 @@ func New(numOfNodes int) *Tree {
 	return t
 }
 
+// Insert : Insert nodes into the Tree
 func (t *Tree) Insert(v int) *Tree {
 	if t == nil {
 		return &Tree{nil, v, nil}
@@ -34,6 +35,7 @@ func (t *Tree) Insert(v int) *Tree {
 	return t
 }
 
+// Search : Search for an element in the Tree
 func (t *Tree) Search(v int) bool {
 	if t == nil {
 		return false
@@ -50,25 +52,23 @@ func (t *Tree) Search(v int) bool {
 	return false
 }
 
+// Inorder : Inorder traversal of the Tree
 func (t *Tree) Inorder() []int {
 	traversal := []int{}
 	if t == nil {
 		return traversal
 	}
 	if t.Left != nil {
-		for _, v := range t.Left.Inorder() {
-			traversal = append(traversal, v)
-		}
+		traversal = append(traversal, t.Left.Inorder()...)
 	}
 	traversal = append(traversal, t.Value)
 	if t.Right != nil {
-		for _, v := range t.Right.Inorder() {
-			traversal = append(traversal, v)
-		}
+		traversal = append(traversal, t.Right.Inorder()...)
 	}
 	return traversal
 }
 
+// PreOrder : Preorder traversal of the Tree
 func (t *Tree) PreOrder() []int {
 	traversal := []int{}
 	if t == nil {
@@ -76,35 +76,50 @@ func (t *Tree) PreOrder() []int {
 	}
 	traversal = append(traversal, t.Value)
 	if t.Left != nil {
-		for _, v := range t.Left.PreOrder() {
-			traversal = append(traversal, v)
-		}
+		traversal = append(traversal, t.Left.PreOrder()...)
 	}
 	if t.Right != nil {
-		for _, v := range t.Right.PreOrder() {
-			traversal = append(traversal, v)
-		}
+		traversal = append(traversal, t.Right.PreOrder()...)
 	}
 	return traversal
 }
 
+// PostOrder : Postorder traversal of Tree
 func (t *Tree) PostOrder() []int {
 	traversal := []int{}
 	if t == nil {
 		return traversal
 	}
 	if t.Left != nil {
-		for _, v := range t.Left.PostOrder() {
-			traversal = append(traversal, v)
-		}
+		traversal = append(traversal, t.Left.PostOrder()...)
 	}
 	if t.Right != nil {
-		for _, v := range t.Right.PostOrder() {
-			traversal = append(traversal, v)
-		}
+		traversal = append(traversal, t.Right.PostOrder()...)
 	}
 	traversal = append(traversal, t.Value)
 	return traversal
+}
+
+// Min : Finds the minimum value in the Tree
+func (t *Tree) Min() int {
+	if t == nil {
+		return 0
+	}
+	if t.Left != nil {
+		return t.Left.Min()
+	}
+	return t.Value
+}
+
+// Max : Finds the maximum value in the Tree
+func (t *Tree) Max() int {
+	if t == nil {
+		return 0
+	}
+	if t.Right != nil {
+		return t.Right.Max()
+	}
+	return t.Value
 }
 
 func main() {
@@ -119,4 +134,6 @@ func main() {
 	fmt.Println(t.PostOrder())
 	fmt.Println("Searching for 21 : ", t.Search(21))
 	fmt.Println("Searching for 5 : ", t.Search(5))
+	fmt.Println("Minimum element is : ", t.Min())
+	fmt.Println("Maximum element is : ", t.Max())
 }
