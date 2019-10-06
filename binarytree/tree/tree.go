@@ -1,10 +1,7 @@
-package main
+package tree
 
 import (
-	"fmt"
 	"math/rand"
-	"os"
-	"strconv"
 )
 
 // Tree data type
@@ -120,20 +117,4 @@ func (t *Tree) Max() int {
 		return t.Right.Max()
 	}
 	return t.Value
-}
-
-func main() {
-	numOfNodes, err := strconv.ParseInt(os.Args[1], 0, 0)
-	if err != nil {
-		panic(err)
-	}
-	t := New(int(numOfNodes))
-	t = t.Insert(21)
-	fmt.Println(t.Inorder())
-	fmt.Println(t.PreOrder())
-	fmt.Println(t.PostOrder())
-	fmt.Println("Searching for 21 : ", t.Search(21))
-	fmt.Println("Searching for 5 : ", t.Search(5))
-	fmt.Println("Minimum element is : ", t.Min())
-	fmt.Println("Maximum element is : ", t.Max())
 }
