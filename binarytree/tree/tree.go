@@ -2,6 +2,7 @@ package tree
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"time"
 )
@@ -161,4 +162,20 @@ func (t *Tree) Same(x *Tree) bool {
 		}
 	}
 	return false
+}
+
+// MaxDepth : Finds the maximum depth of the tree
+func (t *Tree) MaxDepth() int {
+	leftDepth := 0
+	rightDepth := 0
+	if t == nil {
+		return 0
+	}
+	if t.Left != nil {
+		leftDepth += 1 + t.Left.MaxDepth()
+	}
+	if t.Right != nil {
+		rightDepth += 1 + t.Right.MaxDepth()
+	}
+	return int(math.Max(float64(leftDepth), float64(rightDepth)))
 }
