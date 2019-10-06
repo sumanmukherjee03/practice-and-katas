@@ -27,6 +27,7 @@ func main() {
 	fmt.Println("Minimum element is : ", t.Min())
 	fmt.Println("Maximum element is : ", t.Max())
 	fmt.Println("Maximum depth is : ", t.MaxDepth())
+	fmt.Println("Paths to leaf nodes : ", t.RootToLeafPaths([][]int{{}}, 0))
 	fmt.Println(">>>>>>>> Comparing binary trees")
 	fmt.Println("Tree 1 : ", t.String())
 	t1 := tree.New(arr)

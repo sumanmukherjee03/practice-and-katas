@@ -196,3 +196,28 @@ func (t *Tree) Mirror() *Tree {
 	x.Right = mirroredLeft
 	return x
 }
+
+// RootToLeafPaths : Returns an array of root -> node -> leaf paths for the Tree
+func (t *Tree) RootToLeafPaths(paths [][]int, i int) [][]int {
+	if t == nil {
+		return paths
+	}
+	if len(paths) == 0 {
+		paths = append(paths, []int{})
+	}
+	if len(paths[i]) == 0 {
+		paths[i] = []int{}
+	}
+	paths[i] = append(paths[i], t.Value)
+	fmt.Println(paths)
+	if t.Left == nil && t.Right == nil {
+		i++
+	}
+	if t.Left != nil {
+		return t.Left.RootToLeafPaths(paths, i)
+	}
+	if t.Right != nil {
+		return t.Right.RootToLeafPaths(paths, i)
+	}
+	return paths
+}
