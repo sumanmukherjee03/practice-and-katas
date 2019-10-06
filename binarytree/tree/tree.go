@@ -141,9 +141,13 @@ func (t *Tree) String() string {
 	str += fmt.Sprint(t.Value) + " "
 	if t.Left != nil {
 		str += t.Left.String() + " "
+	} else {
+		str += "()" + " "
 	}
 	if t.Right != nil {
 		str += t.Right.String() + " "
+	} else {
+		str += "()" + " "
 	}
 	return "(" + str + ")"
 }
@@ -178,4 +182,16 @@ func (t *Tree) MaxDepth() int {
 		rightDepth += 1 + t.Right.MaxDepth()
 	}
 	return int(math.Max(float64(leftDepth), float64(rightDepth)))
+}
+
+func (t *Tree) Mirror() *Tree {
+	if t == nil {
+		return nil
+	}
+	x := &Tree{nil, t.Value, nil}
+	mirroredLeft := t.Left.Mirror()
+	mirroredRight := t.Right.Mirror()
+	x.Left = mirroredRight
+	x.Right = mirroredLeft
+	return x
 }

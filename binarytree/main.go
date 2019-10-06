@@ -38,4 +38,7 @@ func main() {
 	fmt.Println("Tree 3 : ", t2.String())
 	fmt.Println(">>>>>>>> Comparing tree 1 and 2 :", t.Same(t1))
 	fmt.Println(">>>>>>>> Comparing tree 2 and 3 :", t1.Same(t2))
+	fmt.Println(">>>>>>>> Mirrored binary trees")
+	fmt.Println("Tree 1 : ", t.String())
+	fmt.Println("Tree 2 : ", t.Mirror().String())
 }
