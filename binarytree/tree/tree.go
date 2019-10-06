@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"fmt"
 	"math/rand"
 )
 
@@ -117,4 +118,19 @@ func (t *Tree) Max() int {
 		return t.Right.Max()
 	}
 	return t.Value
+}
+
+func (t *Tree) String() string {
+	if t == nil {
+		return "()"
+	}
+	str := ""
+	str += fmt.Sprint(t.Value) + " "
+	if t.Left != nil {
+		str += t.Left.String() + " "
+	}
+	if t.Right != nil {
+		str += t.Right.String() + " "
+	}
+	return "(" + str + ")"
 }

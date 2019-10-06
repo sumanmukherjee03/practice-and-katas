@@ -22,4 +22,5 @@ func main() {
 	fmt.Println("Searching for 5 : ", t.Search(5))
 	fmt.Println("Minimum element is : ", t.Min())
 	fmt.Println("Maximum element is : ", t.Max())
+	fmt.Println(t.String())
 }
