@@ -202,8 +202,8 @@ func (t *Tree) Same(x *Tree) bool {
 	go x.Walk(xc)
 	for i := range tc {
 		j := <-xc
-		fmt.Println("Receiving i : ", i)
-		fmt.Println("Receiving j :", j)
+		fmt.Println("Received i : ", i)
+		fmt.Println("Received j :", j)
 		if i != j {
 			return false
 		}
