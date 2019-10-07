@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// generate an array of random elements
 func genArray(n int) []int {
 	arr := make([]int, n)
 	rand.Seed(time.Now().UnixNano())
@@ -19,6 +20,7 @@ func genArray(n int) []int {
 	return arr
 }
 
+// slice indexOf
 func indexOf(element int, data []int) int {
 	for k, v := range data {
 		if element == v {
@@ -28,48 +30,41 @@ func indexOf(element int, data []int) int {
 	return -1
 }
 
-func findClosestElems(n int, x int, k int) []int {
-	arr := genArray(n)
-	res := make([]int, k)
-	var cutoverPoint int
-	fmt.Println("Original array : ", arr)
-	sort.Ints(arr)
-	fmt.Println("Sorted array : ", arr)
-
-	var binarySearch func([]int) int
-	binarySearch = func(a []int) int {
-		var cutoverElm int
-		fmt.Println(a)
-		if x < a[0] {
-			cutoverElm = a[0]
-			return cutoverElm
-		} else if x > a[len(a)-1] {
-			cutoverElm = a[len(a)-1]
-			return cutoverElm
-		}
-		if len(a) > 1 {
-			m := len(a) / 2
-			e1 := a[m-1]
-			e2 := a[m]
-			if x < e1 {
-				cutoverElm = binarySearch(a[0:m])
-			} else if x > e2 {
-				cutoverElm = binarySearch(a[m:len(a)])
-			} else {
-				if math.Abs(float64(x-e1)) < math.Abs(float64(x-e2)) {
-					cutoverElm = e1
-				} else {
-					cutoverElm = e2
-				}
-			}
-		} else {
-			cutoverElm = a[0]
-		}
-		return cutoverElm
+// binary search for closest element in slice - returns the element in the original array
+func binarySearch(val int, arr []int) int {
+	if val < arr[0] || len(arr) == 1 {
+		return arr[0]
+	}
+	if val > arr[len(arr)-1] {
+		return arr[len(arr)-1]
 	}
 
-	elm := binarySearch(arr)
-	fmt.Println(elm)
+	var cutoverElm int
+	middle := len(arr) / 2
+	leftLast := arr[middle-1]
+	rightFirst := arr[middle]
+	if val == leftLast {
+		cutoverElm = leftLast
+	} else if val == rightFirst {
+		cutoverElm = rightFirst
+	} else if val < leftLast {
+		cutoverElm = binarySearch(val, arr[0:middle])
+	} else if val > rightFirst {
+		cutoverElm = binarySearch(val, arr[middle:len(arr)])
+	} else {
+		if math.Abs(float64(val-leftLast)) < math.Abs(float64(val-rightFirst)) {
+			cutoverElm = leftLast
+		} else {
+			cutoverElm = rightFirst
+		}
+	}
+	return cutoverElm
+}
+
+func findClosestElems(x int, k int, arr []int) []int {
+	var cutoverPoint int
+	res := make([]int, k)
+	elm := binarySearch(x, arr)
 	cutoverPoint = indexOf(elm, arr)
 	if cutoverPoint >= 1 && cutoverPoint < len(arr)-1 {
 		res[0] = arr[cutoverPoint-1]
@@ -80,7 +75,6 @@ func findClosestElems(n int, x int, k int) []int {
 	} else if cutoverPoint == len(arr)-1 {
 		copy(res, arr[len(arr)-4:])
 	}
-
 	return res
 }
 
@@ -97,5 +91,10 @@ func main() {
 	if err3 != nil {
 		panic(err3)
 	}
-	fmt.Println("Closest elements to given value in the array : ", findClosestElems(int(n), int(x), int(k)))
+
+	arr := genArray(int(n))
+	fmt.Println("Original array : ", arr)
+	sort.Ints(arr)
+	fmt.Println("Sorted array : ", arr)
+	fmt.Println("Closest elements to given value in the array : ", findClosestElems(int(x), int(k), arr))
 }
