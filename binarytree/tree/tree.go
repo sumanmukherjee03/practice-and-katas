@@ -152,8 +152,8 @@ func (t *Tree) String() string {
 	return "(" + str + ")"
 }
 
-// Same : compares 2 binary trees
-func (t *Tree) Same(x *Tree) bool {
+// Equal : structurally compares 2 binary trees
+func (t *Tree) Equal(x *Tree) bool {
 	if t == nil && x == nil {
 		return true
 	}
@@ -162,10 +162,53 @@ func (t *Tree) Same(x *Tree) bool {
 	}
 	if t != nil && x != nil {
 		if t.Value == x.Value {
-			return t.Left.Same(x.Left) && t.Right.Same(x.Right)
+			return t.Left.Equal(x.Left) && t.Right.Equal(x.Right)
+		} else {
+			return false
 		}
 	}
 	return false
+}
+
+// Walk : Walks the tree and sends the data to a channel
+func (t *Tree) Walk(c chan int) {
+	if t == nil {
+		return
+	}
+
+	var walkImpl func(*Tree, chan int)
+	walkImpl = func(tree *Tree, ch chan int) {
+		if tree.Left != nil {
+			walkImpl(tree.Left, ch)
+		}
+		ch <- tree.Value
+		if tree.Right != nil {
+			walkImpl(tree.Right, ch)
+		}
+	}
+
+	walkImpl(t, c)
+	close(c)
+}
+
+// Same : compares if 2 trees are the same based on their traversals
+func (t *Tree) Same(x *Tree) bool {
+	if t == nil && x == nil {
+		return true
+	}
+	tc := make(chan int)
+	xc := make(chan int)
+	go t.Walk(tc)
+	go x.Walk(xc)
+	for i := range tc {
+		j := <-xc
+		fmt.Println("Receiving i : ", i)
+		fmt.Println("Receiving j :", j)
+		if i != j {
+			return false
+		}
+	}
+	return true
 }
 
 // MaxDepth : Finds the maximum depth of the tree
