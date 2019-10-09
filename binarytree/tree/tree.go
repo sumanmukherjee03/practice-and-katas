@@ -171,17 +171,22 @@ func (t *Tree) Equal(x *Tree) bool {
 }
 
 // Walk : Walks the tree and sends the data to a channel
-func (t *Tree) Walk(c chan int) {
+func (t *Tree) Walk(c chan int, q chan bool) {
 	if t == nil {
 		return
 	}
 
 	var walkImpl func(*Tree, chan int)
 	walkImpl = func(tree *Tree, ch chan int) {
+		select {
+		case ch <- tree.Value:
+			// Value sent to channel
+		case <-q:
+			return
+		}
 		if tree.Left != nil {
 			walkImpl(tree.Left, ch)
 		}
-		ch <- tree.Value
 		if tree.Right != nil {
 			walkImpl(tree.Right, ch)
 		}
@@ -198,8 +203,10 @@ func (t *Tree) Same(x *Tree) bool {
 	}
 	tc := make(chan int)
 	xc := make(chan int)
-	go t.Walk(tc)
-	go x.Walk(xc)
+	q := make(chan bool)
+	defer close(q)
+	go t.Walk(tc, q)
+	go x.Walk(xc, q)
 	for i := range tc {
 		j := <-xc
 		fmt.Println("Received i : ", i)
