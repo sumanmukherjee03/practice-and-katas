@@ -5,9 +5,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 )
+
+var wg sync.WaitGroup
 
 type State struct {
 	url    string
@@ -31,7 +34,7 @@ func (r *Resource) Poll() (string, error) {
 	}
 	r.successCounter++
 	r.errorCounter = 0
-	fmt.Println(">>>>", *r)
+	fmt.Println("PROCESSING URL : >>>>", *r)
 	return resp.Status, nil
 }
 
@@ -41,23 +44,45 @@ func (r *Resource) Sleep(pending chan<- *Resource) {
 	pending <- r
 }
 
-func Poller(pending chan *Resource, complete chan<- *Resource, errors chan<- error, quit <-chan bool) {
+func Poller(pending chan *Resource, complete chan *Resource, errors chan error, quit <-chan bool) {
 	for {
 		select {
 		case r := <-pending:
+			fmt.Println("RECEIVED FROM PENDING :>> ", *r)
 			_, err := r.Poll()
 			if err != nil {
 				errors <- err
 			}
-			complete <- r
+			go func() { complete <- r }()
+		default:
+		}
+
+		select {
+		case r := <-complete:
+			fmt.Println("RECEIVED FROM COMPLETE :>> ", *r)
+			go r.Sleep(pending)
+		default:
+		}
+
+		select {
+		case err := <-errors:
+			if err != nil {
+				fmt.Println("ERROR :>> ", err)
+			}
+		default:
+		}
+
+		select {
 		case q := <-quit:
 			if q {
 				fmt.Println("Shutting down poller. Closing pending and complete channels")
 				close(complete)
 				close(pending)
 				close(errors)
+				wg.Done()
 				return
 			}
+		default:
 		}
 	}
 }
@@ -87,24 +112,17 @@ func main() {
 	}
 
 	// Launch poller go routines
-	for i := 0; i < len(resources); i++ {
-		go Poller(pending, complete, errors, quit)
-	}
+	// for i := 0; i < len(resources); i++ {
+	// go Poller(pending, complete, errors, quit)
+	// }
 
+	wg.Add(2)
 	go func() {
 		for _, r := range resources {
 			pending <- r
 		}
+		wg.Done()
 	}()
-
-	for {
-		select {
-		case r := <-complete:
-			go r.Sleep(pending)
-		case err := <-errors:
-			if err != nil {
-				fmt.Println("ERROR :>> ", err)
-			}
-		}
-	}
+	go Poller(pending, complete, errors, quit)
+	wg.Wait()
 }
