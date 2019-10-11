@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -28,19 +31,14 @@ func (r *Resource) Poll() (string, error) {
 	}
 	r.successCounter++
 	r.errorCounter = 0
-	fmt.Println(">>>>", r)
+	fmt.Println(">>>>", *r)
 	return resp.Status, nil
 }
 
-func (r *Resource) Sleep(pending chan<- *Resource, quit <-chan bool) {
+func (r *Resource) Sleep(pending chan<- *Resource) {
 	fmt.Println("Sleeping ...")
 	time.Sleep(5000 * time.Millisecond)
-	select {
-	case pending <- r:
-		// Do nothing
-	case <-quit:
-		fmt.Println("No more sleeping. Killing go routine")
-	}
+	pending <- r
 }
 
 func Poller(pending chan *Resource, complete chan<- *Resource, errors chan<- error, quit <-chan bool) {
@@ -52,17 +50,36 @@ func Poller(pending chan *Resource, complete chan<- *Resource, errors chan<- err
 				errors <- err
 			}
 			complete <- r
-		case <-quit:
-			fmt.Println("Shutting down poller go routine")
-			return
+		case q := <-quit:
+			if q {
+				fmt.Println("Shutting down poller. Closing pending and complete channels")
+				close(complete)
+				close(pending)
+				close(errors)
+				return
+			}
 		}
 	}
+}
+
+func setupCloseHandler(q chan bool) {
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		select {
+		case <-c:
+			q <- true
+			close(q)
+			fmt.Println("\r\n Killing program and cleaning up")
+			os.Exit(0)
+		}
+	}()
 }
 
 func main() {
 	pending, complete, errors := make(chan *Resource), make(chan *Resource), make(chan error)
 	quit := make(chan bool)
-	defer close(quit)
+	setupCloseHandler(quit)
 
 	resources := []*Resource{
 		&Resource{url: "http://golang.org/"},
@@ -83,12 +100,10 @@ func main() {
 	for {
 		select {
 		case r := <-complete:
-			go r.Sleep(pending, quit)
+			go r.Sleep(pending)
 		case err := <-errors:
-			fmt.Println(err)
-		case _, ok := <-quit:
-			if !ok {
-				fmt.Println("Shutting down main go routine")
+			if err != nil {
+				fmt.Println("ERROR :>> ", err)
 			}
 		}
 	}
