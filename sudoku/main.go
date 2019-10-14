@@ -24,9 +24,10 @@ func parseInput(str string) [9][9]int {
 	return matrix
 }
 
-func printMatrix(matrix [9][9]int) {
-	for _, m := range matrix {
-		for _, v := range m {
+func printMatrix(m *[9][9]int) {
+	for i := 0; i < 9; i++ {
+		for j := 0; j < 9; j++ {
+			v := m[i][j]
 			fmt.Print(v)
 			fmt.Print(" ")
 		}
@@ -34,34 +35,50 @@ func printMatrix(matrix [9][9]int) {
 	}
 }
 
-func validateDupesInRowsCols(m [9][9]int) error {
+func findDupRowColForInt(a []int, i int, j int) bool {
+	for _, v := range a {
+		r := v / 10
+		c := v % 10
+		if r == i || c == j {
+			return true
+		}
+	}
+	return false
+}
+
+func validateDupesInRowsCols(m *[9][9]int) error {
 	intMap := make(map[int][]int)
-	for i, r := range m {
-		for j, v := range r {
-			if found, ok := intMap[v]; ok && v > 0 && (found[0] == i || found[1] == j) {
-				return errors.New("There are dupes in rows or cols")
+	for i := 0; i < 9; i++ {
+		for j := 0; j < 9; j++ {
+			v := m[i][j]
+			if v > 0 {
+				if found, ok := intMap[v]; ok && findDupRowColForInt(found, i, j) {
+					return errors.New("there are dupes in rows or cols")
+				}
+				intMap[v] = append(intMap[v], i*10+j)
 			}
-			intMap[v] = []int{i, j}
 		}
 	}
 	return nil
 }
 
-func validateDupesIn3x3Matrix(m [9][9]int, startRow int, startCol int) error {
+func validateDupesIn3x3Matrix(m *[9][9]int, startRow int, startCol int) error {
 	intMap := make(map[int][]int)
 	for i := startRow; i < startRow+3; i++ {
 		for j := startCol; j < startCol+3; j++ {
 			v := m[i][j]
-			if _, ok := intMap[v]; ok && v > 0 {
-				return errors.New("There are dupes in 3x3 matrix")
+			if v > 0 {
+				if found, ok := intMap[v]; ok && len(found) > 0 {
+					return errors.New("there are dupes in 3x3 matrix")
+				}
+				intMap[v] = append(intMap[v], i*10+j)
 			}
-			intMap[v] = []int{i, j}
 		}
 	}
 	return nil
 }
 
-func validateAll3x3Matrix(m [9][9]int) error {
+func validateAll3x3Matrix(m *[9][9]int) error {
 	for i := 0; i < 9; i = i + 3 {
 		for j := 0; j < 9; j = j + 3 {
 			err := validateDupesIn3x3Matrix(m, i, j)
@@ -73,18 +90,74 @@ func validateAll3x3Matrix(m [9][9]int) error {
 	return nil
 }
 
+func boundingFn(m *[9][9]int) bool {
+	if err1 := validateDupesInRowsCols(m); err1 != nil {
+		return false
+	}
+	if err2 := validateAll3x3Matrix(m); err2 != nil {
+		return false
+	}
+	return true
+}
+
+func hasEmptyCells(m *[9][9]int) bool {
+	for i := 0; i < 9; i++ {
+		for j := 0; j < 9; j++ {
+			if m[i][j] == 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func backtrack(i int, j int, m *[9][9]int) bool {
+	if !hasEmptyCells(m) {
+		return true
+	}
+	if m[i][j] == 0 {
+		for k := 1; k <= 9; k++ {
+			m[i][j] = k
+			if boundingFn(m) {
+				fmt.Printf(">>>>>>>> row : %d, col : %d val : %d\n", i, j, k)
+				printMatrix(m)
+				nextJ := (j + 1) % 9
+				nextI := i
+				if i > 0 && nextJ == 0 {
+					nextI = i + 1
+				}
+				val := backtrack(nextI, nextJ, m)
+				if val {
+					return true
+				}
+			}
+			m[i][j] = 0
+		}
+	} else {
+		nextJ := (j + 1) % 9
+		nextI := i
+		if i > 0 && nextJ == 0 {
+			nextI = i + 1
+		}
+		return backtrack(nextI, nextJ, m)
+	}
+	return false
+}
+
 func main() {
 	m := parseInput(os.Args[1])
 	fmt.Println("Initial matrix for sudoku :")
-	printMatrix(m)
-	err := validateDupesInRowsCols(m)
+	printMatrix(&m)
+	err := validateDupesInRowsCols(&m)
 	if err != nil {
 		panic(err)
 	}
-	err = validateAll3x3Matrix(m)
+	err = validateAll3x3Matrix(&m)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("Matrix for sudoku is valid")
+	backtrack(0, 0, &m)
 	fmt.Println("Final solution :")
+	printMatrix(&m)
 }
