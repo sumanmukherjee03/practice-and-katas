@@ -111,6 +111,15 @@ func hasEmptyCells(m *[9][9]int) bool {
 	return false
 }
 
+func getNextRowColToVisit(i, j int) (int, int) {
+	nextJ := (j + 1) % 9
+	nextI := i
+	if i >= 0 && i < 8 && nextJ == 0 {
+		nextI = i + 1
+	}
+	return nextI, nextJ
+}
+
 func backtrack(i int, j int, m *[9][9]int) bool {
 	if !hasEmptyCells(m) {
 		return true
@@ -119,13 +128,7 @@ func backtrack(i int, j int, m *[9][9]int) bool {
 		for k := 1; k <= 9; k++ {
 			m[i][j] = k
 			if boundingFn(m) {
-				fmt.Printf(">>>>>>>> row : %d, col : %d val : %d\n", i, j, k)
-				printMatrix(m)
-				nextJ := (j + 1) % 9
-				nextI := i
-				if i > 0 && nextJ == 0 {
-					nextI = i + 1
-				}
+				nextI, nextJ := getNextRowColToVisit(i, j)
 				val := backtrack(nextI, nextJ, m)
 				if val {
 					return true
@@ -134,12 +137,9 @@ func backtrack(i int, j int, m *[9][9]int) bool {
 			m[i][j] = 0
 		}
 	} else {
-		nextJ := (j + 1) % 9
-		nextI := i
-		if i > 0 && nextJ == 0 {
-			nextI = i + 1
-		}
-		return backtrack(nextI, nextJ, m)
+		nextI, nextJ := getNextRowColToVisit(i, j)
+		val := backtrack(nextI, nextJ, m)
+		return val
 	}
 	return false
 }
