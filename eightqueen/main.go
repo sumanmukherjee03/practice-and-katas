@@ -93,11 +93,20 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	ch := make(chan [][]int)
+	defer close(ch)
 	for i := 0; i < int(n); i++ {
-		s := genInitialSolution(int(n))
-		m := genMatrix(int(n))
-		backtrack(i, m, s)
-		printMatrix(m)
-		fmt.Println(">>>>>>>>>>>>>")
+		go func(startQ int) {
+			s := genInitialSolution(int(n))
+			m := genMatrix(int(n))
+			backtrack(startQ, m, s)
+			ch <- *m
+		}(i)
+	}
+
+	for j := 0; j < int(n); j++ {
+		matrix := <-ch
+		printMatrix(&matrix)
+		fmt.Println(">>>>>>>>>>>>")
 	}
 }
