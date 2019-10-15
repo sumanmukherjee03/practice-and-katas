@@ -76,7 +76,8 @@ func backtrack(q int, m *[][]int, s *[]int) bool {
 		(*s)[q] = col
 		(*m)[q][col] = 1
 		if boundingFn(m, s) {
-			val := backtrack(q+1, m, s)
+			nextQ := (q + 1) % n
+			val := backtrack(nextQ, m, s)
 			if val {
 				return true
 			}
@@ -92,8 +93,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	s := genInitialSolution(int(n))
-	m := genMatrix(int(n))
-	backtrack(0, m, s)
-	printMatrix(m)
+	for i := 0; i < int(n); i++ {
+		s := genInitialSolution(int(n))
+		m := genMatrix(int(n))
+		backtrack(i, m, s)
+		printMatrix(m)
+		fmt.Println(">>>>>>>>>>>>>")
+	}
 }
