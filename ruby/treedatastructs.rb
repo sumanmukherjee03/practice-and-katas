@@ -151,12 +151,24 @@ class BinarySearchTreeNode < BinaryTreeNode
   def delete(val)
     node = self.find(val)
     return false unless node
+    # If no left or rigth subtree
+    #   If parent is there, remove this child from the parent
+    #   Else set the value of this node to nil
     if !node.left && !node.right
       if node.parent
         node.parent.remove_child(node)
       else
         node.set_value(nil)
       end
+    # If there is a left and a right subtree
+    #   If the next highest value is not the right child, ie the right child has a left subtree
+    #     Then find the min value node from the right node onwards
+    #     And then make the node to be deleted the node with the min value from above
+    #     ie, recursively delete the min value node from above
+    #     and make the value of the current node as the node from above
+    #   If the next highest value node is the right child
+    #     Then make this node the right node
+    #     And make the right subtree of this node the right subtree of the right child
     elsif node.left && node.right
       next_big_node = node.right.find_min
       if next_big_node.value != node.right.value
@@ -166,6 +178,8 @@ class BinarySearchTreeNode < BinaryTreeNode
         node.set_value(node.right.value)
         node.set_right(node.right.right)
       end
+    # If there is only one subtree, ie, left or right
+    #   Replace the current node with the node from the left or right subtree, which ever it is
     else
       if node.left
         node.parent.replace_child(node, node.left)
