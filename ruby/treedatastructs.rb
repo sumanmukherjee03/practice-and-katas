@@ -1,3 +1,6 @@
+###############################################################################
+############################## BINARY TREE NODE ###############################
+###############################################################################
 class BinaryTreeNode
   attr_accessor :left, :right, :parent, :value
 
@@ -8,29 +11,35 @@ class BinaryTreeNode
     @value = value
   end
 
+  # Recursively find height of left subtree + 1
   def left_height
     return 0 unless self.left
     self.left.height + 1
   end
 
+  # Recursively find height of right subtree + 1
   def right_height
     return 0 unless self.right
     self.right.height + 1
   end
 
+  # Find max of left height and right height
   def height
     [self.left_height, self.right_height].max
   end
 
+  # Find diff of left height and right height
   def balance
     self.left_height - self.right_height
   end
 
+  # Only sets the value of a node, not it's pointers
   def set_value(val)
     self.value = val
     self
   end
 
+  # Change the left subtree
   def set_left(node)
     if self.left
       self.left.parent = nil
@@ -40,6 +49,7 @@ class BinaryTreeNode
     self
   end
 
+  # Change the right subtree
   def set_right(node)
     if self.right
       self.right.parent = nil
@@ -49,6 +59,7 @@ class BinaryTreeNode
     self
   end
 
+  # Remove the child subtree from the matching node onwards
   def remove_child(node)
     if self.left && self.left.value == node.value
       self.left = nil
@@ -61,6 +72,7 @@ class BinaryTreeNode
     return false
   end
 
+  # Replace child subtree from matching node onwards with a new subtree containing new node
   def replace_child(target_node, replacement_node)
     return false unless target_node && replacement_node
     if self.left && self.left.value == target_node.value
@@ -74,6 +86,7 @@ class BinaryTreeNode
     return false
   end
 
+  # Inorder traversal Left, Right, Root
   def inorder
     traversal = []
     traversal.concat(self.left.inorder) if self.left
@@ -82,6 +95,7 @@ class BinaryTreeNode
     traversal
   end
 
+  # Preorder traversal Root, Left, Right
   def preorder
     traversal = []
     traversal << self.value
@@ -90,6 +104,7 @@ class BinaryTreeNode
     traversal
   end
 
+  # Postorder traversal Left, Right, Root
   def postorder
     traversal = []
     traversal.concat(self.left.postorder) if self.left
@@ -98,6 +113,7 @@ class BinaryTreeNode
     traversal
   end
 
+  # Sibling of parent
   def parents_sibling
     return nil unless self.parent
     return nil unless self.parent.parent
@@ -112,6 +128,7 @@ class BinaryTreeNode
     self.value.to_s
   end
 
+  # Class method to copy a node
   def self.copy(src, dest)
     dest.set_value(src.value)
     dest.set_left(src.left)
@@ -119,15 +136,25 @@ class BinaryTreeNode
   end
 end
 
+
+###############################################################################
+########################### BINARY SEARCH TREE NODE ###########################
+###############################################################################
 class BinarySearchTreeNode < BinaryTreeNode
   def insert(val)
     return self unless val
+    # If value is lower than current nodes value go left
+    #   Recursively try to insert the same value on the left subtree if a left subtree exists
+    #   Otherwise create a new node and add it as the left child of current node
     if val < self.value
       return self.left.insert(val) if self.left
       node = BinarySearchTreeNode.new
       self.set_left(node)
       return node
     end
+    # If value is greater than current nodes value go right
+    #   Recursively try to insert the same value on the right subtree if a right subtree exists
+    #   Otherwise create a new node and add it as the right child of current node
     if val > self.value
       return self.right.insert(val) if self.right
       node = BinarySearchTreeNode.new
@@ -137,6 +164,10 @@ class BinarySearchTreeNode < BinaryTreeNode
     self
   end
 
+  # Find node matching value
+  #   If current node has the asked value return that node
+  #     Else recursively search left if value if lower than current nodes value
+  #     Or recursively search right if value is greater than current nodes value
   def find(val)
     return self if self.value == val
     return self.left.find(val) if val < self.value && self.left
@@ -144,6 +175,7 @@ class BinarySearchTreeNode < BinaryTreeNode
     return nil
   end
 
+  # Check if node or it's subtree contains a value
   def contains?(val)
     !!self.find(val)
   end
@@ -163,9 +195,9 @@ class BinarySearchTreeNode < BinaryTreeNode
     # If there is a left and a right subtree
     #   If the next highest value is not the right child, ie the right child has a left subtree
     #     Then find the min value node from the right node onwards
-    #     And then make the node to be deleted the node with the min value from above
-    #     ie, recursively delete the min value node from above
-    #     and make the value of the current node as the node from above
+    #     And then make the node to be deleted the node with the min value from above search
+    #       ie, recursively delete the next big node
+    #       and make the value of the current node as the next big node
     #   If the next highest value node is the right child
     #     Then make this node the right node
     #     And make the right subtree of this node the right subtree of the right child
@@ -190,12 +222,23 @@ class BinarySearchTreeNode < BinaryTreeNode
     return true
   end
 
+  # Recursively traverse the left subtree to find the minimum value
   def find_min
     return self unless self.left
     self.left.find_min
   end
+
+  # Recursively traverse the right subtree to find the max value
+  def find_max
+    return self unless self.right
+    self.right.find_max
+  end
 end
 
+
+###############################################################################
+############################## BINARY SEARCH TREE #############################
+###############################################################################
 class BinarySearchTree
   attr_accessor :root
 
@@ -229,6 +272,10 @@ class BinarySearchTree
 
   def find_min
     self.root.find_min
+  end
+
+  def find_max
+    self.root.find_max
   end
 
   def height
