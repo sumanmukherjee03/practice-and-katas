@@ -134,7 +134,36 @@ class BinaryTreeNode
     dest.set_left(src.left)
     dest.set_right(src.right)
   end
+
+  def self.from_arrays(inorder_arr, preorder_arr)
+    klass = self
+    preorder_index = 0
+
+    # Dont use Proc.new - use lambda
+    build_from_array = lambda do |in_arr|
+      return nil if preorder_index >= preorder_arr.length
+      val = preorder_arr[preorder_index]
+      preorder_index += 1
+      node = klass.new(val)
+      return node if in_arr.length == 1
+      in_index = in_arr.index(val)
+      ltree_vals = in_arr[0...in_index]
+      rtree_vals = in_arr[in_index+1..-1]
+      l_node = build_from_array.call(ltree_vals)
+      node.set_left(l_node) if l_node
+      r_node = build_from_array.call(rtree_vals)
+      node.set_right(r_node) if r_node
+      return node
+    end
+
+    return build_from_array.call(inorder_arr)
+  end
 end
+
+=begin
+n = BinaryTreeNode.from_arrays(["D","B","E","A","F","C"], ["A","B","D","E","C","F"])
+puts "Result : #{n.inorder}"
+=end
 
 
 ###############################################################################

@@ -30,6 +30,9 @@ class LinkedList
     @tail = nil
   end
 
+  # Create new node with value and next as the current head
+  #   Change head to be the new node
+  #   If there is no tail, it means this is the first node - so make tail as the current node
   def prepend(val)
     node = LinkedListNode.new(val, self.head)
     self.head = node
@@ -39,6 +42,10 @@ class LinkedList
     self
   end
 
+  # Create new node with value and next as nil
+  #   Change current tail's next to be the new node
+  #   Change current tail to become the new node
+  #   If there is no head, it means this is the first node - so make head as the current node
   def append(val)
     node = LinkedListNode.new(val)
     if !self.head
@@ -51,6 +58,7 @@ class LinkedList
     self
   end
 
+  # Start from the head and keep going in a loop to find the value
   def find(val)
     found = false
     if !self.head
@@ -89,12 +97,15 @@ class LinkedList
         end
         break
       end
-      previous = current
-      current = current.next
+      previous = current # Maintain a history variable to store the current node
+      current = current.next # Then change current to the next node
     end
     deleted
   end
 
+  # Store current head as result
+  # Change head to next node of current head
+  # Return result from above
   def delete_head
     if !self.head
       return nil
@@ -110,6 +121,9 @@ class LinkedList
     res
   end
 
+  # Traverse to the node before the current tail
+  # Store the tail as the node to return
+  # Change the tail to the node before the current tail and return the result from above
   def delete_tail
     res = self.tail
     if self.head == self.tail
@@ -131,10 +145,10 @@ class LinkedList
     previous = nil
     current = self.head
     while current
-      next_node = current.next
-      current.next = previous
-      previous = current
-      current = next_node
+      next_node = current.next # Save the next node of current to move forward in the loop
+      current.next = previous # Set the next of the current node to the previous node
+      previous = current # Update the history variable previous to be the current node
+      current = next_node # Update the current node to next node saved from above
     end
     self.tail = self.head
     self.head = previous
