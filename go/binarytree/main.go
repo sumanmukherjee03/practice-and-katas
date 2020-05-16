@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/sumanmukherjee03/practice-and-katas/binarytree/tree"
+	"github.com/sumanmukherjee03/practice-and-katas/go/binarytree/tree"
 )
 
 func main() {
