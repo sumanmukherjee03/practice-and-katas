@@ -1,0 +1,37 @@
+package main
+
+import (
+	"fmt"
+	"sync"
+	"sync/atomic"
+)
+
+var wg sync.WaitGroup
+
+func main() {
+	describe()
+	var counter uint64
+
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func() {
+			for j := 0; j < 1000; j++ {
+				atomic.AddUint64(&counter, 1)
+			}
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+	fmt.Println("counter : ", counter)
+}
+
+func describe() {
+	str := `
+Start 50 go routines and make each go routine increment a counter exactly 1000 times.
+At the end we are supposed to get back exactly 50000 such operations.
+
+_____________________
+	`
+	fmt.Println(str)
+}
