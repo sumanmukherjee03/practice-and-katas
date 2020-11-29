@@ -83,6 +83,8 @@ The state will be owned by a single goroutine.
 This will guarantee that the data is never corrupted with concurrent access.
 In order to read or write that state, other goroutines will send messages to the owning goroutine and receive corresponding replies.
 These readOp and writeOp structs encapsulate those requests and a resp channel for the owning goroutine to respond.
+
+_____________________
 	`
 	fmt.Println(str)
 }
