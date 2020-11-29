@@ -31,6 +31,9 @@ func describe() {
 Start 50 go routines and make each go routine increment a counter exactly 1000 times.
 At the end we are supposed to get back exactly 50000 such operations.
 
+The program shouldnt show any errors when race detection is enabled.
+  For example using : counter += 1 // go run -race main.go - This will give a race condition error when executed
+
 _____________________
 	`
 	fmt.Println(str)
