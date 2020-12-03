@@ -108,8 +108,8 @@ func (b *Boid) start() {
 }
 
 func (b *Boid) moveOne() {
-	b.velocity = b.velocity.AddVector(b.calculateAcceleration()).Limit(-1, 1)
 	mutex.Lock()
+	b.velocity = b.velocity.AddVector(b.calculateAcceleration()).Limit(-1, 1)
 	boidMap[int(b.position.x)][int(b.position.y)] = -1
 	b.position = b.position.AddVector(b.velocity)
 	boidMap[int(b.position.x)][int(b.position.y)] = b.id
@@ -132,9 +132,7 @@ func (b *Boid) calculateAcceleration() Vector2D {
 	targetVelocityVector := Vector2D{x: 0, y: 0}
 	for i := xLeft; i <= xRight; i++ {
 		for j := yBottom; j <= yTop; j++ {
-			mutex.Lock()
 			bId := boidMap[int(i)][int(j)]
-			mutex.Unlock()
 			if bId >= 0 && bId != b.id {
 				if d := boids[bId].position.Distance(b.position); d < viewRadius {
 					count += 1
