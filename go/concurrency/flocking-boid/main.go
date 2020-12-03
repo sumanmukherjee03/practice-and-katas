@@ -5,21 +5,25 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
 )
 
 const (
-	screenWidth  = 640
-	screenHeight = 360
-	boidCount    = 500 // total number of boids
+	screenWidth    = 640
+	screenHeight   = 360
+	boidCount      = 500   // total number of boids
+	viewRadius     = 14    // radius of circle around boid to adjust for clustering
+	adjustmentRate = 0.015 // factor for smooth transition of velocity for boids to get alignment with the neighbours
 )
 
 var (
 	green   = color.RGBA{10, 255, 50, 255}
 	boids   [boidCount]*Boid                       // an array of boid pointers
 	boidMap [screenWidth + 1][screenHeight + 1]int // stores where on the grid which boid is
+	mutex   = &sync.Mutex{}
 )
 
 /////////////////////// Define Game ///////////////////////////
@@ -104,7 +108,12 @@ func (b *Boid) start() {
 }
 
 func (b *Boid) moveOne() {
+	b.velocity = b.velocity.AddVector(b.calculateAcceleration()).Limit(-1, 1)
+	mutex.Lock()
+	boidMap[int(b.position.x)][int(b.position.y)] = -1
 	b.position = b.position.AddVector(b.velocity)
+	boidMap[int(b.position.x)][int(b.position.y)] = b.id
+	mutex.Unlock()
 	nextPosition := b.position.AddVector(b.velocity)
 	if nextPosition.x >= screenWidth || nextPosition.x < 0 {
 		b.velocity.x = -b.velocity.x
@@ -112,6 +121,33 @@ func (b *Boid) moveOne() {
 	if nextPosition.y >= screenHeight || nextPosition.y < 0 {
 		b.velocity.y = -b.velocity.y
 	}
+}
+
+func (b *Boid) calculateAcceleration() Vector2D {
+	xLeft := math.Max(0, b.position.x-viewRadius)
+	yBottom := math.Max(0, b.position.y-viewRadius)
+	xRight := math.Min(screenWidth, b.position.x+viewRadius)
+	yTop := math.Min(screenHeight, b.position.y+viewRadius)
+	count := 0.0
+	targetVelocityVector := Vector2D{x: 0, y: 0}
+	for i := xLeft; i <= xRight; i++ {
+		for j := yBottom; j <= yTop; j++ {
+			mutex.Lock()
+			bId := boidMap[int(i)][int(j)]
+			mutex.Unlock()
+			if bId >= 0 && bId != b.id {
+				if d := boids[bId].position.Distance(b.position); d < viewRadius {
+					count += 1
+					targetVelocityVector = targetVelocityVector.AddVector(boids[bId].velocity)
+				}
+			}
+		}
+	}
+	if count > 0 {
+		targetVelocityVector = targetVelocityVector.DivideScalar(count)
+	}
+	accelerationVector := targetVelocityVector.SubtractVector(b.velocity)
+	return accelerationVector.MultiplyScalar(adjustmentRate)
 }
 
 /////////////////////// Vector2D /////////////////////
@@ -149,7 +185,7 @@ func (v *Vector2D) DivideScalar(d float64) Vector2D {
 	return Vector2D{x: v.x / d, y: v.y / d}
 }
 
-func (v *Vector2D) DistanceVector(v1 Vector2D) float64 {
+func (v *Vector2D) Distance(v1 Vector2D) float64 {
 	return math.Sqrt(math.Pow((v.x-v1.x), 2) + math.Pow((v.y-v1.y), 2))
 }
 
