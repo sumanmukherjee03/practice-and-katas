@@ -108,12 +108,12 @@ func (b *Boid) start() {
 }
 
 func (b *Boid) moveOne() {
+	acceleration := b.calculateAcceleration()
 	mutex.Lock()
-	b.velocity = b.velocity.AddVector(b.calculateAcceleration()).Limit(-1, 1)
+	b.velocity = b.velocity.AddVector(acceleration).Limit(-1, 1)
 	boidMap[int(b.position.x)][int(b.position.y)] = -1
 	b.position = b.position.AddVector(b.velocity)
 	boidMap[int(b.position.x)][int(b.position.y)] = b.id
-	mutex.Unlock()
 	nextPosition := b.position.AddVector(b.velocity)
 	if nextPosition.x >= screenWidth || nextPosition.x < 0 {
 		b.velocity.x = -b.velocity.x
@@ -121,6 +121,7 @@ func (b *Boid) moveOne() {
 	if nextPosition.y >= screenHeight || nextPosition.y < 0 {
 		b.velocity.y = -b.velocity.y
 	}
+	mutex.Unlock()
 }
 
 func (b *Boid) calculateAcceleration() Vector2D {
@@ -129,7 +130,8 @@ func (b *Boid) calculateAcceleration() Vector2D {
 	xRight := math.Min(screenWidth, b.position.x+viewRadius)
 	yTop := math.Min(screenHeight, b.position.y+viewRadius)
 	count := 0.0
-	targetVelocityVector := Vector2D{x: 0, y: 0}
+	accelerationVector, targetPositionVector, targetVelocityVector := Vector2D{x: 0, y: 0}, Vector2D{x: 0, y: 0}, Vector2D{x: 0, y: 0}
+	mutex.Lock()
 	for i := xLeft; i <= xRight; i++ {
 		for j := yBottom; j <= yTop; j++ {
 			bId := boidMap[int(i)][int(j)]
@@ -137,15 +139,22 @@ func (b *Boid) calculateAcceleration() Vector2D {
 				if d := boids[bId].position.Distance(b.position); d < viewRadius {
 					count += 1
 					targetVelocityVector = targetVelocityVector.AddVector(boids[bId].velocity)
+					targetPositionVector = targetPositionVector.AddVector(boids[bId].position)
 				}
 			}
 		}
 	}
+	mutex.Unlock()
 	if count > 0 {
 		targetVelocityVector = targetVelocityVector.DivideScalar(count)
+		targetPositionVector = targetPositionVector.DivideScalar(count)
 	}
-	accelerationVector := targetVelocityVector.SubtractVector(b.velocity)
-	return accelerationVector.MultiplyScalar(adjustmentRate)
+	accelerationAlignmentVector := targetVelocityVector.SubtractVector(b.velocity)
+	accelerationAlignmentVector = accelerationAlignmentVector.MultiplyScalar(adjustmentRate)
+	accelerationCohesionVector := targetPositionVector.SubtractVector(b.position)
+	accelerationCohesionVector = accelerationCohesionVector.MultiplyScalar(adjustmentRate)
+	accelerationVector = accelerationVector.AddVector(accelerationAlignmentVector)
+	return accelerationVector.AddVector(accelerationCohesionVector)
 }
 
 /////////////////////// Vector2D /////////////////////
