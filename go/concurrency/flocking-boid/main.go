@@ -23,7 +23,7 @@ var (
 	green   = color.RGBA{10, 255, 50, 255}
 	boids   [boidCount]*Boid                       // an array of boid pointers
 	boidMap [screenWidth + 1][screenHeight + 1]int // stores where on the grid which boid is
-	mutex   = &sync.Mutex{}
+	mutex   = &sync.RWMutex{}                      // Get a reader writer lock to allow multiple reads and exclusive writes
 )
 
 /////////////////////// Define Game ///////////////////////////
@@ -109,19 +109,12 @@ func (b *Boid) start() {
 
 func (b *Boid) moveOne() {
 	acceleration := b.calculateAcceleration()
-	mutex.Lock()
+	mutex.Lock() // Acquire a write lock here
 	b.velocity = b.velocity.AddVector(acceleration).Limit(-1, 1)
 	boidMap[int(b.position.x)][int(b.position.y)] = -1
 	b.position = b.position.AddVector(b.velocity)
 	boidMap[int(b.position.x)][int(b.position.y)] = b.id
-	nextPosition := b.position.AddVector(b.velocity)
-	if nextPosition.x >= screenWidth || nextPosition.x < 0 {
-		b.velocity.x = -b.velocity.x
-	}
-	if nextPosition.y >= screenHeight || nextPosition.y < 0 {
-		b.velocity.y = -b.velocity.y
-	}
-	mutex.Unlock()
+	mutex.Unlock() // Release read lock
 }
 
 func (b *Boid) calculateAcceleration() Vector2D {
@@ -130,8 +123,9 @@ func (b *Boid) calculateAcceleration() Vector2D {
 	xRight := math.Min(screenWidth, b.position.x+viewRadius)
 	yTop := math.Min(screenHeight, b.position.y+viewRadius)
 	count := 0.0
-	accelerationVector, targetPositionVector, targetVelocityVector := Vector2D{x: 0, y: 0}, Vector2D{x: 0, y: 0}, Vector2D{x: 0, y: 0}
-	mutex.Lock()
+	accelerationVector := Vector2D{x: b.borderBounce(b.position.x, screenWidth), y: b.borderBounce(b.position.y, screenHeight)}
+	targetPositionVector, targetVelocityVector, separationVector := Vector2D{x: 0, y: 0}, Vector2D{x: 0, y: 0}, Vector2D{x: 0, y: 0}
+	mutex.RLock() // Acquire a read lock here
 	for i := xLeft; i <= xRight; i++ {
 		for j := yBottom; j <= yTop; j++ {
 			bId := boidMap[int(i)][int(j)]
@@ -140,11 +134,13 @@ func (b *Boid) calculateAcceleration() Vector2D {
 					count += 1
 					targetVelocityVector = targetVelocityVector.AddVector(boids[bId].velocity)
 					targetPositionVector = targetPositionVector.AddVector(boids[bId].position)
+					temp := b.position.SubtractVector(boids[bId].position)
+					separationVector = separationVector.AddVector(temp.DivideScalar(d))
 				}
 			}
 		}
 	}
-	mutex.Unlock()
+	mutex.RUnlock() // Release read lock
 	if count > 0 {
 		targetVelocityVector = targetVelocityVector.DivideScalar(count)
 		targetPositionVector = targetPositionVector.DivideScalar(count)
@@ -153,8 +149,21 @@ func (b *Boid) calculateAcceleration() Vector2D {
 	accelerationAlignmentVector = accelerationAlignmentVector.MultiplyScalar(adjustmentRate)
 	accelerationCohesionVector := targetPositionVector.SubtractVector(b.position)
 	accelerationCohesionVector = accelerationCohesionVector.MultiplyScalar(adjustmentRate)
+	accelerationSeparationVector := separationVector.MultiplyScalar(adjustmentRate)
+
 	accelerationVector = accelerationVector.AddVector(accelerationAlignmentVector)
-	return accelerationVector.AddVector(accelerationCohesionVector)
+	accelerationVector = accelerationVector.AddVector(accelerationCohesionVector)
+	accelerationVector = accelerationVector.AddVector(accelerationSeparationVector)
+	return accelerationVector
+}
+
+func (b *Boid) borderBounce(pos, max float64) float64 {
+	if pos < viewRadius {
+		return 1 / pos
+	} else if pos > max-viewRadius {
+		return 1 / (pos - max)
+	}
+	return 0
 }
 
 /////////////////////// Vector2D /////////////////////
