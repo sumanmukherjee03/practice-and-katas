@@ -15,7 +15,7 @@ const (
 	think  = time.Second
 )
 
-var dining sync.WaitGroup
+var dining sync.WaitGroup // wait group to synchronize the eating and thinking activities of the philosophers
 
 func main() {
 	describe()
@@ -25,6 +25,9 @@ func main() {
 	// Go around the table and invoke go routines while synchronizing access to the forks with mutexes
 	fmt.Println("Table empty")
 	dining.Add(len(philosophers))
+
+	// Create a mutex representing a resource for the forks because they need to be locked when a philosopher is eating
+	// Iterate over all the philosophers and start eating if possible or else start thinking while waiting for forks to become available
 	fork0 := &sync.Mutex{}
 	forkLeft := fork0
 	for i := 1; i < len(philosophers); i++ {
@@ -33,23 +36,26 @@ func main() {
 		forkLeft = forkRight
 	}
 	go solve(philosophers[0], forkLeft, fork0)
+
 	dining.Wait()
 	fmt.Println("Table empty")
 }
 
-func solve(philosopher string, leftHand, rightHand *sync.Mutex) {
+// Only repeat the eat and sleep cycle for #hunger number of times
+// Acquire lock on forks, eat for a few secs and then release lock on forks and sleep for a few seconds
+func solve(philosopher string, leftHandFork, rightHandFork *sync.Mutex) {
 	rSleep := func(t time.Duration) {
 		time.Sleep(t + time.Duration(rand.Intn(500)))
 	}
 	fmt.Println(philosopher, "seated")
 	for h := hunger; h > 0; h-- {
 		fmt.Println(philosopher, "hungry")
-		leftHand.Lock()
-		rightHand.Lock()
+		leftHandFork.Lock()
+		rightHandFork.Lock()
 		fmt.Println(philosopher, "eating")
 		rSleep(eat)
-		leftHand.Unlock()
-		rightHand.Unlock()
+		leftHandFork.Unlock()
+		rightHandFork.Unlock()
 		fmt.Println(philosopher, "thinking")
 		rSleep(think)
 	}
@@ -70,8 +76,8 @@ After an individual philosopher finishes eating,
 they need to put down both forks so that the forks become available to others.
 A philosopher can take the fork on their right or the one on their left as they become available,
 but cannot start eating before getting both forks.
-Eating is not limited by the remaining amounts of spaghetti or stomach space,
-an infinite supply and an infinite demand are assumed.
+Eating is not limited by the remaining amounts of spaghetti or stomach space.
+An infinite supply and an infinite demand are assumed.
 The problem is how to design a discipline of behavior such that no philosopher will starve,
 i.e., each can forever continue to alternate between eating and thinking,
 assuming that no philosopher can know when others may want to eat or think.

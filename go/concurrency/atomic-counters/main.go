@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 )
 
-var wg sync.WaitGroup
+var wg sync.WaitGroup // wait group to synchronize
 
 func main() {
 	describe()
@@ -16,7 +16,7 @@ func main() {
 		wg.Add(1)
 		go func() {
 			for j := 0; j < 1000; j++ {
-				atomic.AddUint64(&counter, 1)
+				atomic.AddUint64(&counter, 1) // Use an atomic counter to make sure you can access a thread safe variable
 			}
 			wg.Done()
 		}()
