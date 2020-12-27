@@ -6,6 +6,8 @@ import (
 )
 
 func main() {
+	describe()
+
 	ticker := time.NewTicker(500 * time.Millisecond)
 	done := make(chan bool)
 
