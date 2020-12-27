@@ -31,12 +31,13 @@ func variant1() {
 	for i := 0; i < 3; i++ {
 		jobs <- fmt.Sprintf("job_%d", i)
 	}
-	close(jobs)
-	<-done
+	close(jobs) // Remember to close channel after the job is done
+	<-done      // Finally read from the done channel to indicate end of job
 }
 
 // This is what you can avoid doing with the better variant above
-// - having the done complete inside the goroutine
+//   - by having the done complete inside the goroutine by publishing to the done channel inside the goroutine
+//     and reading from it in main proc
 // because otherwise you will require wait groups to make the goroutines wait before the main function completes
 func bad_variant2() {
 	jobs := make(chan string)

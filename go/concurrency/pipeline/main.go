@@ -30,6 +30,8 @@ func main() {
 	windChan := make(chan []string)
 	degreesChan := make(chan float64)
 
+	// Start the goroutines that handle the pipeline
+	// by passing output channel from one as input to the next goroutine
 	go parseToArray(textChan, metarChan)
 	go extractWindDirection(metarChan, windChan)
 	go mineWindDistribution(windChan, degreesChan)
@@ -55,7 +57,7 @@ func main() {
 		text := string(data)
 		textChan <- text
 	}
-	close(textChan)
+	close(textChan) // You can close a non-empty channel and still have the remaining values received
 	elapsedTime := time.Since(startTime)
 
 	fmt.Printf("%v\n", windDist)
@@ -75,6 +77,7 @@ func initDist() {
 }
 
 func parseToArray(inChan chan string, outChan chan []string) {
+	// Iterate over each element in the channel as it is received
 	for text := range inChan {
 		lines := strings.Split(text, "\n")
 		metarSlice := make([]string, 0, len(lines))
@@ -93,7 +96,7 @@ func parseToArray(inChan chan string, outChan chan []string) {
 		}
 		outChan <- metarSlice
 	}
-	close(inChan)
+	close(outChan)
 }
 
 func extractWindDirection(inChan chan []string, outChan chan []string) {
@@ -106,7 +109,7 @@ func extractWindDirection(inChan chan []string, outChan chan []string) {
 		}
 		outChan <- winds
 	}
-	close(inChan)
+	close(outChan)
 }
 
 func mineWindDistribution(inChan chan []string, outChan chan float64) {
@@ -125,5 +128,5 @@ func mineWindDistribution(inChan chan []string, outChan chan float64) {
 			}
 		}
 	}
-	close(inChan)
+	close(outChan)
 }

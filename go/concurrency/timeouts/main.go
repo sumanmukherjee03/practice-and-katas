@@ -10,12 +10,13 @@ func main() {
 	describe()
 	rand.Seed(time.Now().UnixNano())
 
-	c1 := make(chan string, 1)
+	c1 := make(chan string, 1) // Use buffered channel to make sure that the send operation is non-blocking
 	go func() {
 		time.Sleep(2 * time.Second)
 		c1 <- "hello_Channel_1"
 	}()
 
+	// Single select because we are publishing only 1 message in the channel above
 	select {
 	case m1 := <-c1:
 		fmt.Println("Msg from channel 1 : ", m1)
@@ -23,7 +24,7 @@ func main() {
 		fmt.Println("Timeout waiting for channel 1 to send anything")
 	}
 
-	c2 := make(chan string, 2)
+	c2 := make(chan string, 2) // Use buffered channel to make sure that the send operation is non-blocking
 	for i := 0; i < 2; i++ {
 		go func() {
 			time.Sleep(2 * time.Second)
@@ -31,6 +32,7 @@ func main() {
 		}()
 	}
 
+	// 2 selects because we are publishing 2 messages in the channel above
 	for j := 0; j < 2; j++ {
 		select {
 		case m2 := <-c2:

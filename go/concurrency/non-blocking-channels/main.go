@@ -8,7 +8,8 @@ import (
 
 func main() {
 	describe()
-	variant1()
+	// variant1()
+	variant2()
 }
 
 func variant1() {
@@ -61,7 +62,7 @@ func variant2() {
 		case m := <-msgs:
 			fmt.Println("Message received in go routine 1: ", m)
 		default:
-			fmt.Println("Nothing to receive")
+			fmt.Println("Nothing to receive - from goroutine 1")
 		}
 		wg.Done()
 	}()
@@ -83,9 +84,9 @@ func variant2() {
 		case nm := <-msgs:
 			fmt.Println("Message received in goroutine 3: ", nm)
 		case sig := <-signals:
-			fmt.Println("Signal received in go routine 3: ", sig)
+			fmt.Println("Signal received in goroutine 3: ", sig)
 		default:
-			fmt.Println("No activity")
+			fmt.Println("No activity - from goroutine 3")
 		}
 		wg.Done()
 	}()
@@ -95,7 +96,7 @@ func variant2() {
 
 func describe() {
 	str := `
-Basic sends and receives on channels are blocking.
+Basic sends and receives on channels are blocking, ie if there is no receiver then you cant send a message unless the channel has a buffer.
 However, we can use select with a default clause to implement non-blocking sends, receives, and even non-blocking multi-way selects.
 
 

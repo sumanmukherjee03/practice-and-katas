@@ -30,9 +30,9 @@ func filesearch(path, filename string) {
 	files, _ := ioutil.ReadDir(path)
 	for _, f := range files {
 		if strings.Contains(f.Name(), filename) {
-			mutex.Lock()
+			mutex.Lock() // Acquire lock on state var that stores results because this func is run by multiple goroutines
 			matches = append(matches, filepath.Join(path, f.Name()))
-			mutex.Unlock()
+			mutex.Unlock() // Release lock
 		}
 		if f.IsDir() {
 			wg.Add(1)
