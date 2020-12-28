@@ -53,6 +53,8 @@ func burstRateLimit(reqs chan string) {
 	}
 
 	// Start a goroutine that reads from a ticker and pushes a timestamp into our rate limiter every 100ms
+	// Since we are not directly ranging over the limiter, this goroutine can die when main exits.
+	// Nothing should cause a deadlock in that case. Also, no cleanup is necessary.
 	go func() {
 		ticker := time.Tick(100 * time.Millisecond)
 		for t := range ticker {
