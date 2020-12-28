@@ -10,8 +10,8 @@ func main() {
 
 	const numOfJobs = 10
 	const numOfWorkers = 3
-	jobs := make(chan int, numOfJobs)
-	results := make(chan int, numOfJobs)
+	jobs := make(chan int, numOfJobs)    // A channel to track the job which is consumed by the workers
+	results := make(chan int, numOfJobs) // A results channel where the results of the jobs are published
 
 	// Create a worker pool
 	for i := 1; i <= numOfWorkers; i++ {
@@ -25,7 +25,9 @@ func main() {
 	close(jobs) // Close the jobs channel when you are done creating the jobs
 
 	// Finally, extract the results for each job
-	// You cant range over the results because we are closing the results channel anywhere
+	// You cant range over the results because we are not closing the results channel anywhere.
+	// If we ranged over this channel we would have ended up getting an error - fatal error: all goroutines are asleep - deadlock!
+	// This is because the range operator would keep waiting for more input from the channel
 	for k := 1; k <= numOfJobs; k++ {
 		r := <-results
 		fmt.Println("Processed job result", r)
@@ -33,6 +35,7 @@ func main() {
 }
 
 func worker(id int, jobs <-chan int, res chan<- int) {
+	// You can range over the jobs channel because the jobs channel eventually gets closed in main
 	for j := range jobs {
 		fmt.Println("Worker", id, "Started processing job", j)
 		time.Sleep(200 * time.Millisecond)
