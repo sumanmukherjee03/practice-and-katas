@@ -140,6 +140,8 @@ For train 3, crossing 3 first, then crossing 4. For train 4, crossing 1 first th
 Note the difference here - how we are going by the id of the crossing
 as opposed to simply looking ahead and locking the nearest one first and then the fathest crossingi second.
 
+Remember that the ordering solution only works when there are no code branches and you already know which resources you will be locking.
+
 Here's a pictorial representation of the trains and crossings
                         t
                         r
