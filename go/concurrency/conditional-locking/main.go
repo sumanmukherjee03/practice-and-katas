@@ -48,6 +48,7 @@ func spendy() {
 			// The mutex needs to be acquired first and then the conditional is checked. If the condition is not met, the lock is released.
 			// This gurantees that the other goroutine picks up the mutex and continues with it's work.
 			// If you acquire the "mutex.Lock()" after this conditonal wait, then you will see an error like this - fatal error: sync: unlock of unlocked moneyDeposited.Wait()
+			moneyDeposited.Wait()
 		}
 		balance -= 20
 		str := fmt.Sprintf("SPENDY COUNT : %d - Withdrew 20 dollars. Current balance is : %d", i, balance)
