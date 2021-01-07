@@ -15,6 +15,13 @@ var (
 	urlRegex = regexp.MustCompile(`(https|http)://.*`)
 )
 
+type visitationResult struct {
+	url   string
+	urls  []string
+	err   error
+	depth int
+}
+
 func main() {
 	describe()
 	start := time.Now()
@@ -24,27 +31,51 @@ func main() {
 }
 
 // crawl a url upto a given depth
+// To convert this to a more parallel program, we need to convert the recursion to an iteration and use channels for communication
 func crawl(url string, depth int) {
-	if depth < 0 {
-		return
+	ch := make(chan *visitationResult)
+
+	fetch := func(u string, d int) {
+		urls, err := visit(u)
+		r := visitationResult{
+			url:   u,
+			urls:  urls,
+			err:   err,
+			depth: d,
+		}
+		ch <- &r
 	}
 
-	urls, err := visit(url)
-	if err != nil {
-		log.Printf("Encountered error visiting url %s : %v", url, err)
-		return
-	}
-	fetched[url] = true // mark this url as fetched so that this link is not revisited again
-	fmt.Println("Fetched url : ", url)
+	go fetch(url, depth)
+	fetched[url] = true // make sure to not update the fetched map inside the goroutine to avoid creating a mutex
 
-	// range over all the new links that were generated from visiting the given url and recursively call crawl on them
-	for _, u := range urls {
-		if !fetched[u] {
-			crawl(u, depth-1) // Remember to reduce the depth by 1
+	// fetching is the variable that keeps track of how many goroutines are still running
+	// the concept is similar to adding to a waitgroup so that we know how many goroutines we need to wait for to finish
+	// since when this loop begins, we only have 1 goroutine, we start with 1 and start counting down
+	for fetching := 1; fetching > 0; fetching-- {
+		res := <-ch // This blocks until the channel has been read from
+
+		if res.err != nil {
+			log.Printf("Encountered error visiting url %s : %v", res.url, res.err)
+			continue
+		}
+
+		log.Println("Fetched url : ", res.url)
+
+		if res.depth > 0 {
+			for _, u := range res.urls {
+				if !fetched[u] {
+					// Every time to add a new goroutine to fetch a url, we increment fetching.
+					// That way, we know we want to run the loop one more time to consume from the channel
+					fetching++
+					go fetch(u, res.depth-1)
+					fetched[u] = true
+				}
+			}
 		}
 	}
 
-	return
+	close(ch)
 }
 
 // visit a url, get the http response, parse the html and call traverse function to extract all the links from that page
