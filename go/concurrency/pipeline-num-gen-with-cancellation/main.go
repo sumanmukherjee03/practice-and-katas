@@ -84,6 +84,12 @@ func merge(done <-chan struct{}, chans ...<-chan int) <-chan int {
 	}
 
 	go func() {
+		// The wait has to go in a goroutine because otherwise this function merge
+		// will keep waiting for it's goroutines and not return the out channel.
+		// The out channel is used in the main function to receive values.
+		// This means out channel will block on channel send operations because there wont be a receiver
+		// and that would lead to a deadlock since merge will keep waiting forever.
+		// That's why this needs to be in a goroutine.
 		wg.Wait()
 		close(out)
 	}()

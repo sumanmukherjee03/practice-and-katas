@@ -186,6 +186,12 @@ func processImage(done <-chan struct{}, paths <-chan string) <-chan *processingR
 	}
 
 	go func() {
+		// The wait has to go in a goroutine because otherwise this function processImage
+		// will keep waiting for it's goroutines and not return the out channel.
+		// The out channel is used in the setupPipeline function to receive values.
+		// This means out channel will block on channel send operations because there wont be a receiver
+		// and that would lead to a deadlock since processImage will keep waiting forever.
+		// That's why this needs to be in a goroutine.
 		wg.Wait()
 		close(out)
 	}()
