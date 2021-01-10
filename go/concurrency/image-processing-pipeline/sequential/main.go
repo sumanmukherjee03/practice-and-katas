@@ -91,7 +91,6 @@ func getFileContentType(file string) (string, error) {
 // processImage - takes image file as input
 // return pointer to thumbnail image in memory.
 func processImage(path string) (*image.NRGBA, error) {
-
 	// load the image from file
 	srcImage, err := imaging.Open(path)
 	if err != nil {
