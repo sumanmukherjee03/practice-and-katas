@@ -44,7 +44,7 @@ func main() {
 
 func describe() {
 	str := `
-This is an example of a cancellable context. The cancel function is generally called with a defer where the cancellable context is defined.
+This is an example of a cancellable context. The cancel function is generally where the cancellable context is defined.
 When cancel function is called, it sends a done signal on the done channel of the context.
 The child goroutine must handle the done signal and bail out to prevent goroutine leaks.
 
