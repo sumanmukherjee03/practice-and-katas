@@ -21,6 +21,7 @@ func main() {
 				select {
 				case out <- rand.Intn(1000):
 				case <-c.Done():
+					fmt.Println("Context has expired, exiting goroutine")
 					return // bail out if program termination is indicated using the done channel
 				}
 			}
@@ -35,11 +36,13 @@ func main() {
 	for x := range ch {
 		if count >= 5 {
 			cancel() // indicate program termination by calling cancel when condition is met
-			return   // bail out of the for loop
+			break    // bail out of the for loop
 		}
 		fmt.Println(x)
 		count++
 	}
+
+	time.Sleep(100 * time.Millisecond) // Give the goroutine some time to exit, so that you can see the context expired message
 }
 
 func describe() {
