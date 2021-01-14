@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -9,7 +10,17 @@ import (
 	"google.golang.org/grpc"
 )
 
+// This server needs to implement the GreetServiceServer interface defined in the code generated from the protobuf
 type server struct{}
+
+// Implements - Greet(context.Context, *GreetRequest) (*GreetResponse, error)
+func (s *server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.GreetResponse, error) {
+	firstName := req.GetGreeting().GetFirstName()
+	lastName := req.GetGreeting().GetFirstName()
+	result := "Hello " + firstName + " " + lastName
+	res := &greetpb.GreetResponse{Result: result}
+	return res, nil
+}
 
 func main() {
 	fmt.Println("Starting new grpc server")
