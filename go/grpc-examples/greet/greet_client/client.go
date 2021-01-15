@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -18,5 +19,19 @@ func main() {
 
 	// boilerplate code to create a new grpc client connecting to a grpc server at host:port
 	c := greetpb.NewGreetServiceClient(conn)
-	fmt.Printf("Created client : %f", c)
+	// fmt.Printf("Created client : %f", c)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	req := &greetpb.GreetRequest{
+		Greeting: &greetpb.Greeting{
+			FirstName: "John",
+			LastName:  "Doe",
+		},
+	}
+	resp, err := c.Greet(ctx, req)
+	if err != nil {
+		log.Fatalf("Encountered an error making a request : %v", err)
+	}
+	fmt.Printf("Got response from server : %s", resp.GetResult())
 }
