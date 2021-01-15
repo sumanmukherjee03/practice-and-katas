@@ -20,9 +20,12 @@ func main() {
 	// boilerplate code to create a new grpc client connecting to a grpc server at host:port
 	c := greetpb.NewGreetServiceClient(conn)
 	// fmt.Printf("Created client : %f", c)
+	doUnary(c)
+}
+
+func doUnary(c greetpb.GreetServiceClient) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	req := &greetpb.GreetRequest{
 		Greeting: &greetpb.Greeting{
 			FirstName: "John",
