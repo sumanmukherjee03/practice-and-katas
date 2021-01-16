@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package calculator;
+option go_package = "calculator/calculatorpb";
+
+// naming convention for request is <what>Request
+message CalculationRequest {
+  repeated double operands = 1; // repeated makes this a list of float64 values
+  string operator = 2;
+}
+
+// naming convention for response is <what>Response
+message CalculationResponse {
+  double result = 1; // double corresponds to float64 in golang
+}
+
+// naming convention for service is <what>Service
+service CalculatorService {
+  rpc Calculation(CalculationRequest) returns (CalculationResponse) {}; // defines a unary api
+}
