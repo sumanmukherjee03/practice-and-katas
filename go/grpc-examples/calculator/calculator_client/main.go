@@ -24,12 +24,12 @@ func doUnary(c calculatorpb.CalculatorServiceClient) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	req := &calculatorpb.CalculationRequest{
+	req := &calculatorpb.SumRequest{
 		Operands: []float64{5.7, 2.3, 9.1, 6.2},
 		Operator: "Sum",
 	}
 
-	resp, err := c.Calculation(ctx, req)
+	resp, err := c.Sum(ctx, req)
 	if err != nil {
 		log.Fatalf("Received an error from the grpc server : %v", err)
 	}

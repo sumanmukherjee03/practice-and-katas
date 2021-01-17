@@ -10,15 +10,15 @@ import (
 	"google.golang.org/grpc"
 )
 
-type calculatorServer struct{}
+type server struct{}
 
-func (c *calculatorServer) Calculation(ctx context.Context, req *calculatorpb.CalculationRequest) (*calculatorpb.CalculationResponse, error) {
-	fmt.Println("Calculation method called in calculator service")
+func (c *server) Sum(ctx context.Context, req *calculatorpb.SumRequest) (*calculatorpb.SumResponse, error) {
+	fmt.Println("Sum method called in calculator service")
 	var sum float64
 	for _, num := range req.GetOperands() {
 		sum += num
 	}
-	resp := &calculatorpb.CalculationResponse{Result: sum}
+	resp := &calculatorpb.SumResponse{Result: sum}
 	return resp, nil
 }
 
@@ -30,7 +30,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	calculatorpb.RegisterCalculatorServiceServer(s, &calculatorServer{})
+	calculatorpb.RegisterCalculatorServiceServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Encountered error starting grpc server : %v", err)
 	}
