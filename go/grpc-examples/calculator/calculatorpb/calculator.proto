@@ -14,8 +14,17 @@ message SumResponse {
   double result = 1; // double corresponds to float64 in golang
 }
 
+message PrimeNumberDecompositionRequest {
+  int32 number = 1;
+}
+
+// this represents each message block in the stream
+message PrimeNumberDecompositionResponse {
+  int32 factor = 1;
+}
+
 // naming convention for service is <what>Service
 service CalculatorService {
   rpc Sum(SumRequest) returns (SumResponse) {}; // defines a unary api
-  // rpc PrimeNumberDecomposition(PrimeNumberDecompositionRequest) returns (stream PrimeNumberDecompositionResponse) {}; // defines a server streaming api
+  rpc PrimeNumberDecomposition(PrimeNumberDecompositionRequest) returns (stream PrimeNumberDecompositionResponse) {}; // defines a server streaming api
 }
