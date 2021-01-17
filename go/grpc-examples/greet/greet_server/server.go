@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/sumanmukherjee03/practice-and-katas/go/grpc-examples/greet/greetpb"
 	"google.golang.org/grpc"
@@ -18,9 +19,22 @@ func (s *server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb
 	fmt.Printf("Greet function was invoked with : %v", req)
 	firstName := req.GetGreeting().GetFirstName()
 	lastName := req.GetGreeting().GetLastName()
-	result := "Hello " + firstName + " " + lastName
+	result := "Hello " + firstName + " " + lastName + "\n"
 	res := &greetpb.GreetResponse{Result: result}
 	return res, nil
+}
+
+func (s *server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb.GreetService_GreetManyTimesServer) error {
+	firstName := req.GetGreeting().GetFirstName()
+	lastName := req.GetGreeting().GetLastName()
+	for i := 0; i < 10; i++ {
+		resp := &greetpb.GreetManyTimesResponse{
+			Result: fmt.Sprintf("Hi %s %s : %d\n", firstName, lastName, i),
+		}
+		stream.Send(resp)
+		time.Sleep(1 * time.Second)
+	}
+	return nil
 }
 
 func main() {
