@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/sumanmukherjee03/practice-and-katas/go/grpc-examples/greet/greetpb"
@@ -35,6 +37,24 @@ func (s *server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greet
 		time.Sleep(1 * time.Second)
 	}
 	return nil
+}
+
+func (s *server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
+	var names []string
+	for {
+		req, err := stream.Recv() // Stream blocks until you receive something from it
+		if err == io.EOF {
+			resp := &greetpb.LongGreetResponse{Result: "Hello " + strings.Join(names, ",")}
+			return stream.SendAndClose(resp)
+		}
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Received client streaming request : %v\n", req)
+		firstName := req.GetGreeting().GetFirstName()
+		lastName := req.GetGreeting().GetLastName()
+		names = append(names, fmt.Sprintf("%s %s", firstName, lastName))
+	}
 }
 
 func main() {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
 	"github.com/sumanmukherjee03/practice-and-katas/go/grpc-examples/greet/greetpb"
 	"google.golang.org/grpc"
@@ -19,8 +20,9 @@ func main() {
 	defer conn.Close() // Close the connection when the client returns, no matter the return path
 	// boilerplate code to create a new grpc client connecting to a grpc server at host:port
 	c := greetpb.NewGreetServiceClient(conn)
-	doUnary(c)
-	doServerStreaming(c)
+	// doUnary(c)
+	// doServerStreaming(c)
+	doClientStreaming(c)
 }
 
 func doUnary(c greetpb.GreetServiceClient) {
@@ -63,4 +65,29 @@ func doServerStreaming(c greetpb.GreetServiceClient) {
 		}
 		fmt.Printf("Got response from server : %s", msg.GetResult())
 	}
+}
+
+func doClientStreaming(c greetpb.GreetServiceClient) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	clientStream, err := c.LongGreet(ctx)
+	if err != nil {
+		log.Fatalf("Encountered an error making call to server with client streaming : %v", err)
+	}
+	for i := 0; i < 10; i++ {
+		req := &greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: fmt.Sprintf("John %d", i),
+				LastName:  "Doe",
+			},
+		}
+		clientStream.Send(req)
+		time.Sleep(1 * time.Second)
+	}
+	resp, err := clientStream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("Encountered an error receiving response from server with client streaming : %v", err)
+	}
+	fmt.Printf("Client streaming response : %s\n", resp.GetResult())
 }
