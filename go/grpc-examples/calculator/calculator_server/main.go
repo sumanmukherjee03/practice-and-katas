@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"time"
@@ -29,11 +30,11 @@ func (s *server) PrimeNumberDecomposition(req *calculatorpb.PrimeNumberDecomposi
 	factor := int32(2)
 	for num > int32(1) {
 		// If this factor divides num then enter else try to find the next factor
-		if (num % factor == 0) {
+		if num%factor == 0 {
 			// Keep iterating with the same factor as long as it is divisible
-			for (num % factor == 0) {
+			for num%factor == 0 {
 				resp := &calculatorpb.PrimeNumberDecompositionResponse{Factor: factor}
-				num = num/factor
+				num = num / factor
 				stream.Send(resp)
 				time.Sleep(1 * time.Second) // Sleeping for a bit to simulate a real life working example
 			}
@@ -43,6 +44,26 @@ func (s *server) PrimeNumberDecomposition(req *calculatorpb.PrimeNumberDecomposi
 		}
 	}
 	return nil
+}
+
+func (s *server) ComputedAverage(stream calculatorpb.CalculatorService_ComputedAverageServer) error {
+	fmt.Println("Starting client streaming -")
+	var sum float64
+	var count float64
+	for {
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Received message from client : [%v]\n", msg)
+		sum += msg.GetNumber()
+		count++
+	}
+	resp := &calculatorpb.ComputedAverageResponse{Result: sum / count}
+	return stream.SendAndClose(resp)
 }
 
 func main() {

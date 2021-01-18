@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
+	"time"
 
 	"github.com/sumanmukherjee03/practice-and-katas/go/grpc-examples/calculator/calculatorpb"
 	"google.golang.org/grpc"
@@ -18,8 +20,9 @@ func main() {
 	}
 	defer cc.Close()
 	c := calculatorpb.NewCalculatorServiceClient(cc)
-	doUnary(c)
-	doServerStreaming(c)
+	// doUnary(c)
+	// doServerStreaming(c)
+	doClientStreaming(c)
 }
 
 func doUnary(c calculatorpb.CalculatorServiceClient) {
@@ -57,4 +60,24 @@ func doServerStreaming(c calculatorpb.CalculatorServiceClient) {
 		}
 		fmt.Printf("Received factor : %d\n", msg.GetFactor())
 	}
+}
+
+func doClientStreaming(c calculatorpb.CalculatorServiceClient) {
+	rand.Seed(time.Now().UnixNano())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	stream, err := c.ComputedAverage(ctx)
+	if err != nil {
+		log.Fatalf("Encountered an error setting up the connection to the server for client streaming : %v", err)
+	}
+	for i := 0; i < 10; i++ {
+		req := &calculatorpb.ComputedAverageRequest{Number: rand.Float64() * 100}
+		stream.Send(req)
+		time.Sleep(300 * time.Millisecond)
+	}
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("Encountered an error closing stream and fetching final result : %v", err)
+	}
+	fmt.Printf("Final comnputed average : %f\n", resp.GetResult())
 }

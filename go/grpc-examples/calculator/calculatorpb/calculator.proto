@@ -23,8 +23,17 @@ message PrimeNumberDecompositionResponse {
   int32 factor = 1;
 }
 
+message ComputedAverageRequest {
+  double number = 1;
+}
+
+message ComputedAverageResponse {
+  double result = 1;
+}
+
 // naming convention for service is <what>Service
 service CalculatorService {
   rpc Sum(SumRequest) returns (SumResponse) {}; // defines a unary api
   rpc PrimeNumberDecomposition(PrimeNumberDecompositionRequest) returns (stream PrimeNumberDecompositionResponse) {}; // defines a server streaming api
+  rpc ComputedAverage(stream ComputedAverageRequest) returns (ComputedAverageResponse) {}; // defines a client streaming api
 }
