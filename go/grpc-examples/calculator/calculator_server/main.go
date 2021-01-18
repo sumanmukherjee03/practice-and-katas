@@ -49,20 +49,20 @@ func (s *server) PrimeNumberDecomposition(req *calculatorpb.PrimeNumberDecomposi
 func (s *server) ComputedAverage(stream calculatorpb.CalculatorService_ComputedAverageServer) error {
 	fmt.Println("Starting client streaming -")
 	var sum float64
-	var count float64
+	count := 0
 	for {
 		msg, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return err
+			log.Fatalf("Encountered an error from client during streaming. Bailing out : %v", err)
 		}
 		fmt.Printf("Received message from client : [%v]\n", msg)
 		sum += msg.GetNumber()
 		count++
 	}
-	resp := &calculatorpb.ComputedAverageResponse{Result: sum / count}
+	resp := &calculatorpb.ComputedAverageResponse{Result: sum / float64(count)}
 	return stream.SendAndClose(resp)
 }
 
