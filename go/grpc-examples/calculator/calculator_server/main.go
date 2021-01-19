@@ -79,7 +79,10 @@ func (s *server) FindMaximum(stream calculatorpb.CalculatorService_FindMaximumSe
 		fmt.Printf("Received message from client : [%v]\n", msg)
 		if msg.GetNumber() > maxNum {
 			maxNum = msg.GetNumber()
-			stream.Send(&calculatorpb.FindMaximumResponse{Result: maxNum})
+			sendErr := stream.Send(&calculatorpb.FindMaximumResponse{Result: maxNum})
+			if sendErr != nil {
+				return sendErr
+			}
 		}
 	}
 }
