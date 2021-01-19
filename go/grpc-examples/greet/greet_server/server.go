@@ -61,7 +61,7 @@ func (s *server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) 
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF { // This indicates that the client has stopped streaming
-			return nil
+			return nil // Dont return the error because this successfully terminates the loop
 		}
 		if err != nil {
 			return err

@@ -94,6 +94,7 @@ func doClientStreaming(c greetpb.GreetServiceClient) {
 }
 
 func doBiDirectionalStreaming(c greetpb.GreetServiceClient) {
+	waitChan := make(chan struct{})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	stream, err := c.GreetEveryone(ctx)
@@ -101,9 +102,8 @@ func doBiDirectionalStreaming(c greetpb.GreetServiceClient) {
 		log.Fatalf("Encountered an error making call to server with bi-directional streaming : %v", err)
 	}
 
-	waitChan := make(chan struct{})
 	go func() {
-		defer stream.CloseSend()
+		defer stream.CloseSend() // Make sure to defer close the stream in the goroutine where you are sending data
 		for i := 0; i < 10; i++ {
 			req := &greetpb.GreetEveryoneRequest{
 				Greeting: &greetpb.Greeting{
@@ -122,6 +122,13 @@ func doBiDirectionalStreaming(c greetpb.GreetServiceClient) {
 
 	go func() {
 		defer close(waitChan)
+		// Since this is an infinite loop dependent upon the fact that the server will
+		// close the stream, you cant send a value to the wait channel here.
+		// That will cause the wait channel to block forever.
+		// One way to unblock the wait channel is by closing the channel.
+		// So, we defer close the channel as soon as the goroutine finishes which can handle the error path of the goroutine.
+		// You can also send a value to the wait channel when you encounter an error and are about to exit the goroutine,
+		// but when combined with the close(waitChan) that logic becomes redundant.
 		for {
 			resp, err := stream.Recv()
 			if err == io.EOF {
@@ -135,5 +142,5 @@ func doBiDirectionalStreaming(c greetpb.GreetServiceClient) {
 		}
 	}()
 
-	<-waitChan
+	<-waitChan // This blocks the function until the goroutines are done
 }

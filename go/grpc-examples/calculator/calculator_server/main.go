@@ -65,6 +65,25 @@ func (s *server) ComputedAverage(stream calculatorpb.CalculatorService_ComputedA
 	return stream.SendAndClose(resp)
 }
 
+func (s *server) FindMaximum(stream calculatorpb.CalculatorService_FindMaximumServer) error {
+	maxNum := int32(0)
+	for {
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			fmt.Println("Client closed the stream")
+			return nil // return nil because this successfully terminates the loop
+		}
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Received message from client : [%v]\n", msg)
+		if msg.GetNumber() > maxNum {
+			maxNum = msg.GetNumber()
+			stream.Send(&calculatorpb.FindMaximumResponse{Result: maxNum})
+		}
+	}
+}
+
 func main() {
 	fmt.Println("Starting grpc server for calculator service")
 	lis, err := net.Listen("tcp", "localhost:50051") // default port for grpc is 50051

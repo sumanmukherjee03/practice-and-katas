@@ -22,7 +22,8 @@ func main() {
 	c := calculatorpb.NewCalculatorServiceClient(cc)
 	// doUnary(c)
 	// doServerStreaming(c)
-	doClientStreaming(c)
+	// doClientStreaming(c)
+	doBiDiStreaming(c)
 }
 
 func doUnary(c calculatorpb.CalculatorServiceClient) {
@@ -80,4 +81,47 @@ func doClientStreaming(c calculatorpb.CalculatorServiceClient) {
 		log.Fatalf("Encountered an error closing stream and fetching final result : %v", err)
 	}
 	fmt.Printf("Final comnputed average : %f\n", resp.GetResult())
+}
+
+func doBiDiStreaming(c calculatorpb.CalculatorServiceClient) {
+	rand.Seed(time.Now().UnixNano())
+	waitCh := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	stream, err := c.FindMaximum(ctx)
+	if err != nil {
+		log.Fatalf("Encountered an error setting up the connection to the server for bidirectional streaming : %v", err)
+	}
+
+	go func() {
+		defer stream.CloseSend()
+		fmt.Println("Starting sender goroutine")
+		for i := 0; i < 10; i++ {
+			err := stream.Send(&calculatorpb.FindMaximumRequest{Number: rand.Int31()})
+			if err != nil {
+				log.Printf("Encountered an error sending requests to server with bi-directional streaming : %v", err)
+				return
+			}
+			time.Sleep(300 * time.Millisecond)
+		}
+	}()
+
+	go func() {
+		defer close(waitCh)
+		fmt.Println("Starting receiver goroutine")
+		for {
+			msg, err := stream.Recv()
+			if err == io.EOF {
+				fmt.Println("Server closed the stream")
+				return
+			}
+			if err != nil {
+				log.Fatalf("Encountered an error fetching result from server : %v", err)
+				return
+			}
+			fmt.Printf("Current max is : %d\n", msg.GetResult())
+		}
+	}()
+
+	<-waitCh
 }
