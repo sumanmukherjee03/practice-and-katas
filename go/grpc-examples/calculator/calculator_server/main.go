@@ -15,7 +15,6 @@ import (
 type server struct{}
 
 func (s *server) Sum(ctx context.Context, req *calculatorpb.SumRequest) (*calculatorpb.SumResponse, error) {
-	fmt.Println("Sum method called in calculator service")
 	var sum float64
 	for _, num := range req.GetOperands() {
 		sum += num
@@ -56,7 +55,7 @@ func (s *server) ComputedAverage(stream calculatorpb.CalculatorService_ComputedA
 			break
 		}
 		if err != nil {
-			log.Fatalf("Encountered an error from client during streaming. Bailing out : %v", err)
+			return err
 		}
 		fmt.Printf("Received message from client : [%v]\n", msg)
 		sum += msg.GetNumber()

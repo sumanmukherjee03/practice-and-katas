@@ -57,6 +57,25 @@ func (s *server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
 	}
 }
 
+func (s *server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) error {
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF { // This indicates that the client has stopped streaming
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Received client streaming request : %v\n", req)
+		resp := &greetpb.GreetEveryoneResponse{Result: fmt.Sprintf("Hello %s %s\n", req.GetGreeting().GetFirstName(), req.GetGreeting().GetLastName())}
+		err = stream.Send(resp)
+		if err != nil {
+			return err
+		}
+		time.Sleep(400 * time.Millisecond)
+	}
+}
+
 func main() {
 	fmt.Println("Starting new grpc server")
 	lis, err := net.Listen("tcp", "localhost:50051") // 50051 is the default port for grpc

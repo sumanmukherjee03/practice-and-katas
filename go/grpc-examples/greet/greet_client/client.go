@@ -22,7 +22,8 @@ func main() {
 	c := greetpb.NewGreetServiceClient(conn)
 	// doUnary(c)
 	// doServerStreaming(c)
-	doClientStreaming(c)
+	// doClientStreaming(c)
+	doBiDirectionalStreaming(c)
 }
 
 func doUnary(c greetpb.GreetServiceClient) {
@@ -90,4 +91,49 @@ func doClientStreaming(c greetpb.GreetServiceClient) {
 		log.Fatalf("Encountered an error receiving response from server with client streaming : %v", err)
 	}
 	fmt.Printf("Client streaming response : %s\n", resp.GetResult())
+}
+
+func doBiDirectionalStreaming(c greetpb.GreetServiceClient) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	stream, err := c.GreetEveryone(ctx)
+	if err != nil {
+		log.Fatalf("Encountered an error making call to server with bi-directional streaming : %v", err)
+	}
+
+	waitChan := make(chan struct{})
+	go func() {
+		defer stream.CloseSend()
+		for i := 0; i < 10; i++ {
+			req := &greetpb.GreetEveryoneRequest{
+				Greeting: &greetpb.Greeting{
+					FirstName: fmt.Sprintf("John %d", i),
+					LastName:  "Doe",
+				},
+			}
+			err := stream.Send(req)
+			if err != nil {
+				log.Printf("Encountered an error sending requests to server with bi-directional streaming : %v", err)
+				return
+			}
+			time.Sleep(300 * time.Millisecond)
+		}
+	}()
+
+	go func() {
+		defer close(waitChan)
+		for {
+			resp, err := stream.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				log.Printf("Encountered an error receiving responses from server with bi-directional streaming : %v", err)
+				return
+			}
+			fmt.Println(resp.GetResult())
+		}
+	}()
+
+	<-waitChan
 }
