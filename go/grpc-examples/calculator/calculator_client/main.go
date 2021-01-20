@@ -10,6 +10,8 @@ import (
 
 	"github.com/sumanmukherjee03/practice-and-katas/go/grpc-examples/calculator/calculatorpb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -23,7 +25,8 @@ func main() {
 	// doUnary(c)
 	// doServerStreaming(c)
 	// doClientStreaming(c)
-	doBiDiStreaming(c)
+	// doBiDiStreaming(c)
+	doUnaryWithErrorHandling(c)
 }
 
 func doUnary(c calculatorpb.CalculatorServiceClient) {
@@ -124,4 +127,27 @@ func doBiDiStreaming(c calculatorpb.CalculatorServiceClient) {
 	}()
 
 	<-waitCh
+}
+
+func doUnaryWithErrorHandling(c calculatorpb.CalculatorServiceClient) {
+	number := int32(-10)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	req := &calculatorpb.SquareRootRequest{Number: number}
+	resp, err := c.SquareRoot(ctx, req)
+	if err != nil {
+		respErr, ok := status.FromError(err)
+		if ok { // A proper error code returned by the grpc server
+			if respErr.Code() == codes.InvalidArgument {
+				log.Printf("A wrong argument was provided to the grpc call - %s\n", respErr.Message())
+				return
+			} else {
+				log.Printf("Got an error with code %v from the grpc server : %s\n", respErr.Code(), respErr.Message())
+				return
+			}
+		} else {
+			log.Fatalf("Encountered an error fetching result from server : %v\n", err)
+		}
+	}
+	fmt.Printf("Square root of %d : %f\n", number, resp.GetNumberRoot())
 }

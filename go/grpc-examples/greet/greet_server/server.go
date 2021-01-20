@@ -11,6 +11,8 @@ import (
 
 	"github.com/sumanmukherjee03/practice-and-katas/go/grpc-examples/greet/greetpb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // This server needs to implement the GreetServiceServer interface defined in the code generated from the protobuf
@@ -18,7 +20,7 @@ type server struct{}
 
 // Implements - Greet(context.Context, *GreetRequest) (*GreetResponse, error)
 func (s *server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.GreetResponse, error) {
-	fmt.Printf("Greet function was invoked with : %v", req)
+	fmt.Printf("Greet function was invoked with : %v\n", req)
 	firstName := req.GetGreeting().GetFirstName()
 	lastName := req.GetGreeting().GetLastName()
 	result := "Hello " + firstName + " " + lastName + "\n"
@@ -74,6 +76,22 @@ func (s *server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) 
 		}
 		time.Sleep(400 * time.Millisecond)
 	}
+}
+
+func (s *server) GreetWithDeadline(ctx context.Context, req *greetpb.GreetWithDeadlineRequest) (*greetpb.GreetWithDeadlineResponse, error) {
+	fmt.Printf("Greet with deadline function was invoked with : %v\n", req)
+	for i := 0; i < 3; i++ {
+		if ctx.Err() == context.Canceled { // Check if the client has cancelled the request
+			fmt.Println("Client cancelled the request")
+			return nil, status.Error(codes.DeadlineExceeded, "The client cancelled the request") // return an error from the server with the proper error code
+		}
+		time.Sleep(1 * time.Second)
+	}
+	firstName := req.GetGreeting().GetFirstName()
+	lastName := req.GetGreeting().GetLastName()
+	result := "Hello " + firstName + " " + lastName + "\n"
+	res := &greetpb.GreetWithDeadlineResponse{Result: result}
+	return res, nil
 }
 
 func main() {

@@ -9,6 +9,8 @@ import (
 
 	"github.com/sumanmukherjee03/practice-and-katas/go/grpc-examples/greet/greetpb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -23,7 +25,9 @@ func main() {
 	// doUnary(c)
 	// doServerStreaming(c)
 	// doClientStreaming(c)
-	doBiDirectionalStreaming(c)
+	// doBiDirectionalStreaming(c)
+	doUnaryWithDeadline(c, 5*time.Second) // will complete
+	doUnaryWithDeadline(c, 1*time.Second) // will timeout
 }
 
 func doUnary(c greetpb.GreetServiceClient) {
@@ -143,4 +147,30 @@ func doBiDirectionalStreaming(c greetpb.GreetServiceClient) {
 	}()
 
 	<-waitChan // This blocks the function until the goroutines are done
+}
+
+func doUnaryWithDeadline(c greetpb.GreetServiceClient, timeout time.Duration) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	req := &greetpb.GreetWithDeadlineRequest{
+		Greeting: &greetpb.Greeting{
+			FirstName: "John",
+			LastName:  "Doe",
+		},
+	}
+	resp, err := c.GreetWithDeadline(ctx, req)
+	if err != nil {
+		respErr, ok := status.FromError(err)
+		if ok {
+			if respErr.Code() == codes.DeadlineExceeded {
+				fmt.Println("Timeout was hit, deadline exceeded")
+			} else {
+				fmt.Printf("Encountered an unexpected error from the server : %v", respErr)
+			}
+		} else {
+			log.Fatalf("Encountered an error making a request : %v", err)
+		}
+		return
+	}
+	fmt.Printf("Got response from server : %s", resp.GetResult())
 }
