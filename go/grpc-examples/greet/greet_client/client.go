@@ -10,12 +10,25 @@ import (
 	"github.com/sumanmukherjee03/practice-and-katas/go/grpc-examples/greet/greetpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
 func main() {
 	fmt.Println("Starting new grpc client")
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	var opts grpc.DialOption
+	tls := false
+	opts = grpc.WithInsecure()
+	if tls {
+		certFile := "ssl/ca.crt"
+		creds, err := credentials.NewClientTLSFromFile(certFile, "")
+		if err != nil {
+			log.Fatalf("Could not load CA trust certificate : %v", err)
+		}
+		opts = grpc.WithTransportCredentials(creds)
+	}
+
+	conn, err := grpc.Dial("localhost:50051", opts)
 	if err != nil {
 		log.Fatalf("Couldnt connect to the server : %v", err)
 	}
@@ -165,12 +178,12 @@ func doUnaryWithDeadline(c greetpb.GreetServiceClient, timeout time.Duration) {
 			if respErr.Code() == codes.DeadlineExceeded {
 				fmt.Println("Timeout was hit, deadline exceeded")
 			} else {
-				fmt.Printf("Encountered an unexpected error from the server : %v", respErr)
+				fmt.Printf("Encountered an unexpected error from the server : %s, %s\n", respErr.Code(), respErr.Message())
 			}
 		} else {
-			log.Fatalf("Encountered an error making a request : %v", err)
+			log.Fatalf("Encountered an error making a request : %v\n", err)
 		}
 		return
 	}
-	fmt.Printf("Got response from server : %s", resp.GetResult())
+	fmt.Printf("Got response from server : %s\n", resp.GetResult())
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/sumanmukherjee03/practice-and-katas/go/grpc-examples/greet/greetpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
@@ -102,7 +103,19 @@ func main() {
 	}
 
 	// boilerplate code to create a new grpc server listening on a host:port
-	s := grpc.NewServer()
+	tls := false
+	opts := []grpc.ServerOption{}
+	if tls {
+		certFile := "ssl/server.crt"
+		keyFile := "ssl/server.pem"
+		creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
+		if err != nil {
+			log.Fatalf("Failed to load server creds for TLS : %s", err)
+		}
+		opts = append(opts, grpc.Creds(creds))
+	}
+
+	s := grpc.NewServer(opts...)
 	greetpb.RegisterGreetServiceServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to start server : %s", err)
