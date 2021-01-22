@@ -6,3 +6,7 @@
 **/*/metarfiles
 **/*.jpg
 **/*/*.pb.go
+**/*/*.pem
+**/*/*.key
+**/*/*.crt
+**/*/*.csr

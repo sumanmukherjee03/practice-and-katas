@@ -135,7 +135,7 @@ func doBiDirectionalStreaming(c greetpb.GreetServiceClient) {
 		// but when combined with the close(waitChan) that logic becomes redundant.
 		for {
 			resp, err := stream.Recv()
-			if err == io.EOF {
+			if err == io.EOF { // This indicates that the server has stopped streaming
 				return
 			}
 			if err != nil {
