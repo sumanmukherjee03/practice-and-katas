@@ -12,6 +12,7 @@ import (
 	"github.com/sumanmukherjee03/practice-and-katas/go/grpc-examples/calculator/calculatorpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 )
 
@@ -109,6 +110,7 @@ func main() {
 
 	s := grpc.NewServer()
 	calculatorpb.RegisterCalculatorServiceServer(s, &server{})
+	reflection.Register(s) // Register the reflection service on the grpc server
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Encountered error starting grpc server : %v", err)
 	}
