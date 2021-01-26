@@ -73,6 +73,40 @@ func (s *server) ReadBlog(ctx context.Context, req *blogpb.ReadBlogRequest) (*bl
 	return resp, nil
 }
 
+func (s *server) UpdateBlog(ctx context.Context, req *blogpb.UpdateBlogRequest) (*blogpb.UpdateBlogResponse, error) {
+	blog := req.GetBlog()
+	oid, err := primitive.ObjectIDFromHex(blog.GetId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Encountered an error generating object id for blog from blogId passed in : %v", err))
+	}
+	data := &blogItem{}
+	filter := bson.M{"_id": oid}
+	updateDocument := bson.M{
+		"$set": bson.M{
+			"author_id": blog.GetAuthorId(),
+			"title":     blog.GetTitle(),
+			"content":   blog.GetContent(),
+		},
+	}
+	after := options.After // TODO : Not sure why this needs to be in a separate line - understand iota better
+	opts := &options.FindOneAndUpdateOptions{
+		ReturnDocument: &after,
+	}
+	res := collection.FindOneAndUpdate(ctx, filter, updateDocument, opts)
+	if err = res.Decode(data); err != nil {
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Encountered an error updating object in database : %v", err))
+	}
+	resp := &blogpb.UpdateBlogResponse{
+		Blog: &blogpb.Blog{
+			Id:       data.ID.Hex(),
+			AuthorId: data.AuthorId,
+			Title:    data.Title,
+			Content:  data.Content,
+		},
+	}
+	return resp, nil
+}
+
 ////////////////////////// Types for entries in the Database //////////////////////
 type blogItem struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty"`
