@@ -94,7 +94,7 @@ func (s *server) UpdateBlog(ctx context.Context, req *blogpb.UpdateBlogRequest) 
 	}
 	res := collection.FindOneAndUpdate(ctx, filter, updateDocument, opts)
 	if err = res.Decode(data); err != nil {
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Encountered an error updating object in database : %v", err))
+		return nil, status.Errorf(codes.NotFound, fmt.Sprintf("Encountered an error updating object in database : %v", err))
 	}
 	resp := &blogpb.UpdateBlogResponse{
 		Blog: &blogpb.Blog{
