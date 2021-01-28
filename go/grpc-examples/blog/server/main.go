@@ -124,6 +124,36 @@ func (s *server) DeleteBlog(ctx context.Context, req *blogpb.DeleteBlogRequest) 
 	return &blogpb.DeleteBlogResponse{BlogId: blogId}, nil
 }
 
+func (s *server) ListBlog(req *blogpb.ListBlogRequest, stream blogpb.BlogService_ListBlogServer) error {
+	ctx := context.Background()
+	cursor, err := collection.Find(ctx, primitive.D{{}})
+	if err != nil {
+		return status.Errorf(codes.Internal, fmt.Sprintf("Encountered an error getting cursor from database for items - %v\n", err))
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		data := &blogItem{}
+		if fetchErr := cursor.Decode(data); fetchErr != nil {
+			return status.Errorf(codes.Internal, fmt.Sprintf("Encountered an error fetching item from database - %v\n", fetchErr))
+		}
+		resp := &blogpb.ListBlogResponse{
+			Blog: &blogpb.Blog{
+				Id:       data.ID.Hex(),
+				AuthorId: data.AuthorId,
+				Title:    data.Title,
+				Content:  data.Content,
+			},
+		}
+		if sendErr := stream.Send(resp); sendErr != nil {
+			return status.Errorf(codes.Internal, fmt.Sprintf("Encountered an error sending items to client - :%v\n", sendErr))
+		}
+	}
+	if cursorErr := cursor.Err(); cursorErr != nil {
+		return status.Errorf(codes.Internal, fmt.Sprintf("Encountered an error in the database cursor - :%v\n", cursorErr))
+	}
+	return nil
+}
+
 ////////////////////////// Types for entries in the Database //////////////////////
 type blogItem struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty"`

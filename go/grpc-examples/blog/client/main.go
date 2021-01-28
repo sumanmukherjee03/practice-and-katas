@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"time"
@@ -65,4 +66,22 @@ func main() {
 		log.Fatalf("Encountered an error in deleting a blog : %v", err)
 	}
 	fmt.Printf("Deleted blog in the database with id : [%s]\n", delBlogResponse.GetBlogId())
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	listBlogReq := &blogpb.ListBlogRequest{}
+	stream, listBlogErr := c.ListBlog(ctx, listBlogReq)
+	if listBlogErr != nil {
+		log.Fatalf("Received an error from the blog server while setting up server streaming : %v", listBlogErr)
+	}
+	for {
+		listBlogResp, listBlogStreamErr := stream.Recv()
+		if listBlogStreamErr == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("Received an error during streaming of the response : %v", listBlogStreamErr)
+		}
+		fmt.Printf("Received blog : [%v]\n", listBlogResp.GetBlog())
+	}
 }
