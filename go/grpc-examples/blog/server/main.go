@@ -107,6 +107,23 @@ func (s *server) UpdateBlog(ctx context.Context, req *blogpb.UpdateBlogRequest) 
 	return resp, nil
 }
 
+func (s *server) DeleteBlog(ctx context.Context, req *blogpb.DeleteBlogRequest) (*blogpb.DeleteBlogResponse, error) {
+	blogId := req.GetBlogId()
+	oid, err := primitive.ObjectIDFromHex(blogId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Encountered an error generating object id for blog from blogId passed in : %v", err))
+	}
+	filter := bson.M{"_id": oid}
+	res, err := collection.DeleteOne(ctx, filter)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Encountered an error deleting a record from the database : %v", err))
+	}
+	if res.DeletedCount == 0 {
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Encountered an error deleting a record from the database because the record could not be found : %v", err))
+	}
+	return &blogpb.DeleteBlogResponse{BlogId: blogId}, nil
+}
+
 ////////////////////////// Types for entries in the Database //////////////////////
 type blogItem struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty"`

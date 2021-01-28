@@ -60,4 +60,9 @@ func main() {
 	updatedBlog := updateBlogResp.GetBlog()
 	fmt.Printf("Updated blog in the database : [%s]\n", updatedBlog)
 
+	delBlogResponse, err := c.DeleteBlog(context.Background(), &blogpb.DeleteBlogRequest{BlogId: readBlog.GetId()})
+	if err != nil {
+		log.Fatalf("Encountered an error in deleting a blog : %v", err)
+	}
+	fmt.Printf("Deleted blog in the database with id : [%s]\n", delBlogResponse.GetBlogId())
 }
