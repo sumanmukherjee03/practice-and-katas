@@ -23,6 +23,8 @@ func CreateUser(ctx *gin.Context) {
 	// return
 	// }
 
+	// ctx.ShouldBindJSON does the job of receiving bytes array from the request body in POST
+	// unmarshall it and populate the user struct
 	if err := ctx.ShouldBindJSON(&user); err != nil {
 		restErr := errors.NewBadRequestError(err)
 		ctx.JSON(restErr.Status, restErr)

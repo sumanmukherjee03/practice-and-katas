@@ -18,3 +18,11 @@ func NewBadRequestError(err error) *RestErr {
 		Error:   "bad_request",
 	}
 }
+
+func NewNotFoundError(err error) *RestErr {
+	return &RestErr{
+		Message: fmt.Sprintf("Entity could not be found - %v", err.Error()),
+		Status:  http.StatusNotFound,
+		Error:   "not_found",
+	}
+}
