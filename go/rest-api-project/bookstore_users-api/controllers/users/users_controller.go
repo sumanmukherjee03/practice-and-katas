@@ -2,6 +2,7 @@ package users
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/domain/users"
@@ -41,7 +42,20 @@ func CreateUser(ctx *gin.Context) {
 }
 
 func GetUser(ctx *gin.Context) {
-	ctx.String(http.StatusNotImplemented, "GetUser NOT IMPLEMENTED")
+	userId, err := strconv.ParseInt(ctx.Param("user_id"), 10, 64)
+	if err != nil {
+		restErr := errors.NewBadRequestError(err)
+		ctx.JSON(restErr.Status, restErr)
+		return
+	}
+
+	user, notFoundErr := services.GetUser(userId)
+	if notFoundErr != nil {
+		ctx.JSON(notFoundErr.Status, notFoundErr)
+		return
+	}
+
+	ctx.JSON(http.StatusFound, user)
 }
 
 func DeleteUser(ctx *gin.Context) {

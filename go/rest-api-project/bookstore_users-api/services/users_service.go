@@ -16,3 +16,11 @@ func CreateUser(u users.User) (*users.User, *errors.RestErr) {
 	}
 	return &u, nil
 }
+
+func GetUser(userId int64) (*users.User, *errors.RestErr) {
+	var u = &users.User{Id: userId}
+	if err := u.Get(); err != nil {
+		return nil, err
+	}
+	return u, nil
+}
