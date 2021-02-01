@@ -26,3 +26,11 @@ func NewNotFoundError(err error) *RestErr {
 		Error:   "not_found",
 	}
 }
+
+func NewInternalServerError(err error) *RestErr {
+	return &RestErr{
+		Message: fmt.Sprintf("Encountered an internal server error - %v", err.Error()),
+		Status:  http.StatusInternalServerError,
+		Error:   "internal_server_error",
+	}
+}

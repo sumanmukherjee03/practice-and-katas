@@ -12,6 +12,10 @@ var (
 	usersDB = make(map[int64]*User)
 )
 
+const (
+	queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?, ?, ?, ?);"
+)
+
 func (u *User) Get() *errors.RestErr {
 	if err := usersdb.Client.Ping(); err != nil {
 		panic(err)
@@ -29,13 +33,20 @@ func (u *User) Get() *errors.RestErr {
 }
 
 func (u *User) Save() *errors.RestErr {
-	if res, found := usersDB[u.Id]; found {
-		if res.Email == u.Email {
-			return errors.NewBadRequestError(fmt.Errorf("User with email %s already exists", u.Email))
-		}
-		return errors.NewBadRequestError(fmt.Errorf("User with id %d already exists", u.Id))
-	}
 	u.DateCreated = date_utils.GetNowString()
-	usersDB[u.Id] = u
+	stmt, err := usersdb.Client.Prepare(queryInsertUser)
+	if err != nil {
+		return errors.NewInternalServerError(err)
+	}
+	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
+	insertRes, insertErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.DateCreated)
+	if insertErr != nil {
+		return errors.NewInternalServerError(insertErr)
+	}
+	userId, lastInsertIdErr := insertRes.LastInsertId() // Get the id of the row just inserted
+	if lastInsertIdErr != nil {
+		return errors.NewInternalServerError(lastInsertIdErr)
+	}
+	u.Id = userId
 	return nil
 }
