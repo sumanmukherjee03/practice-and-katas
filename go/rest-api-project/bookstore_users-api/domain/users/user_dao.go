@@ -3,6 +3,7 @@ package users
 import (
 	"fmt"
 
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/datasources/mysql/usersdb"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/date_utils"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/errors"
 )
@@ -12,6 +13,9 @@ var (
 )
 
 func (u *User) Get() *errors.RestErr {
+	if err := usersdb.Client.Ping(); err != nil {
+		panic(err)
+	}
 	res, found := usersDB[u.Id]
 	if !found {
 		return errors.NewNotFoundError(fmt.Errorf("User with id %d not found", u.Id))
