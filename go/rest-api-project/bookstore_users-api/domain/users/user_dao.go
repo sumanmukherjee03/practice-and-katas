@@ -2,6 +2,7 @@ package users
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/datasources/mysql/usersdb"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/date_utils"
@@ -33,14 +34,17 @@ func (u *User) Get() *errors.RestErr {
 }
 
 func (u *User) Save() *errors.RestErr {
-	u.DateCreated = date_utils.GetNowString()
-	stmt, err := usersdb.Client.Prepare(queryInsertUser)
+	stmt, err := usersdb.Client.Prepare(queryInsertUser) // Prepare a DB statement first. Prepared DB statements are also more performant.
 	if err != nil {
 		return errors.NewInternalServerError(err)
 	}
 	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
+	u.DateCreated = date_utils.GetNowString()
 	insertRes, insertErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.DateCreated)
 	if insertErr != nil {
+		if strings.Contains(insertErr.Error(), "email_unique") {
+			return errors.NewBadRequestError(fmt.Errorf("Email already exists : %s", u.Email))
+		}
 		return errors.NewInternalServerError(insertErr)
 	}
 	userId, lastInsertIdErr := insertRes.LastInsertId() // Get the id of the row just inserted
