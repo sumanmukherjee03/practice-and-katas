@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/datasources/mysql/usersdb"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/date_utils"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/errors"
@@ -14,10 +15,9 @@ var (
 )
 
 const (
-	uniqueEmailIndex = "email_unique"
-	sqlErrorNoRows   = "no rows in result set"
-	queryInsertUser  = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?, ?, ?, ?);"
-	queryGetUser     = "SELECT id, first_name, last_name, email, date_created FROM users WHERE id=?;"
+	sqlErrorNoRows  = "no rows in result set"
+	queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?, ?, ?, ?);"
+	queryGetUser    = "SELECT id, first_name, last_name, email, date_created FROM users WHERE id=?;"
 )
 
 // A code chunk if you simply want to ping the database to test a connection
@@ -52,7 +52,12 @@ func (u *User) Save() *errors.RestErr {
 	u.DateCreated = date_utils.GetNowString()
 	insertRes, insertErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.DateCreated)
 	if insertErr != nil {
-		if strings.Contains(insertErr.Error(), uniqueEmailIndex) {
+		sqlErr, ok := insertErr.(*mysql.MySQLError)
+		if !ok {
+			return errors.NewInternalServerError(fmt.Errorf("Could not convert error returned by DB into a mysql error : %v", insertErr))
+		}
+		switch sqlErr.Number {
+		case 1062: // Represents a Duplicate Key error when inserting in a database
 			return errors.NewBadRequestError(fmt.Errorf("Email for user already exists : %s", u.Email))
 		}
 		return errors.NewInternalServerError(insertErr)
