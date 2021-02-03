@@ -58,6 +58,32 @@ func GetUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusFound, user)
 }
 
+func UpdateUser(ctx *gin.Context) {
+	userId, err := strconv.ParseInt(ctx.Param("user_id"), 10, 64)
+	if err != nil {
+		restErr := errors.NewBadRequestError(err)
+		ctx.JSON(restErr.Status, restErr)
+		return
+	}
+
+	var user users.User
+	if err := ctx.ShouldBindJSON(&user); err != nil {
+		restErr := errors.NewBadRequestError(err)
+		ctx.JSON(restErr.Status, restErr)
+		return
+	}
+
+	user.Id = userId
+
+	res, serverErr := services.UpdateUser(user)
+	if serverErr != nil {
+		ctx.JSON(serverErr.Status, serverErr)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}
+
 func DeleteUser(ctx *gin.Context) {
 	ctx.String(http.StatusNotImplemented, "DeleteUser NOT IMPLEMENTED")
 }

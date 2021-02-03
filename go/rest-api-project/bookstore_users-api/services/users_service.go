@@ -24,3 +24,19 @@ func GetUser(userId int64) (*users.User, *errors.RestErr) {
 	}
 	return u, nil
 }
+
+// By convention, always return error at the end
+func UpdateUser(u users.User) (*users.User, *errors.RestErr) {
+	var err *errors.RestErr
+	currentUser, err := GetUser(u.Id)
+	if err != nil {
+		return nil, err // Check if user even exists in DB and return an error if it doesnt
+	}
+	currentUser.FirstName = u.FirstName
+	currentUser.LastName = u.LastName
+	currentUser.Email = u.Email
+	if err = currentUser.Update(); err != nil {
+		return nil, err
+	}
+	return currentUser, nil
+}
