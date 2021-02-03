@@ -33,11 +33,6 @@ func UpdateUser(isPartial bool, u users.User) (*users.User, *errors.RestErr) {
 		return nil, err // Check if user even exists in DB and return an error if it doesnt
 	}
 
-	// Validate that the user being passed in is valid
-	if err = u.Validate(); err != nil {
-		return nil, err
-	}
-
 	// Handle Patch and Put type methods
 	if isPartial {
 		if len(u.FirstName) > 0 {
@@ -53,6 +48,11 @@ func UpdateUser(isPartial bool, u users.User) (*users.User, *errors.RestErr) {
 		currentUser.FirstName = u.FirstName
 		currentUser.LastName = u.LastName
 		currentUser.Email = u.Email
+	}
+
+	// Validate that the user being passed in is valid
+	if err = currentUser.Validate(); err != nil {
+		return nil, err
 	}
 
 	if err = currentUser.Update(); err != nil {
