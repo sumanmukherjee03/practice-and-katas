@@ -107,5 +107,5 @@ func Delete(ctx *gin.Context) {
 		ctx.JSON(serverErr.Status, serverErr)
 		return
 	}
-	ctx.JSON(http.StatusOK, userId)
+	ctx.JSON(http.StatusOK, map[string]string{"status": fmt.Sprintf("Deleted user %d", userId))
 }
