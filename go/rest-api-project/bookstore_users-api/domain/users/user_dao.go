@@ -15,6 +15,7 @@ const (
 	queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?, ?, ?, ?);"
 	queryGetUser    = "SELECT id, first_name, last_name, email, date_created FROM users WHERE id=?;"
 	queryUpdateUser = "UPDATE users SET first_name=?, last_name=?, email=? WHERE id=?;"
+	queryDeleteUser = "DELETE FROM users WHERE id = ?;"
 )
 
 // A code chunk if you simply want to ping the database to test a connection
@@ -65,6 +66,19 @@ func (u *User) Update() *errors.RestErr {
 	_, updateErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.Id)
 	if updateErr != nil {
 		return mysql_utils.ParseError(updateErr)
+	}
+	return nil
+}
+
+func (u *User) Delete() *errors.RestErr {
+	stmt, err := usersdb.Client.Prepare(queryDeleteUser) // Prepare a DB statement first. Prepared DB statements are also more performant.
+	if err != nil {
+		return errors.NewInternalServerError(err)
+	}
+	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
+	_, deleteErr := stmt.Exec(u.Id)
+	if deleteErr != nil {
+		return mysql_utils.ParseError(deleteErr)
 	}
 	return nil
 }

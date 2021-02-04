@@ -61,3 +61,11 @@ func UpdateUser(isPartial bool, u users.User) (*users.User, *errors.RestErr) {
 
 	return currentUser, nil
 }
+
+func DeleteUser(userId int64) *errors.RestErr {
+	var u = &users.User{Id: userId}
+	if err := u.Delete(); err != nil {
+		return err
+	}
+	return nil
+}

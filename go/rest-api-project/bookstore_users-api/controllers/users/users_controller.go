@@ -10,7 +10,19 @@ import (
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/errors"
 )
 
-func CreateUser(ctx *gin.Context) {
+//////////////////////// HELPER FUNCS ////////////////////
+func getUserId(userIdStr string) (int64, *errors.RestErr) {
+	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	if err != nil {
+		restErr := errors.NewBadRequestError(err)
+		return 0, restErr
+	}
+	return userId, nil
+}
+
+//////////////////////// PUBLIC CONTROLLER FUNCS ////////////////////
+
+func Create(ctx *gin.Context) {
 	var user users.User
 
 	// The lines below can be replaced by the ctx.ShouldBindJSON function call
@@ -41,11 +53,10 @@ func CreateUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, res)
 }
 
-func GetUser(ctx *gin.Context) {
-	userId, err := strconv.ParseInt(ctx.Param("user_id"), 10, 64)
-	if err != nil {
-		restErr := errors.NewBadRequestError(err)
-		ctx.JSON(restErr.Status, restErr)
+func Get(ctx *gin.Context) {
+	userId, userIdRestErr := getUserId(ctx.Param("user_id"))
+	if userIdRestErr != nil {
+		ctx.JSON(userIdRestErr.Status, userIdRestErr)
 		return
 	}
 
@@ -58,11 +69,10 @@ func GetUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusFound, user)
 }
 
-func UpdateUser(ctx *gin.Context) {
-	userId, err := strconv.ParseInt(ctx.Param("user_id"), 10, 64)
-	if err != nil {
-		restErr := errors.NewBadRequestError(err)
-		ctx.JSON(restErr.Status, restErr)
+func Update(ctx *gin.Context) {
+	userId, userIdRestErr := getUserId(ctx.Param("user_id"))
+	if userIdRestErr != nil {
+		ctx.JSON(userIdRestErr.Status, userIdRestErr)
 		return
 	}
 
@@ -86,6 +96,16 @@ func UpdateUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
-func DeleteUser(ctx *gin.Context) {
-	ctx.String(http.StatusNotImplemented, "DeleteUser NOT IMPLEMENTED")
+func Delete(ctx *gin.Context) {
+	userId, userIdRestErr := getUserId(ctx.Param("user_id"))
+	if userIdRestErr != nil {
+		ctx.JSON(userIdRestErr.Status, userIdRestErr)
+		return
+	}
+
+	if serverErr := services.DeleteUser(userId); serverErr != nil {
+		ctx.JSON(serverErr.Status, serverErr)
+		return
+	}
+	ctx.JSON(http.StatusOK, userId)
 }
