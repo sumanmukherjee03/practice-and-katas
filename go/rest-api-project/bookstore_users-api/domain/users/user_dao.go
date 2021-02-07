@@ -1,6 +1,8 @@
 package users
 
 import (
+	"fmt"
+
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/datasources/mysql/usersdb"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/date_utils"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/errors"
@@ -12,10 +14,11 @@ var (
 )
 
 const (
-	queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?, ?, ?, ?);"
-	queryGetUser    = "SELECT id, first_name, last_name, email, date_created FROM users WHERE id=?;"
-	queryUpdateUser = "UPDATE users SET first_name=?, last_name=?, email=? WHERE id=?;"
-	queryDeleteUser = "DELETE FROM users WHERE id = ?;"
+	queryInsertUser        = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?, ?, ?, ?);"
+	queryGetUser           = "SELECT id, first_name, last_name, email, date_created FROM users WHERE id=?;"
+	queryUpdateUser        = "UPDATE users SET first_name=?, last_name=?, email=? WHERE id=?;"
+	queryDeleteUser        = "DELETE FROM users WHERE id = ?;"
+	queryFindUsersByStatus = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE status=?;"
 )
 
 // A code chunk if you simply want to ping the database to test a connection
@@ -81,4 +84,32 @@ func (u *User) Delete() *errors.RestErr {
 		return mysql_utils.ParseError(deleteErr)
 	}
 	return nil
+}
+
+func FindByStatus(status string) ([]User, *errors.RestErr) {
+	stmt, err := usersdb.Client.Prepare(queryFindUsersByStatus)
+	if err != nil {
+		return nil, errors.NewInternalServerError(err)
+	}
+	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
+	rows, err := stmt.Query(status)
+	if err != nil {
+		return nil, errors.NewInternalServerError(err)
+	}
+	defer rows.Close() // Make sure you defer close the rows to not have idle connections lingering around
+
+	res := make([]User, 0)
+	for rows.Next() {
+		var user User
+		if getErr := rows.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.DateCreated, &user.Status); getErr != nil {
+			return nil, mysql_utils.ParseError(getErr)
+		}
+		res = append(res, user)
+	}
+
+	if len(res) == 0 {
+		return nil, errors.NewNotFoundError(fmt.Errorf("No user matching status %s found", status))
+	}
+
+	return res, nil
 }

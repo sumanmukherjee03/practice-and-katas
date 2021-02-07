@@ -1,6 +1,7 @@
 package users
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -107,5 +108,15 @@ func Delete(ctx *gin.Context) {
 		ctx.JSON(serverErr.Status, serverErr)
 		return
 	}
-	ctx.JSON(http.StatusOK, map[string]string{"status": fmt.Sprintf("Deleted user %d", userId))
+	ctx.JSON(http.StatusOK, map[string]string{"status": fmt.Sprintf("Deleted user %d", userId)})
+}
+
+func Search(ctx *gin.Context) {
+	status := ctx.Query("status") // Since status is coming as a query parameter and not as a paramter in the url
+	users, serverErr := services.Search(status)
+	if serverErr != nil {
+		ctx.JSON(serverErr.Status, serverErr)
+		return
+	}
+	ctx.JSON(http.StatusFound, users)
 }

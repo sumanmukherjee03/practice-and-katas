@@ -15,6 +15,8 @@ type User struct {
 	LastName    string `json:"last_name"`
 	Email       string `json:"email"`
 	DateCreated string `json:"date_created"`
+	Status      string `json:"status"`
+	Password    string `json:-` // The value of json tag as -, states that ignore the password field in the struct when marshalling or unmarshalling
 }
 
 // Validate method on user checks if an user is valid or not
