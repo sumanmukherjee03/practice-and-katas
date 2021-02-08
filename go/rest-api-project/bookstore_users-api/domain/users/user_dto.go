@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/crypto_utils"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/date_utils"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/errors"
 )
@@ -32,6 +33,7 @@ func (u *User) PrepBeforeSave() {
 	u.DateCreated = date_utils.GetNowDBFormat()
 	u.Status = StatusActive
 	u.Password = strings.TrimSpace(u.Password)
+	u.Password = crypto_utils.GetMd5(u.Password)
 }
 
 // Validate method on user checks if an user is valid or not
