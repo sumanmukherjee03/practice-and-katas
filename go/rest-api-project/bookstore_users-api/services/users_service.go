@@ -8,6 +8,7 @@ import (
 // By convention, always return error at the end
 func CreateUser(u users.User) (*users.User, *errors.RestErr) {
 	var err *errors.RestErr
+	u.PrepBeforeSave()
 	if err = u.Validate(); err != nil {
 		return nil, err
 	}
@@ -44,10 +45,18 @@ func UpdateUser(isPartial bool, u users.User) (*users.User, *errors.RestErr) {
 		if len(u.Email) > 0 {
 			currentUser.Email = u.Email
 		}
+		if len(u.Status) > 0 {
+			currentUser.Status = u.Status
+		}
+		if len(u.Password) > 0 {
+			currentUser.Password = u.Password
+		}
 	} else {
 		currentUser.FirstName = u.FirstName
 		currentUser.LastName = u.LastName
 		currentUser.Email = u.Email
+		currentUser.Status = u.Status
+		currentUser.Password = u.Password
 	}
 
 	// Validate that the user being passed in is valid
