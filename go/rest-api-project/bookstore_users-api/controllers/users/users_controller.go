@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/domain/users"
@@ -19,6 +20,10 @@ func getUserId(userIdStr string) (int64, *errors.RestErr) {
 		return 0, restErr
 	}
 	return userId, nil
+}
+
+func isReqPublic(ctx *gin.Context) bool {
+	return strings.Compare(ctx.GetHeader("X-Public"), "true") == 0
 }
 
 //////////////////////// PUBLIC CONTROLLER FUNCS ////////////////////
@@ -45,13 +50,13 @@ func Create(ctx *gin.Context) {
 		return
 	}
 
-	res, serverErr := services.CreateUser(user)
+	createdUser, serverErr := services.CreateUser(user)
 	if serverErr != nil {
 		ctx.JSON(serverErr.Status, serverErr)
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, res)
+	ctx.JSON(http.StatusCreated, createdUser.Marshal(isReqPublic(ctx)))
 }
 
 func Get(ctx *gin.Context) {
@@ -67,7 +72,7 @@ func Get(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusFound, user)
+	ctx.JSON(http.StatusFound, user.Marshal(isReqPublic(ctx)))
 }
 
 func Update(ctx *gin.Context) {
@@ -88,13 +93,13 @@ func Update(ctx *gin.Context) {
 
 	isPartialUpdate := ctx.Request.Method == http.MethodPatch
 
-	res, serverErr := services.UpdateUser(isPartialUpdate, user)
+	updatedUser, serverErr := services.UpdateUser(isPartialUpdate, user)
 	if serverErr != nil {
 		ctx.JSON(serverErr.Status, serverErr)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, updatedUser.Marshal(isReqPublic(ctx)))
 }
 
 func Delete(ctx *gin.Context) {
@@ -113,10 +118,12 @@ func Delete(ctx *gin.Context) {
 
 func Search(ctx *gin.Context) {
 	status := ctx.Query("status") // Since status is coming as a query parameter and not as a paramter in the url
-	users, serverErr := services.Search(status)
+
+	searchedUsers, serverErr := services.Search(status)
 	if serverErr != nil {
 		ctx.JSON(serverErr.Status, serverErr)
 		return
 	}
-	ctx.JSON(http.StatusFound, users)
+
+	ctx.JSON(http.StatusFound, searchedUsers.Marshal(isReqPublic(ctx)))
 }

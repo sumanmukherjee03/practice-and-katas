@@ -26,6 +26,8 @@ type User struct {
 	// Password    string `json:-` // The value of json tag as -, states that ignore the password field in the struct when marshalling or unmarshalling
 }
 
+type Users []User
+
 func (u *User) PrepBeforeSave() {
 	u.FirstName = strings.TrimSpace(strings.ToLower(u.FirstName))
 	u.LastName = strings.TrimSpace(strings.ToLower(u.LastName))
@@ -36,7 +38,6 @@ func (u *User) PrepBeforeSave() {
 	u.Password = crypto_utils.GetMd5(u.Password)
 }
 
-// Validate method on user checks if an user is valid or not
 func (u *User) Validate() *errors.RestErr {
 	if len(u.Email) == 0 {
 		return errors.NewBadRequestError(fmt.Errorf("Invalid email address provided for user"))

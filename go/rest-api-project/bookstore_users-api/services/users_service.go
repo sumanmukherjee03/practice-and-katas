@@ -76,6 +76,6 @@ func DeleteUser(userId int64) *errors.RestErr {
 	return u.Delete()
 }
 
-func Search(status string) ([]users.User, *errors.RestErr) {
-	return users.FindByStatus(status)
+func Search(status string) (users.Users, *errors.RestErr) {
+	return users.FindByStatus(status) // Although users.FindByStatus returns a []User, it is treated as type Users
 }
