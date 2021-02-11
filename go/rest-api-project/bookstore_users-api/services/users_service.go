@@ -6,10 +6,19 @@ import (
 )
 
 var (
-	UsersService usersService = usersService{}
+	UsersService usersServiceInterface = &usersService{} // Use the UsersService object as a singleton
 )
 
 type usersService struct{}
+
+// We create this interface so that it is easy to mock in tests
+type usersServiceInterface interface {
+	CreateUser(users.User) (*users.User, *errors.RestErr)
+	GetUser(int64) (*users.User, *errors.RestErr)
+	UpdateUser(bool, users.User) (*users.User, *errors.RestErr)
+	DeleteUser(int64) *errors.RestErr
+	SearchUser(string) (users.Users, *errors.RestErr)
+}
 
 // By convention, always return error at the end
 func (s *usersService) CreateUser(u users.User) (*users.User, *errors.RestErr) {
@@ -82,6 +91,6 @@ func (s *usersService) DeleteUser(userId int64) *errors.RestErr {
 	return u.Delete()
 }
 
-func (s *usersService) Search(status string) (users.Users, *errors.RestErr) {
+func (s *usersService) SearchUser(status string) (users.Users, *errors.RestErr) {
 	return users.FindByStatus(status) // Although users.FindByStatus returns a []User, it is treated as type Users
 }

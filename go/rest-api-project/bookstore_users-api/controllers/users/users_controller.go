@@ -119,7 +119,7 @@ func Delete(ctx *gin.Context) {
 func Search(ctx *gin.Context) {
 	status := ctx.Query("status") // Since status is coming as a query parameter and not as a paramter in the url
 
-	searchedUsers, serverErr := services.UsersService.Search(status)
+	searchedUsers, serverErr := services.UsersService.SearchUser(status)
 	if serverErr != nil {
 		ctx.JSON(serverErr.Status, serverErr)
 		return
