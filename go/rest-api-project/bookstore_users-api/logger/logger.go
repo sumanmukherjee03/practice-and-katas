@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	Log *zap.Logger
+	log *zap.Logger
 )
 
 func init() {
@@ -25,7 +25,21 @@ func init() {
 	}
 
 	var err error
-	if Log, err = logConfig.Build(); err != nil {
+	if log, err = logConfig.Build(); err != nil {
 		panic(err)
 	}
+}
+
+func GetLogger() *zap.Logger {
+	return log
+}
+
+func Info(msg string, tags ...zap.Field) {
+	log.Info(msg, tags...)
+	log.Sync() // sync is gonna flush the logs
+}
+
+func Error(msg string, tags ...zap.Field) {
+	log.Error(msg, tags...)
+	log.Sync() // sync is gonna flush the logs
 }
