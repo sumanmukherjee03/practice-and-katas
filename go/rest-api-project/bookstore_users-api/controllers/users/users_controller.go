@@ -50,7 +50,7 @@ func Create(ctx *gin.Context) {
 		return
 	}
 
-	createdUser, serverErr := services.CreateUser(user)
+	createdUser, serverErr := services.UsersService.CreateUser(user)
 	if serverErr != nil {
 		ctx.JSON(serverErr.Status, serverErr)
 		return
@@ -66,7 +66,7 @@ func Get(ctx *gin.Context) {
 		return
 	}
 
-	user, notFoundErr := services.GetUser(userId)
+	user, notFoundErr := services.UsersService.GetUser(userId)
 	if notFoundErr != nil {
 		ctx.JSON(notFoundErr.Status, notFoundErr)
 		return
@@ -93,7 +93,7 @@ func Update(ctx *gin.Context) {
 
 	isPartialUpdate := ctx.Request.Method == http.MethodPatch
 
-	updatedUser, serverErr := services.UpdateUser(isPartialUpdate, user)
+	updatedUser, serverErr := services.UsersService.UpdateUser(isPartialUpdate, user)
 	if serverErr != nil {
 		ctx.JSON(serverErr.Status, serverErr)
 		return
@@ -109,7 +109,7 @@ func Delete(ctx *gin.Context) {
 		return
 	}
 
-	if serverErr := services.DeleteUser(userId); serverErr != nil {
+	if serverErr := services.UsersService.DeleteUser(userId); serverErr != nil {
 		ctx.JSON(serverErr.Status, serverErr)
 		return
 	}
@@ -119,7 +119,7 @@ func Delete(ctx *gin.Context) {
 func Search(ctx *gin.Context) {
 	status := ctx.Query("status") // Since status is coming as a query parameter and not as a paramter in the url
 
-	searchedUsers, serverErr := services.Search(status)
+	searchedUsers, serverErr := services.UsersService.Search(status)
 	if serverErr != nil {
 		ctx.JSON(serverErr.Status, serverErr)
 		return
