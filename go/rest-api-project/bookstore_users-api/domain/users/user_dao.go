@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/datasources/mysql/usersdb"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/logger"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/errors"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/mysql_utils"
 )
@@ -28,7 +29,8 @@ const (
 func (u *User) Get() *errors.RestErr {
 	stmt, err := usersdb.Client.Prepare(queryGetUser) // Prepare a DB statement first. Prepared DB statements are also more performant.
 	if err != nil {
-		return errors.NewInternalServerError(err)
+		logger.Error("Error in preparing statement for fetching user from database", err)
+		return errors.NewInternalServerError(errors.NewError("database error"))
 	}
 	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
 	// stmt.QueryRow returns a single row and the connection closes automatically on return
@@ -43,7 +45,8 @@ func (u *User) Get() *errors.RestErr {
 func (u *User) Save() *errors.RestErr {
 	stmt, err := usersdb.Client.Prepare(queryInsertUser) // Prepare a DB statement first. Prepared DB statements are also more performant.
 	if err != nil {
-		return errors.NewInternalServerError(err)
+		logger.Error("Error in preparing statement for saving user into database", err)
+		return errors.NewInternalServerError(errors.NewError("database error"))
 	}
 	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
 	insertRes, insertErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.DateCreated, u.Status, u.Password)
@@ -61,7 +64,8 @@ func (u *User) Save() *errors.RestErr {
 func (u *User) Update() *errors.RestErr {
 	stmt, err := usersdb.Client.Prepare(queryUpdateUser) // Prepare a DB statement first. Prepared DB statements are also more performant.
 	if err != nil {
-		return errors.NewInternalServerError(err)
+		logger.Error("Error in preparing statement for updating user in database", err)
+		return errors.NewInternalServerError(errors.NewError("database error"))
 	}
 	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
 	_, updateErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.Status, u.Password, u.Id)
@@ -74,7 +78,8 @@ func (u *User) Update() *errors.RestErr {
 func (u *User) Delete() *errors.RestErr {
 	stmt, err := usersdb.Client.Prepare(queryDeleteUser) // Prepare a DB statement first. Prepared DB statements are also more performant.
 	if err != nil {
-		return errors.NewInternalServerError(err)
+		logger.Error("Error in preparing statement for updating user in database", err)
+		return errors.NewInternalServerError(errors.NewError("database error"))
 	}
 	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
 	_, deleteErr := stmt.Exec(u.Id)
@@ -87,7 +92,8 @@ func (u *User) Delete() *errors.RestErr {
 func FindByStatus(status string) ([]User, *errors.RestErr) {
 	stmt, err := usersdb.Client.Prepare(queryFindUsersByStatus)
 	if err != nil {
-		return nil, errors.NewInternalServerError(err)
+		logger.Error("Error in preparing statement for finding user by status in database", err)
+		return nil, errors.NewInternalServerError(errors.NewError("database error"))
 	}
 	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
 
