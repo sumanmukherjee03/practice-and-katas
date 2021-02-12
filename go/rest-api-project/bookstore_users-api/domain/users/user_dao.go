@@ -6,7 +6,6 @@ import (
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/datasources/mysql/usersdb"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/logger"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/errors"
-	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/mysql_utils"
 )
 
 var (
@@ -37,7 +36,9 @@ func (u *User) Get() *errors.RestErr {
 	// However, if we used stmt.Query, it would have returned *Rows in which case, we would have
 	// had a need to defer rows.Close() so that we dont end up with idle connections to the DB.
 	if getErr := stmt.QueryRow(u.Id).Scan(&u.Id, &u.FirstName, &u.LastName, &u.Email, &u.DateCreated, &u.Status); getErr != nil {
-		return mysql_utils.ParseError(getErr)
+		logger.Error("Error in trying to get user by id from database", getErr)
+		return errors.NewInternalServerError(errors.NewError("database error"))
+		// return mysql_utils.ParseError(getErr)
 	}
 	return nil
 }
@@ -51,11 +52,15 @@ func (u *User) Save() *errors.RestErr {
 	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
 	insertRes, insertErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.DateCreated, u.Status, u.Password)
 	if insertErr != nil {
-		return mysql_utils.ParseError(insertErr)
+		logger.Error("Error in inserting user into database", insertErr)
+		return errors.NewInternalServerError(errors.NewError("database error"))
+		// return mysql_utils.ParseError(insertErr)
 	}
 	userId, lastInsertIdErr := insertRes.LastInsertId() // Get the id of the row just inserted
 	if lastInsertIdErr != nil {
-		return errors.NewInternalServerError(lastInsertIdErr)
+		logger.Error("Error in getting id of last inserted user into database", lastInsertIdErr)
+		return errors.NewInternalServerError(errors.NewError("database error"))
+		// return errors.NewInternalServerError(lastInsertIdErr)
 	}
 	u.Id = userId
 	return nil
@@ -70,7 +75,9 @@ func (u *User) Update() *errors.RestErr {
 	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
 	_, updateErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.Status, u.Password, u.Id)
 	if updateErr != nil {
-		return mysql_utils.ParseError(updateErr)
+		logger.Error("Error in updating user in database", updateErr)
+		return errors.NewInternalServerError(errors.NewError("database error"))
+		// return mysql_utils.ParseError(updateErr)
 	}
 	return nil
 }
@@ -84,7 +91,9 @@ func (u *User) Delete() *errors.RestErr {
 	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
 	_, deleteErr := stmt.Exec(u.Id)
 	if deleteErr != nil {
-		return mysql_utils.ParseError(deleteErr)
+		logger.Error("Error in deleting user from database", deleteErr)
+		return errors.NewInternalServerError(errors.NewError("database error"))
+		// return mysql_utils.ParseError(deleteErr)
 	}
 	return nil
 }
@@ -99,7 +108,9 @@ func FindByStatus(status string) ([]User, *errors.RestErr) {
 
 	rows, err := stmt.Query(status) // Use query instead of exec to get back rows of results
 	if err != nil {
-		return nil, errors.NewInternalServerError(err)
+		logger.Error("Error in running query to find users by status from database", err)
+		return nil, errors.NewInternalServerError(errors.NewError("database error"))
+		// return nil, errors.NewInternalServerError(err)
 	}
 	defer rows.Close() // Make sure you defer close the rows to not have idle connections lingering around
 
@@ -107,7 +118,9 @@ func FindByStatus(status string) ([]User, *errors.RestErr) {
 	for rows.Next() { // keep iterating as long as there is a next row
 		var user User
 		if getErr := rows.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.DateCreated, &user.Status); getErr != nil {
-			return nil, mysql_utils.ParseError(getErr)
+			logger.Error("Error in getting single row from database when finding users by status", getErr)
+			return nil, errors.NewInternalServerError(errors.NewError("database error"))
+			// return nil, mysql_utils.ParseError(getErr)
 		}
 		res = append(res, user)
 	}
