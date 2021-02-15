@@ -10,10 +10,14 @@ import (
 // This interface will be satisfied by the database repository
 type Repository interface {
 	GetById(string) (*AccessToken, *errors.RestErr)
+	Create(AccessToken) *errors.RestErr
+	UpdateExpirationTime(AccessToken) *errors.RestErr
 }
 
 type Service interface {
 	GetById(string) (*AccessToken, *errors.RestErr)
+	Create(AccessToken) *errors.RestErr
+	UpdateExpirationTime(AccessToken) *errors.RestErr
 }
 
 type service struct {
@@ -34,4 +38,18 @@ func (s *service) GetById(accessTokenId string) (*AccessToken, *errors.RestErr) 
 		return nil, errors.NewBadRequestError(fmt.Errorf("Access token id provided by user is invalid"))
 	}
 	return s.repository.GetById(accessTokenId)
+}
+
+func (s *service) Create(at AccessToken) *errors.RestErr {
+	if err := at.Validate(); err != nil {
+		return err
+	}
+	return s.repository.Create(at)
+}
+
+func (s *service) UpdateExpirationTime(at AccessToken) *errors.RestErr {
+	if err := at.Validate(); err != nil {
+		return err
+	}
+	return s.repository.UpdateExpirationTime(at)
 }
