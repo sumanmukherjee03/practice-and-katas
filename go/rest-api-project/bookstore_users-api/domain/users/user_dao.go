@@ -2,10 +2,12 @@ package users
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/datasources/mysql/usersdb"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/logger"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/errors"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/mysql_utils"
 )
 
 var (
@@ -13,11 +15,12 @@ var (
 )
 
 const (
-	queryInsertUser        = "INSERT INTO users(first_name, last_name, email, date_created, status, password) VALUES(?, ?, ?, ?, ?, ?);"
-	queryGetUser           = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE id=?;"
-	queryUpdateUser        = "UPDATE users SET first_name=?, last_name=?, email=?, status=?, password=? WHERE id=?;"
-	queryDeleteUser        = "DELETE FROM users WHERE id = ?;"
-	queryFindUsersByStatus = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE status=?;"
+	queryInsertUser                 = "INSERT INTO users(first_name, last_name, email, date_created, status, password) VALUES(?, ?, ?, ?, ?, ?);"
+	queryGetUser                    = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE id=?;"
+	queryUpdateUser                 = "UPDATE users SET first_name=?, last_name=?, email=?, status=?, password=? WHERE id=?;"
+	queryDeleteUser                 = "DELETE FROM users WHERE id = ?;"
+	queryFindUsersByStatus          = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE status=?;"
+	queryFindUserByEmailAndPassword = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE email=? AND password=? AND status=?;"
 )
 
 // A code chunk if you simply want to ping the database to test a connection
@@ -95,6 +98,26 @@ func (u *User) Delete() *errors.RestErr {
 		return errors.NewInternalServerError(errors.NewError("database error"))
 		// return mysql_utils.ParseError(deleteErr)
 	}
+	return nil
+}
+
+func (u *User) FindByEmailAndPassword() *errors.RestErr {
+	stmt, err := usersdb.Client.Prepare(queryFindUserByEmailAndPassword)
+	if err != nil {
+		logger.Error("Error in preparing statement for finding user by email and password in database", err)
+		return errors.NewInternalServerError(errors.NewError("database error"))
+	}
+	defer stmt.Close() // Make sure you defer close the statement to not have idle connections lingering around
+
+	if getErr := stmt.QueryRow(u.Email, u.Password, StatusActive).Scan(&u.Id, &u.FirstName, &u.LastName, &u.Email, &u.DateCreated, &u.Status); getErr != nil {
+		logger.Error("Error in trying to get user by email and password from database", getErr)
+		if strings.Contains(getErr.Error(), mysql_utils.SqlErrorNoRows) {
+			return errors.NewNotFoundError(errors.NewError("invalid user credentials"))
+		}
+		return errors.NewInternalServerError(errors.NewError("database error"))
+		// return mysql_utils.ParseError(getErr)
+	}
+
 	return nil
 }
 

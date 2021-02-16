@@ -116,6 +116,24 @@ func Delete(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, map[string]string{"status": fmt.Sprintf("Deleted user %d", userId)})
 }
 
+func Login(ctx *gin.Context) {
+	var loginReq users.LoginRequest
+	if err := ctx.ShouldBindJSON(&loginReq); err != nil {
+		restErr := errors.NewBadRequestError(err)
+		ctx.JSON(restErr.Status, restErr)
+		return
+	}
+	loginReq.PrepBeforeSubmit()
+
+	user, notFoundErr := services.UsersService.LoginUser(loginReq)
+	if notFoundErr != nil {
+		ctx.JSON(notFoundErr.Status, notFoundErr)
+		return
+	}
+
+	ctx.JSON(http.StatusFound, user.Marshal(isReqPublic(ctx)))
+}
+
 func Search(ctx *gin.Context) {
 	status := ctx.Query("status") // Since status is coming as a query parameter and not as a paramter in the url
 

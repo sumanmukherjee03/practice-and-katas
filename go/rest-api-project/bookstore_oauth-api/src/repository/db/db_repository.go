@@ -30,14 +30,9 @@ func NewRepository() DbRepository {
 }
 
 func (r *dbRepository) GetById(id string) (*access_token.AccessToken, *errors.RestErr) {
-	session, err := cassandra.GetSession()
-	if err != nil {
-		return nil, errors.NewInternalServerError(fmt.Errorf("Could not connect to cassandra database : %v", err))
-	}
-	defer session.Close()
-
+	session := cassandra.GetSession()
 	var res access_token.AccessToken
-	if err = session.Query(queryGetAccessToken, id).Scan(
+	if err := session.Query(queryGetAccessToken, id).Scan(
 		&res.AccessToken,
 		&res.UserId,
 		&res.ClientId,
@@ -53,13 +48,8 @@ func (r *dbRepository) GetById(id string) (*access_token.AccessToken, *errors.Re
 }
 
 func (r *dbRepository) Create(at access_token.AccessToken) *errors.RestErr {
-	session, err := cassandra.GetSession()
-	if err != nil {
-		return errors.NewInternalServerError(fmt.Errorf("Could not connect to cassandra database : %v", err))
-	}
-	defer session.Close()
-
-	if err = session.Query(queryCreateAccessToken, at.AccessToken, at.UserId, at.ClientId, at.Expires).Exec(); err != nil {
+	session := cassandra.GetSession()
+	if err := session.Query(queryCreateAccessToken, at.AccessToken, at.UserId, at.ClientId, at.Expires).Exec(); err != nil {
 		return errors.NewInternalServerError(fmt.Errorf("Could not insert access_token into database - %v", err))
 	}
 
@@ -67,13 +57,8 @@ func (r *dbRepository) Create(at access_token.AccessToken) *errors.RestErr {
 }
 
 func (r *dbRepository) UpdateExpirationTime(at access_token.AccessToken) *errors.RestErr {
-	session, err := cassandra.GetSession()
-	if err != nil {
-		return errors.NewInternalServerError(fmt.Errorf("Could not connect to cassandra database : %v", err))
-	}
-	defer session.Close()
-
-	if err = session.Query(queryUpdateAccessTokenExpires, at.Expires, at.AccessToken).Exec(); err != nil {
+	session := cassandra.GetSession()
+	if err := session.Query(queryUpdateAccessTokenExpires, at.Expires, at.AccessToken).Exec(); err != nil {
 		return errors.NewInternalServerError(fmt.Errorf("Could not update access_token in database - %v", err))
 	}
 

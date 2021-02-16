@@ -5,15 +5,20 @@ import (
 )
 
 var (
-	cluster *gocql.ClusterConfig
+	session *gocql.Session
 )
 
 func init() {
-	cluster = gocql.NewCluster("localhost")
+	cluster := gocql.NewCluster("localhost")
 	cluster.Keyspace = "oauth"
 	cluster.Consistency = gocql.Quorum
+	var err error
+	if session, err = cluster.CreateSession(); err != nil {
+		panic(err)
+	}
+	defer session.Close()
 }
 
-func GetSession() (*gocql.Session, error) {
-	return cluster.CreateSession()
+func GetSession() *gocql.Session {
+	return session
 }

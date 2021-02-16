@@ -17,6 +17,7 @@ type usersServiceInterface interface {
 	GetUser(int64) (*users.User, *errors.RestErr)
 	UpdateUser(bool, users.User) (*users.User, *errors.RestErr)
 	DeleteUser(int64) *errors.RestErr
+	LoginUser(users.LoginRequest) (*users.User, *errors.RestErr)
 	SearchUser(string) (users.Users, *errors.RestErr)
 }
 
@@ -89,6 +90,14 @@ func (s *usersService) UpdateUser(isPartial bool, u users.User) (*users.User, *e
 func (s *usersService) DeleteUser(userId int64) *errors.RestErr {
 	var u = &users.User{Id: userId}
 	return u.Delete()
+}
+
+func (s *usersService) LoginUser(loginReq users.LoginRequest) (*users.User, *errors.RestErr) {
+	var u = &users.User{Email: loginReq.Email, Password: loginReq.Password}
+	if err := u.FindByEmailAndPassword(); err != nil {
+		return nil, err
+	}
+	return u, nil
 }
 
 func (s *usersService) SearchUser(status string) (users.Users, *errors.RestErr) {
