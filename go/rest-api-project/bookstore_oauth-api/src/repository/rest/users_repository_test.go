@@ -1,39 +1,41 @@
 package rest
 
 import (
-	"net/http"
 	"os"
 	"testing"
 
-	"github.com/mercadolibre/golang-restclient/rest"
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/domain/users"
 )
 
 // TestMain is the entrypoint of every test suite in a package is the TestMain function
 // just like Main function is the entrypoint for a go package
 func TestMain(m *testing.M) {
-	rest.StartMockupServer()
-	os.Exit(m.Run())
+	setup()
+	exitCode := m.Run()
+	teardown()
+	os.Exit(exitCode)
 }
 
-func TestLoginUserTimeoutFromApi(t *testing.T) {
+func setup() {
+	httpmock.ActivateNonDefault(GetRestClient().GetClient())
+}
+
+func teardown() {
+	httpmock.DeactivateAndReset()
+}
+
+func TestLoginUserSuccess(t *testing.T) {
 	assert := assert.New(t)
-	rest.FlushMockups()
-	rest.AddMockups(&rest.Mock{
-		HTTPMethod:   "POST",
-		URL:          "http://localhost:8080/users/login",
-		ReqBody:      `{"email":"foo@bar.com","password":"foobarbaz"}`,
-		RespHTTPCode: -1,
-	})
+	respUser := users.User{Id: 1, FirstName: "Foo", LastName: "Bar", Email: "foo.bar@baz.com"}
+	responder := httpmock.NewJsonResponderOrPanic(200, respUser)
+	httpmock.RegisterResponder("POST", "http://localhost:8080/users/login", responder)
 	repo := usersRepository{}
-	user, err := repo.LoginUser("foo@bar.com", "foobarbaz")
-	assert.Nil(user, "user should have been nil")
-	assert.NotNil(err, "err should not have been nil")
-	assert.EqualValues(err.Status, http.StatusInternalServerError, "err should have been internal server error")
+	res, err := repo.LoginUser("foo.bar@baz.com", "foobarbaz")
+	assert.Nil(err, "error is expected to be nil")
+	assert.Equal("Foo", res.FirstName, "first name is incorrect")
 }
-
-// func TestLoginUserInvalidErrorInterface(t *testing.T) {
-// }
 
 // func TestLoginUserInvalidLoginCredentials(t *testing.T) {
 // }

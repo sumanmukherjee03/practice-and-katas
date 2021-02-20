@@ -1,21 +1,30 @@
 package rest
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/mercadolibre/golang-restclient/rest"
+	"github.com/go-resty/resty"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/domain/users"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/utils/errors"
 )
 
 var (
-	usersRestClient = rest.RequestBuilder{
-		BaseURL: "https://localhost:8080",
-		Timeout: 100 * time.Millisecond,
-	}
+	usersRestClient = resty.New()
 )
+
+func init() {
+	usersRestClient.SetTimeout(100*time.Millisecond).
+		SetHeader("Accept", "application/json").
+		SetHeader("User-Agent", "go-resty").
+		SetHeader("X-Public", "false").
+		SetRetryCount(3).
+		SetRetryWaitTime(5 * time.Second).
+		SetRetryMaxWaitTime(20 * time.Second).
+		SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
+			return 0, fmt.Errorf("quota exceeded")
+		})
+}
 
 type RestUsersRepository interface {
 	LoginUser(string, string) (*users.User, *errors.RestErr)
@@ -25,28 +34,30 @@ type usersRepository struct {
 }
 
 func (u *usersRepository) LoginUser(email string, password string) (*users.User, *errors.RestErr) {
+	var user users.User
+	var restErr errors.RestErr
 	req := users.UserLoginRequest{
 		Email:    email,
 		Password: password,
 	}
-	resp := usersRestClient.Post("/users/login", req)
-	if resp == nil || resp.Response == nil {
-		return nil, errors.NewInternalServerError(fmt.Errorf("Downstream users api is down"))
+	_, err := GetRestClient().R().
+		SetBody(req).
+		SetResult(&user).
+		SetError(&restErr).
+		Post("http://localhost:8080/users/login")
+	if err != nil {
+		return nil, errors.NewInternalServerError(fmt.Errorf("Encountered an error making downstream api call - %v", err))
 	}
-	if resp.StatusCode > 299 {
-		var restErr errors.RestErr
-		if err := json.Unmarshal(resp.Bytes(), &restErr); err != nil {
-			return nil, errors.NewInternalServerError(fmt.Errorf("invalid error interface when trying to login user"))
-		}
+	if restErr.Status > 0 {
 		return nil, &restErr
-	}
-	var user users.User
-	if err := json.Unmarshal(resp.Bytes(), &user); err != nil {
-		return nil, errors.NewInternalServerError(fmt.Errorf("error when trying to unmarshall users api response"))
 	}
 	return &user, nil
 }
 
 func NewRepository() RestUsersRepository {
 	return &usersRepository{}
+}
+
+func GetRestClient() *resty.Client {
+	return usersRestClient
 }
