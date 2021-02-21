@@ -9,6 +9,12 @@ import (
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/utils/errors"
 )
 
+const (
+	MAX_RETRIES         = 10
+	RETRY_WAIT_TIME     = 200 * time.Millisecond
+	MAX_RETRY_WAIT_TIME = 3 * time.Second
+)
+
 var (
 	usersRestClient = resty.New()
 )
@@ -18,12 +24,9 @@ func init() {
 		SetHeader("Accept", "application/json").
 		SetHeader("User-Agent", "go-resty").
 		SetHeader("X-Public", "false").
-		SetRetryCount(3).
-		SetRetryWaitTime(5 * time.Second).
-		SetRetryMaxWaitTime(20 * time.Second).
-		SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
-			return 0, fmt.Errorf("quota exceeded")
-		})
+		SetRetryCount(MAX_RETRIES).
+		SetRetryWaitTime(RETRY_WAIT_TIME).
+		SetRetryMaxWaitTime(MAX_RETRY_WAIT_TIME)
 }
 
 type RestUsersRepository interface {

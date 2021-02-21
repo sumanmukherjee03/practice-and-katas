@@ -47,7 +47,7 @@ func TestLoginUserInvalidLoginCredentials(t *testing.T) {
 	httpmock.RegisterResponder("POST", "http://localhost:8080/users/login", responder)
 	repo := usersRepository{}
 	user, restErr := repo.LoginUser("foo.bar@baz.com", "foobarbaz")
-	assert.EqualValues(restErr.Error, "not_found", "should be a not found error")
+	assert.EqualValues("not_found", restErr.Error, "should be a not found error")
 	assert.Nil(user, "user should be nil")
 }
 
@@ -58,7 +58,7 @@ func TestLoginUserInternalServerError(t *testing.T) {
 	httpmock.RegisterResponder("POST", "http://localhost:8080/users/login", responder)
 	repo := usersRepository{}
 	user, restErr := repo.LoginUser("foo.bar@baz.com", "foobarbaz")
-	assert.EqualValues(restErr.Error, "internal_server_error", "should be an internal server error")
+	assert.EqualValues("internal_server_error", restErr.Error, "should be an internal server error")
 	assert.Nil(user, "user should be nil")
 }
 
@@ -67,7 +67,9 @@ func TestLoginUserConnectionFailure(t *testing.T) {
 	httpmock.RegisterResponder("POST", "http://localhost:8080/users/login", httpmock.ConnectionFailure)
 	repo := usersRepository{}
 	user, restErr := repo.LoginUser("foo.bar@baz.com", "foobarbaz")
-	assert.EqualValues(restErr.Error, "internal_server_error", "should be an internal server error")
+	callCount := httpmock.GetCallCountInfo()
+	assert.Greater(callCount["POST http://localhost:8080/users/login"], 1, "should have been retried few times but was called only once")
+	assert.EqualValues("internal_server_error", restErr.Error, "should be an internal server error")
 	assert.Contains(restErr.Message, "Encountered an error making downstream api call", "should be an internal server error")
 	assert.Nil(user, "user should be nil")
 }
