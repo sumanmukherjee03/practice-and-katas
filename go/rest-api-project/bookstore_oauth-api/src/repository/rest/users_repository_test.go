@@ -33,7 +33,7 @@ func TestLoginUserSuccess(t *testing.T) {
 	assert := assert.New(t)
 	respUser := users.User{Id: 1, FirstName: "Foo", LastName: "Bar", Email: "foo.bar@baz.com"}
 	responder := httpmock.NewJsonResponderOrPanic(http.StatusOK, respUser)
-	httpmock.RegisterResponder("POST", "http://localhost:8080/users/login", responder)
+	httpmock.RegisterResponder("POST", "http://localhost:8081/users/login", responder)
 	repo := usersRepository{}
 	user, err := repo.LoginUser("foo.bar@baz.com", "foobarbaz")
 	assert.Nil(err, "error is expected to be nil")
@@ -44,7 +44,7 @@ func TestLoginUserInvalidLoginCredentials(t *testing.T) {
 	assert := assert.New(t)
 	respErr := errors.NewNotFoundError(fmt.Errorf("Could not find user with username and password"))
 	responder := httpmock.NewJsonResponderOrPanic(respErr.Status, respErr)
-	httpmock.RegisterResponder("POST", "http://localhost:8080/users/login", responder)
+	httpmock.RegisterResponder("POST", "http://localhost:8081/users/login", responder)
 	repo := usersRepository{}
 	user, restErr := repo.LoginUser("foo.bar@baz.com", "foobarbaz")
 	assert.EqualValues("not_found", restErr.Error, "should be a not found error")
@@ -55,7 +55,7 @@ func TestLoginUserInternalServerError(t *testing.T) {
 	assert := assert.New(t)
 	respErr := errors.NewInternalServerError(fmt.Errorf("Could not read user from database"))
 	responder := httpmock.NewJsonResponderOrPanic(respErr.Status, respErr)
-	httpmock.RegisterResponder("POST", "http://localhost:8080/users/login", responder)
+	httpmock.RegisterResponder("POST", "http://localhost:8081/users/login", responder)
 	repo := usersRepository{}
 	user, restErr := repo.LoginUser("foo.bar@baz.com", "foobarbaz")
 	assert.EqualValues("internal_server_error", restErr.Error, "should be an internal server error")
@@ -64,11 +64,11 @@ func TestLoginUserInternalServerError(t *testing.T) {
 
 func TestLoginUserConnectionFailure(t *testing.T) {
 	assert := assert.New(t)
-	httpmock.RegisterResponder("POST", "http://localhost:8080/users/login", httpmock.ConnectionFailure)
+	httpmock.RegisterResponder("POST", "http://localhost:8081/users/login", httpmock.ConnectionFailure)
 	repo := usersRepository{}
 	user, restErr := repo.LoginUser("foo.bar@baz.com", "foobarbaz")
 	callCount := httpmock.GetCallCountInfo()
-	assert.Greater(callCount["POST http://localhost:8080/users/login"], 1, "should have been retried few times but was called only once")
+	assert.Greater(callCount["POST http://localhost:8081/users/login"], 1, "should have been retried few times but was called only once")
 	assert.EqualValues("internal_server_error", restErr.Error, "should be an internal server error")
 	assert.Contains(restErr.Message, "Encountered an error making downstream api call", "should be an internal server error")
 	assert.Nil(user, "user should be nil")
