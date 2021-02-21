@@ -16,7 +16,6 @@ func init() {
 	if session, err = cluster.CreateSession(); err != nil {
 		panic(err)
 	}
-	defer session.Close()
 }
 
 func GetSession() *gocql.Session {

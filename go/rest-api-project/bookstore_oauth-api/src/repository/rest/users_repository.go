@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	MAX_RETRIES         = 10
-	RETRY_WAIT_TIME     = 200 * time.Millisecond
-	MAX_RETRY_WAIT_TIME = 3 * time.Second
+	maxRetries       = 10
+	retryWaitTime    = 200 * time.Millisecond
+	maxRetryWaitTime = 3 * time.Second
 )
 
 var (
@@ -24,9 +24,9 @@ func init() {
 		SetHeader("Accept", "application/json").
 		SetHeader("User-Agent", "go-resty").
 		SetHeader("X-Public", "false").
-		SetRetryCount(MAX_RETRIES).
-		SetRetryWaitTime(RETRY_WAIT_TIME).
-		SetRetryMaxWaitTime(MAX_RETRY_WAIT_TIME)
+		SetRetryCount(maxRetries).
+		SetRetryWaitTime(retryWaitTime).
+		SetRetryMaxWaitTime(maxRetryWaitTime)
 }
 
 type RestUsersRepository interface {
@@ -47,7 +47,7 @@ func (u *usersRepository) LoginUser(email string, password string) (*users.User,
 		SetBody(req).
 		SetResult(&user).
 		SetError(&restErr).
-		Post("http://localhost:8080/users/login")
+		Post("http://localhost:8081/users/login")
 	if err != nil {
 		return nil, errors.NewInternalServerError(fmt.Errorf("Encountered an error making downstream api call - %v", err))
 	}
@@ -57,7 +57,7 @@ func (u *usersRepository) LoginUser(email string, password string) (*users.User,
 	return &user, nil
 }
 
-func NewRepository() RestUsersRepository {
+func NewUsersRepository() RestUsersRepository {
 	return &usersRepository{}
 }
 

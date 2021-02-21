@@ -72,7 +72,7 @@ func Get(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusFound, user.Marshal(isReqPublic(ctx)))
+	ctx.JSON(http.StatusOK, user.Marshal(isReqPublic(ctx)))
 }
 
 func Update(ctx *gin.Context) {
@@ -131,7 +131,7 @@ func Login(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusFound, user.Marshal(isReqPublic(ctx)))
+	ctx.JSON(http.StatusOK, user.Marshal(isReqPublic(ctx)))
 }
 
 func Search(ctx *gin.Context) {
@@ -143,5 +143,5 @@ func Search(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusFound, searchedUsers.Marshal(isReqPublic(ctx)))
+	ctx.JSON(http.StatusOK, searchedUsers.Marshal(isReqPublic(ctx)))
 }

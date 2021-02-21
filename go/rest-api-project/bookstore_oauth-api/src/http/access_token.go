@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/domain/access_token"
+	access_token_service "github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/services/access_token"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/utils/errors"
 )
 
@@ -16,10 +17,10 @@ type AccessTokenHandler interface {
 }
 
 type accessTokenHandler struct {
-	service access_token.Service
+	service access_token_service.Service
 }
 
-func NewHandler(service access_token.Service) AccessTokenHandler {
+func NewHandler(service access_token_service.Service) AccessTokenHandler {
 	return &accessTokenHandler{
 		service: service,
 	}
@@ -36,13 +37,14 @@ func (h *accessTokenHandler) GetById(ctx *gin.Context) {
 }
 
 func (h *accessTokenHandler) Create(ctx *gin.Context) {
-	var at access_token.AccessToken
-	if err := ctx.ShouldBindJSON(&at); err != nil {
+	var atr access_token.AccessTokenRequest
+	if err := ctx.ShouldBindJSON(&atr); err != nil {
 		restErr := errors.NewBadRequestError(fmt.Errorf("Bad input passed to create access token : %v", err))
 		ctx.JSON(restErr.Status, restErr)
 		return
 	}
-	if createErr := h.service.Create(at); createErr != nil {
+	at, createErr := h.service.Create(atr)
+	if createErr != nil {
 		ctx.JSON(createErr.Status, createErr)
 		return
 	}
@@ -50,8 +52,9 @@ func (h *accessTokenHandler) Create(ctx *gin.Context) {
 }
 
 func (h *accessTokenHandler) UpdateExpirationTime(ctx *gin.Context) {
-	at := access_token.AccessToken{}
-	if err := h.service.Create(at); err != nil {
+	atr := access_token.AccessTokenRequest{}
+	at, err := h.service.Create(atr)
+	if err != nil {
 		ctx.JSON(err.Status, err)
 		return
 	}

@@ -14,7 +14,7 @@ var (
 func StartApplication() {
 	mapUrls()
 	logger.Info("Starting bookstore users application")
-	if err := router.Run(":8080"); err != nil {
+	if err := router.Run(":8081"); err != nil {
 		panic("Server failed to start")
 	}
 }
