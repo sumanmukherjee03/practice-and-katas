@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-go/oauth"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/domain/users"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/services"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/errors"
@@ -60,6 +61,11 @@ func Create(ctx *gin.Context) {
 }
 
 func Get(ctx *gin.Context) {
+	if err := oauth.Authenticate(ctx.Request); err != nil {
+		ctx.JSON(err.Status, err)
+		return
+	}
+
 	userId, userIdRestErr := getUserId(ctx.Param("user_id"))
 	if userIdRestErr != nil {
 		ctx.JSON(userIdRestErr.Status, userIdRestErr)
@@ -72,7 +78,14 @@ func Get(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user.Marshal(isReqPublic(ctx)))
+	// Check if user is asking for their own information.
+	// If yes, then make a private request with all the details of the user.
+	if oauth.GetCallerId(ctx.Request) == user.Id {
+		ctx.JSON(http.StatusOK, user.Marshal(false))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, user.Marshal(oauth.IsPublic(ctx.Request)))
 }
 
 func Update(ctx *gin.Context) {

@@ -17,10 +17,11 @@ const (
 	headerXCallerId  = "X-Caller-Id"
 	paramAccessToken = "access_token"
 
-	maxRetries            = 10
-	retryWaitTime         = 200 * time.Millisecond
-	maxRetryWaitTime      = 3 * time.Second
-	oAuthUserAgent        = "bookstore-oauth-go-client"
+	restyTimeout          = 200 * time.Millisecond
+	restyMaxRetries       = 10
+	restyRetryWaitTime    = 200 * time.Millisecond
+	restyMaxRetryWaitTime = 3 * time.Second
+	clientUserAgent       = "bookstore-oauth-go-client"
 	respAcceptContentType = "application/json"
 )
 
@@ -41,13 +42,13 @@ type AccessToken struct {
 }
 
 func init() {
-	restClient.SetTimeout(200*time.Millisecond).
+	restClient.SetTimeout(restyTimeout).
 		SetHeader("Accept", respAcceptContentType).
-		SetHeader("User-Agent", respAcceptContentType).
-		SetHeader("X-Public", "false").
-		SetRetryCount(maxRetries).
-		SetRetryWaitTime(retryWaitTime).
-		SetRetryMaxWaitTime(maxRetryWaitTime)
+		SetHeader("User-Agent", clientUserAgent).
+		SetHeader(headerXPublic, "false").
+		SetRetryCount(restyMaxRetries).
+		SetRetryWaitTime(restyRetryWaitTime).
+		SetRetryMaxWaitTime(restyMaxRetryWaitTime)
 }
 
 func IsPublic(req *http.Request) bool {
@@ -88,12 +89,15 @@ func Authenticate(req *http.Request) *errors.RestErr {
 
 	token := strings.TrimSpace(req.URL.Query().Get(paramAccessToken))
 	if len(token) == 0 {
-		return errors.NewBadRequestError(fmt.Errorf("Access token is not present in request"))
-		// return nil
+		return nil
 	}
 
 	at, err := getAccessToken(token)
 	if err != nil {
+		// If access token is not found then dont break the flow by returning an error but instead return nil
+		if err.Status == http.StatusNotFound {
+			return nil
+		}
 		return err
 	}
 	req.Header.Add(headerXCallerId, fmt.Sprintf("%v", at.UserId))
