@@ -12,11 +12,13 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 public class App {
+  private static Random rand = new Random();
   private static javassist.ClassPool cp = javassist.ClassPool.getDefault();
-  private static float CAP = 0.8f;  // 80%
-  private static int ONE_MB = 1024 * 1024;
-  private static Vector cache = new Vector();
-  private static Runtime rt = Runtime.getRuntime();
+  private static final float CAP = 0.8f;  // 80%
+  private static final int ONE_MB = 1024 * 1024;
+  private static final Vector cache = new Vector();
+  private static final Runtime rt = Runtime.getRuntime();
+  private static final ArrayList<Double> list = new ArrayList<Double>(1000000);
 
   public static void main(String[] args) throws IOException {
     System.out.println("Starting simple java http server");
@@ -30,7 +32,7 @@ public class App {
     System.out.println("Reserve: " + allocBytes/ONE_MB + "MB");
 
     final Executor multi = Executors.newCachedThreadPool();
-    HttpServer server = HttpServer.create(new InetSocketAddress(28500), 100);
+    HttpServer server = HttpServer.create(new InetSocketAddress(28500), 20);
     server.setExecutor(multi);
 
     HttpContext healthzContext = server.createContext("/healthz");
@@ -54,7 +56,9 @@ public class App {
   // Healthcheck that a docker/kubernetes/ecs etc can hit for keeping the service alive
   private static void healthzHandler(HttpExchange exchange) throws IOException {
     System.out.println("Healthcheck called");
-    Integer[] array = new Integer[200 * 200]; // make the healthcheck allocate some space because that will keep the heap space slowly filling up
+    for (int i = 0; i < 1000; i++){
+      list.add(rand.nextDouble()) // make the healthcheck allocate some space because that will keep the heap space slowly filling up
+    }
     String response = "SUCCESS";
     exchange.sendResponseHeaders(200, response.getBytes().length);//response code and length
     OutputStream os = exchange.getResponseBody();
@@ -65,8 +69,8 @@ public class App {
   // Handler that when triggered repeatedly can lead to heapspace getting filled up causing an java.lang.OutOfMemoryError
   private static void hsOOMHandler(HttpExchange exchange) throws IOException {
     System.out.println("hsOOMContext called");
-    // long[][] ary = new long[Integer.MAX_VALUE][Integer.MAX_VALUE];
-    Integer[] array = new Integer[20000 * 20000];
+    long[][] ary = new long[Integer.MAX_VALUE][Integer.MAX_VALUE];
+    // Integer[] array = new Integer[20000 * 20000];
     String response = "FAILURE";
     exchange.sendResponseHeaders(500, response.getBytes().length);//response code and length
     OutputStream os = exchange.getResponseBody();
@@ -74,7 +78,7 @@ public class App {
     os.close();
   }
 
-  // Handler that when triggered repeatedly can lead to heapspace getting filled up causing an java.lang.OutOfMemoryError
+  // Handler that when triggered repeatedly can lead to heapspace getting filled up 1 MB at a time causing an java.lang.OutOfMemoryError
   private static void containerOOMHandler(HttpExchange exchange) throws IOException {
     System.out.println("containerOOMContext called");
     for (int i = 0; i < 100; i++){
@@ -97,9 +101,8 @@ public class App {
     System.out.println("gcOverheadContext called");
     Map m = new HashMap();
     m = System.getProperties();
-    Random r = new Random();
     while (true) {
-      m.put(r.nextInt(), "randomValue");
+      m.put(rand.nextInt(), "randomValue");
     }
   }
 
