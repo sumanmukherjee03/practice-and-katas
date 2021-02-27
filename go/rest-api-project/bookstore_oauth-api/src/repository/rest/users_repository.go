@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-resty/resty"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/domain/users"
-	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/utils/errors"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_utils-go/rest_errors"
 )
 
 const (
@@ -30,15 +30,15 @@ func init() {
 }
 
 type RestUsersRepository interface {
-	LoginUser(string, string) (*users.User, *errors.RestErr)
+	LoginUser(string, string) (*users.User, *rest_errors.RestErr)
 }
 
 type usersRepository struct {
 }
 
-func (u *usersRepository) LoginUser(email string, password string) (*users.User, *errors.RestErr) {
+func (u *usersRepository) LoginUser(email string, password string) (*users.User, *rest_errors.RestErr) {
 	var user users.User
-	var restErr errors.RestErr
+	var restErr rest_errors.RestErr
 	req := users.UserLoginRequest{
 		Email:    email,
 		Password: password,
@@ -49,7 +49,7 @@ func (u *usersRepository) LoginUser(email string, password string) (*users.User,
 		SetError(&restErr).
 		Post("http://localhost:8081/users/login")
 	if err != nil {
-		return nil, errors.NewInternalServerError(fmt.Errorf("Encountered an error making downstream api call - %v", err))
+		return nil, rest_errors.NewInternalServerError(fmt.Errorf("Encountered an error making downstream api call - %v", err))
 	}
 	if restErr.Status > 0 {
 		return nil, &restErr

@@ -10,14 +10,14 @@ import (
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-go/oauth"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/domain/users"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/services"
-	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/errors"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_utils-go/rest_errors"
 )
 
 //////////////////////// HELPER FUNCS ////////////////////
-func getUserId(userIdStr string) (int64, *errors.RestErr) {
+func getUserId(userIdStr string) (int64, *rest_errors.RestErr) {
 	userId, err := strconv.ParseInt(userIdStr, 10, 64)
 	if err != nil {
-		restErr := errors.NewBadRequestError(err)
+		restErr := rest_errors.NewBadRequestError(err)
 		return 0, restErr
 	}
 	return userId, nil
@@ -46,7 +46,7 @@ func Create(ctx *gin.Context) {
 	// ctx.ShouldBindJSON does the job of receiving bytes array from the request body in POST
 	// unmarshall it and populate the user struct
 	if err := ctx.ShouldBindJSON(&user); err != nil {
-		restErr := errors.NewBadRequestError(err)
+		restErr := rest_errors.NewBadRequestError(err)
 		ctx.JSON(restErr.Status, restErr)
 		return
 	}
@@ -97,7 +97,7 @@ func Update(ctx *gin.Context) {
 
 	var user users.User
 	if err := ctx.ShouldBindJSON(&user); err != nil {
-		restErr := errors.NewBadRequestError(err)
+		restErr := rest_errors.NewBadRequestError(err)
 		ctx.JSON(restErr.Status, restErr)
 		return
 	}
@@ -132,7 +132,7 @@ func Delete(ctx *gin.Context) {
 func Login(ctx *gin.Context) {
 	var loginReq users.LoginRequest
 	if err := ctx.ShouldBindJSON(&loginReq); err != nil {
-		restErr := errors.NewBadRequestError(err)
+		restErr := rest_errors.NewBadRequestError(err)
 		ctx.JSON(restErr.Status, restErr)
 		return
 	}

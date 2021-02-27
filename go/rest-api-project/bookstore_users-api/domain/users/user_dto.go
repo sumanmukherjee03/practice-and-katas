@@ -6,7 +6,7 @@ import (
 
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/crypto_utils"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/date_utils"
-	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/errors"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_utils-go/rest_errors"
 )
 
 const (
@@ -38,15 +38,15 @@ func (u *User) PrepBeforeSave() {
 	u.Password = crypto_utils.GetMd5(u.Password)
 }
 
-func (u *User) Validate() *errors.RestErr {
+func (u *User) Validate() *rest_errors.RestErr {
 	if len(u.Email) == 0 {
-		return errors.NewBadRequestError(fmt.Errorf("Invalid email address provided for user"))
+		return rest_errors.NewBadRequestError(fmt.Errorf("Invalid email address provided for user"))
 	}
 	if len(u.Password) == 0 {
-		return errors.NewBadRequestError(fmt.Errorf("Invalid password provided for user"))
+		return rest_errors.NewBadRequestError(fmt.Errorf("Invalid password provided for user"))
 	}
 	if len(u.Status) == 0 {
-		return errors.NewBadRequestError(fmt.Errorf("Invalid status provided for user"))
+		return rest_errors.NewBadRequestError(fmt.Errorf("Invalid status provided for user"))
 	}
 	return nil
 }

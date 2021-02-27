@@ -9,7 +9,7 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/domain/users"
-	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/utils/errors"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_utils-go/rest_errors"
 )
 
 // TestMain is the entrypoint of every test suite in a package is the TestMain function
@@ -42,7 +42,7 @@ func TestLoginUserSuccess(t *testing.T) {
 
 func TestLoginUserInvalidLoginCredentials(t *testing.T) {
 	assert := assert.New(t)
-	respErr := errors.NewNotFoundError(fmt.Errorf("Could not find user with username and password"))
+	respErr := rest_errors.NewNotFoundError(fmt.Errorf("Could not find user with username and password"))
 	responder := httpmock.NewJsonResponderOrPanic(respErr.Status, respErr)
 	httpmock.RegisterResponder("POST", "http://localhost:8081/users/login", responder)
 	repo := usersRepository{}
@@ -53,7 +53,7 @@ func TestLoginUserInvalidLoginCredentials(t *testing.T) {
 
 func TestLoginUserInternalServerError(t *testing.T) {
 	assert := assert.New(t)
-	respErr := errors.NewInternalServerError(fmt.Errorf("Could not read user from database"))
+	respErr := rest_errors.NewInternalServerError(fmt.Errorf("Could not read user from database"))
 	responder := httpmock.NewJsonResponderOrPanic(respErr.Status, respErr)
 	httpmock.RegisterResponder("POST", "http://localhost:8081/users/login", responder)
 	repo := usersRepository{}

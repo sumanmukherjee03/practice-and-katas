@@ -2,7 +2,7 @@ package services
 
 import (
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/domain/users"
-	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/errors"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_utils-go/rest_errors"
 )
 
 var (
@@ -13,17 +13,17 @@ type usersService struct{}
 
 // We create this interface so that it is easy to mock in tests
 type usersServiceInterface interface {
-	CreateUser(users.User) (*users.User, *errors.RestErr)
-	GetUser(int64) (*users.User, *errors.RestErr)
-	UpdateUser(bool, users.User) (*users.User, *errors.RestErr)
-	DeleteUser(int64) *errors.RestErr
-	LoginUser(users.LoginRequest) (*users.User, *errors.RestErr)
-	SearchUser(string) (users.Users, *errors.RestErr)
+	CreateUser(users.User) (*users.User, *rest_errors.RestErr)
+	GetUser(int64) (*users.User, *rest_errors.RestErr)
+	UpdateUser(bool, users.User) (*users.User, *rest_errors.RestErr)
+	DeleteUser(int64) *rest_errors.RestErr
+	LoginUser(users.LoginRequest) (*users.User, *rest_errors.RestErr)
+	SearchUser(string) (users.Users, *rest_errors.RestErr)
 }
 
 // By convention, always return error at the end
-func (s *usersService) CreateUser(u users.User) (*users.User, *errors.RestErr) {
-	var err *errors.RestErr
+func (s *usersService) CreateUser(u users.User) (*users.User, *rest_errors.RestErr) {
+	var err *rest_errors.RestErr
 	u.PrepBeforeSave()
 	if err = u.Validate(); err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (s *usersService) CreateUser(u users.User) (*users.User, *errors.RestErr) {
 	return &u, nil
 }
 
-func (s *usersService) GetUser(userId int64) (*users.User, *errors.RestErr) {
+func (s *usersService) GetUser(userId int64) (*users.User, *rest_errors.RestErr) {
 	var u = &users.User{Id: userId}
 	if err := u.Get(); err != nil {
 		return nil, err
@@ -43,8 +43,8 @@ func (s *usersService) GetUser(userId int64) (*users.User, *errors.RestErr) {
 }
 
 // By convention, always return error at the end
-func (s *usersService) UpdateUser(isPartial bool, u users.User) (*users.User, *errors.RestErr) {
-	var err *errors.RestErr
+func (s *usersService) UpdateUser(isPartial bool, u users.User) (*users.User, *rest_errors.RestErr) {
+	var err *rest_errors.RestErr
 	currentUser, err := s.GetUser(u.Id)
 	if err != nil {
 		return nil, err // Check if user even exists in DB and return an error if it doesnt
@@ -87,12 +87,12 @@ func (s *usersService) UpdateUser(isPartial bool, u users.User) (*users.User, *e
 	return currentUser, nil
 }
 
-func (s *usersService) DeleteUser(userId int64) *errors.RestErr {
+func (s *usersService) DeleteUser(userId int64) *rest_errors.RestErr {
 	var u = &users.User{Id: userId}
 	return u.Delete()
 }
 
-func (s *usersService) LoginUser(loginReq users.LoginRequest) (*users.User, *errors.RestErr) {
+func (s *usersService) LoginUser(loginReq users.LoginRequest) (*users.User, *rest_errors.RestErr) {
 	var u = &users.User{Email: loginReq.Email, Password: loginReq.Password}
 	if err := u.FindByEmailAndPassword(); err != nil {
 		return nil, err
@@ -100,6 +100,6 @@ func (s *usersService) LoginUser(loginReq users.LoginRequest) (*users.User, *err
 	return u, nil
 }
 
-func (s *usersService) SearchUser(status string) (users.Users, *errors.RestErr) {
+func (s *usersService) SearchUser(status string) (users.Users, *rest_errors.RestErr) {
 	return users.FindByStatus(status) // Although users.FindByStatus returns a []User, it is treated as type Users
 }

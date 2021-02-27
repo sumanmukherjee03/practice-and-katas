@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/utils/errors"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/crypto_utils"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_utils-go/rest_errors"
 )
 
 const (
@@ -27,33 +27,33 @@ type AccessTokenRequest struct {
 	Scope string `json:"scope"`
 }
 
-func (atr AccessTokenRequest) Validate() *errors.RestErr {
+func (atr AccessTokenRequest) Validate() *rest_errors.RestErr {
 	atr.GrantType = strings.TrimSpace(atr.GrantType)
 	if len(atr.GrantType) == 0 {
-		return errors.NewBadRequestError(fmt.Errorf("Access token request grant type provided by user is empty"))
+		return rest_errors.NewBadRequestError(fmt.Errorf("Access token request grant type provided by user is empty"))
 	}
 
 	switch atr.GrantType {
 	case grantTypePassword:
 		atr.Username = strings.TrimSpace(atr.Username)
 		if len(atr.Username) == 0 {
-			return errors.NewBadRequestError(fmt.Errorf("Access token request username is empty"))
+			return rest_errors.NewBadRequestError(fmt.Errorf("Access token request username is empty"))
 		}
 		atr.Password = strings.TrimSpace(atr.Password)
 		if len(atr.Password) == 0 {
-			return errors.NewBadRequestError(fmt.Errorf("Access token request password is empty"))
+			return rest_errors.NewBadRequestError(fmt.Errorf("Access token request password is empty"))
 		}
 	case grantTypeClientCredentials:
 		atr.ClientId = strings.TrimSpace(atr.ClientId)
 		if len(atr.ClientId) == 0 {
-			return errors.NewBadRequestError(fmt.Errorf("Access token request client id is empty"))
+			return rest_errors.NewBadRequestError(fmt.Errorf("Access token request client id is empty"))
 		}
 		atr.ClientSecret = strings.TrimSpace(atr.ClientSecret)
 		if len(atr.ClientSecret) == 0 {
-			return errors.NewBadRequestError(fmt.Errorf("Access token request client secret is empty"))
+			return rest_errors.NewBadRequestError(fmt.Errorf("Access token request client secret is empty"))
 		}
 	default:
-		return errors.NewBadRequestError(fmt.Errorf("Access token request grant type is not supported"))
+		return rest_errors.NewBadRequestError(fmt.Errorf("Access token request grant type is not supported"))
 	}
 
 	return nil
@@ -83,19 +83,19 @@ func (at AccessToken) IsExpired() bool {
 	return now.After(expirationTime)
 }
 
-func (at AccessToken) Validate() *errors.RestErr {
+func (at AccessToken) Validate() *rest_errors.RestErr {
 	at.AccessToken = strings.TrimSpace(at.AccessToken)
 	if len(at.AccessToken) == 0 {
-		return errors.NewBadRequestError(fmt.Errorf("Access token id provided by user cant be empty"))
+		return rest_errors.NewBadRequestError(fmt.Errorf("Access token id provided by user cant be empty"))
 	}
 	if at.UserId <= 0 {
-		return errors.NewBadRequestError(fmt.Errorf("Access token user id cant be empty"))
+		return rest_errors.NewBadRequestError(fmt.Errorf("Access token user id cant be empty"))
 	}
 	if at.ClientId <= 0 {
-		return errors.NewBadRequestError(fmt.Errorf("Access token client id cant be empty"))
+		return rest_errors.NewBadRequestError(fmt.Errorf("Access token client id cant be empty"))
 	}
 	if at.Expires <= 0 {
-		return errors.NewBadRequestError(fmt.Errorf("Access token expiration time cant be empty"))
+		return rest_errors.NewBadRequestError(fmt.Errorf("Access token expiration time cant be empty"))
 	}
 	return nil
 }

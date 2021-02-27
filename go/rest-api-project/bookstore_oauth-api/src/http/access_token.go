@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/domain/access_token"
 	access_token_service "github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/services/access_token"
-	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-api/src/utils/errors"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_utils-go/rest_errors"
 )
 
 type AccessTokenHandler interface {
@@ -39,7 +39,7 @@ func (h *accessTokenHandler) GetById(ctx *gin.Context) {
 func (h *accessTokenHandler) Create(ctx *gin.Context) {
 	var atr access_token.AccessTokenRequest
 	if err := ctx.ShouldBindJSON(&atr); err != nil {
-		restErr := errors.NewBadRequestError(fmt.Errorf("Bad input passed to create access token : %v", err))
+		restErr := rest_errors.NewBadRequestError(fmt.Errorf("Bad input passed to create access token : %v", err))
 		ctx.JSON(restErr.Status, restErr)
 		return
 	}

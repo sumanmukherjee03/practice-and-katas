@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty"
-	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-go/errors"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_utils-go/rest_errors"
 )
 
 const (
@@ -81,7 +81,7 @@ func GetClientId(req *http.Request) int64 {
 	return clientId
 }
 
-func Authenticate(req *http.Request) *errors.RestErr {
+func Authenticate(req *http.Request) *rest_errors.RestErr {
 	if req == nil {
 		return nil
 	}
@@ -114,9 +114,9 @@ func cleanRequest(req *http.Request) {
 	req.Header.Del(headerXCallerId)
 }
 
-func getAccessToken(token string) (*AccessToken, *errors.RestErr) {
+func getAccessToken(token string) (*AccessToken, *rest_errors.RestErr) {
 	var at AccessToken
-	var restErr errors.RestErr
+	var restErr rest_errors.RestErr
 	_, err := getRestClient().R().
 		SetPathParams(map[string]string{
 			"accessToken": token,
@@ -125,7 +125,7 @@ func getAccessToken(token string) (*AccessToken, *errors.RestErr) {
 		SetError(&restErr).
 		Get("http://localhost:8080/oauth/access_token/{accessToken}")
 	if err != nil {
-		return nil, errors.NewInternalServerError(fmt.Errorf("Encountered an error making downstream api call to get oauth access token - %v", err))
+		return nil, rest_errors.NewInternalServerError(fmt.Errorf("Encountered an error making downstream api call to get oauth access token - %v", err))
 	}
 	if restErr.Status > 0 {
 		return nil, &restErr
