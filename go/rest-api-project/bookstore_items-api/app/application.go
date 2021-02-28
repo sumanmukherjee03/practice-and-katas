@@ -15,11 +15,11 @@ func StartApplication() {
 	mapUrls()
 
 	srv := &http.Server{
-		Handler: router,
-		Addr:    "127.0.0.1:8082",
-		// Good practice: enforce timeouts for servers you create!
-		WriteTimeout: 10 * time.Second,
-		ReadTimeout:  10 * time.Second,
+		Addr:         "127.0.0.1:8082",
+		Handler:      router,
+		WriteTimeout: 500 * time.Millisecond,
+		ReadTimeout:  3 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	if err := srv.ListenAndServe(); err != nil {
