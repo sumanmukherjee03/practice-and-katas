@@ -23,6 +23,14 @@ func TestNewBadRequestError(t *testing.T) {
 	assert.EqualValues("bad_request", err.Error)
 }
 
+func TestNewUnauthorizedError(t *testing.T) {
+	assert := assert.New(t)
+	err := NewUnauthorizedError(fmt.Errorf("Testing unauthorized error"))
+	assert.NotNil(err)
+	assert.EqualValues(http.StatusUnauthorized, err.Status)
+	assert.EqualValues("unauthorized", err.Error)
+}
+
 func TestNewNotFoundError(t *testing.T) {
 	assert := assert.New(t)
 	err := NewNotFoundError(fmt.Errorf("Testing not found"))

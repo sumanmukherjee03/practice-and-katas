@@ -24,6 +24,14 @@ func NewBadRequestError(err error) *RestErr {
 	}
 }
 
+func NewUnauthorizedError(err error) *RestErr {
+	return &RestErr{
+		Message: fmt.Sprintf("Invalid access token - %v", err.Error()),
+		Status:  http.StatusUnauthorized,
+		Error:   "unauthorized",
+	}
+}
+
 func NewNotFoundError(err error) *RestErr {
 	return &RestErr{
 		Message: fmt.Sprintf("Entity could not be found - %v", err.Error()),

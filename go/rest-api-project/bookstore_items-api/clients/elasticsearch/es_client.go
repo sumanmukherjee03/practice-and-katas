@@ -2,6 +2,7 @@ package elasticsearch
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/olivere/elastic"
@@ -15,7 +16,7 @@ var (
 
 type esClientInterface interface {
 	setClient(c *elastic.Client)
-	Index(interface{}) (*elastic.IndexResponse, error)
+	Index(string, interface{}) (*elastic.IndexResponse, error)
 }
 
 type esClient struct {
@@ -24,11 +25,13 @@ type esClient struct {
 
 // We have Init and not the auto init func because we dont want to connect to an actual elasticsearch
 // cluster in test mode. This Init allows us to call itself on demand.
+// Note : Disable sniffing when running elasticsearch in docker container - https://github.com/olivere/elastic/issues/312
 func Init() {
 	c, err := elastic.NewClient(
 		elastic.SetURL("http://localhost:9200"),
 		elastic.SetHealthcheckInterval(10*time.Second),
 		elastic.SetGzip(true),
+		elastic.SetSniff(false),
 		// elastic.SetErrorLog(log.New(os.Stderr, "ELASTIC ", log.LstdFlags)),
 		// elastic.SetInfoLog(log.New(os.Stdout, "", log.LstdFlags)),
 	)
@@ -44,6 +47,16 @@ func (c *esClient) setClient(ec *elastic.Client) {
 	c.client = ec
 }
 
-func (c *esClient) Index(data interface{}) (*elastic.IndexResponse, error) {
-	return c.client.Index().Do(context.Background())
+func (c *esClient) Index(index string, doc interface{}) (*elastic.IndexResponse, error) {
+	ctx := context.Background()
+	res, err := c.client.Index().
+		Index(index).
+		BodyJson(doc).
+		Do(ctx)
+
+	if err != nil {
+		logger.Error(fmt.Sprintf("encountered error when trying to index document in elasticsearch for index %s", index), err)
+		return nil, err
+	}
+	return res, nil
 }

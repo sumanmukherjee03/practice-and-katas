@@ -34,6 +34,12 @@ func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sellerId := oauth.GetCallerId(r)
+	if sellerId == 0 {
+		http_utils.RespondError(w, rest_errors.NewUnauthorizedError(fmt.Errorf("unauthorized request - no valid access token")))
+		return
+	}
+
 	var itemRequest items.Item
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -47,7 +53,7 @@ func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	itemRequest.Seller = oauth.GetCallerId(r)
+	itemRequest.Seller = sellerId
 
 	item, createErr := services.ItemsService.Create(itemRequest)
 	if createErr != nil {
