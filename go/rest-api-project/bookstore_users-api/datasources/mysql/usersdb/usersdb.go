@@ -3,11 +3,11 @@ package usersdb
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 
-	_ "github.com/go-sql-driver/mysql" // This implements the sql interface in the database/sql package
+	"github.com/go-sql-driver/mysql" // This implements the sql interface in the database/sql package
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_users-api/utils/env_utils"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_utils-go/logger"
 )
 
 const (
@@ -20,6 +20,7 @@ const (
 
 var (
 	Client *sql.DB
+	log    = logger.GetLogger()
 )
 
 // init functions are initialization functions in go and are called only once when a package is imported
@@ -43,5 +44,6 @@ func init() {
 	if err = Client.Ping(); err != nil {
 		panic(err)
 	}
-	log.Println("Database successfully connected")
+	mysql.SetLogger(log)
+	log.Info("Database successfully connected")
 }

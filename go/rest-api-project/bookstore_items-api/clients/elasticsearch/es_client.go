@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/olivere/elastic"
-	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_items-api/logger"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_utils-go/logger"
 )
 
 var (
@@ -32,8 +32,8 @@ func Init() {
 		elastic.SetHealthcheckInterval(10*time.Second),
 		elastic.SetGzip(true),
 		elastic.SetSniff(false),
-		// elastic.SetErrorLog(log.New(os.Stderr, "ELASTIC ", log.LstdFlags)),
-		// elastic.SetInfoLog(log.New(os.Stdout, "", log.LstdFlags)),
+		elastic.SetErrorLog(log),
+		elastic.SetInfoLog(log),
 	)
 
 	if err != nil {
@@ -55,7 +55,7 @@ func (c *esClient) Index(index string, doc interface{}) (*elastic.IndexResponse,
 		Do(ctx)
 
 	if err != nil {
-		logger.Error(fmt.Sprintf("encountered error when trying to index document in elasticsearch for index %s", index), err)
+		log.Error(fmt.Sprintf("encountered error when trying to index document in elasticsearch for index %s", index), err)
 		return nil, err
 	}
 	return res, nil
