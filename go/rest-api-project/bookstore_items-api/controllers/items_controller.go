@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_items-api/domain/items"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_items-api/services"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_items-api/utils/http_utils"
@@ -65,4 +67,19 @@ func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *itemsController) Get(w http.ResponseWriter, r *http.Request) {
+	urlParams := mux.Vars(r)
+	itemId := strings.TrimSpace(urlParams["id"])
+
+	if len(itemId) == 0 {
+		http_utils.RespondError(w, rest_errors.NewBadRequestError(fmt.Errorf("item id can not be empty")))
+		return
+	}
+
+	item, getErr := services.ItemsService.Get(itemId)
+	if getErr != nil {
+		http_utils.RespondError(w, getErr)
+		return
+	}
+
+	http_utils.RespondJson(w, http.StatusCreated, item)
 }
