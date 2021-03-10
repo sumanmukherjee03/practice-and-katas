@@ -57,8 +57,8 @@ func Search(q queries.EsQuery) ([]Item, *rest_errors.RestErr) {
 	if err != nil {
 		return nil, rest_errors.NewInternalServerError(fmt.Errorf("backend search failed"))
 	}
-	items := make([]Item, 0)
-	for _, h := range res.Hits.Hits {
+	items := make([]Item, res.TotalHits())
+	for index, h := range res.Hits.Hits {
 		var i Item
 		bytes, marshalErr := h.Source.MarshalJSON()
 		if marshalErr != nil {
@@ -68,7 +68,7 @@ func Search(q queries.EsQuery) ([]Item, *rest_errors.RestErr) {
 			return items, rest_errors.NewInternalServerError(fmt.Errorf("document with received from elasticsearch does not match the structure of item - %v", unmarshalErr))
 		}
 		i.Id = h.Id // Repopulate the id from the hit because the id field is not returned in the search result source document
-		items = append(items, i)
+		items[index] = i
 	}
 	return items, nil
 }
