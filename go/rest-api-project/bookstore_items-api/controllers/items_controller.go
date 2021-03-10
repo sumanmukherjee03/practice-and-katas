@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_items-api/domain/items"
+	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_items-api/domain/queries"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_items-api/services"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_items-api/utils/http_utils"
 	"github.com/sumanmukherjee03/practice-and-katas/go/rest-api-project/bookstore_oauth-go/oauth"
@@ -25,6 +26,7 @@ var (
 type itemsControllerInterface interface {
 	Create(http.ResponseWriter, *http.Request)
 	Get(http.ResponseWriter, *http.Request)
+	Search(http.ResponseWriter, *http.Request)
 }
 
 type itemsController struct {
@@ -82,4 +84,27 @@ func (c *itemsController) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http_utils.RespondJson(w, http.StatusCreated, item)
+}
+
+func (c *itemsController) Search(w http.ResponseWriter, r *http.Request) {
+	var searchRequest queries.EsQuery
+	requestBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http_utils.RespondError(w, rest_errors.NewBadRequestError(fmt.Errorf("invalid request body : %v", err)))
+		return
+	}
+	defer r.Body.Close()
+
+	if err := json.Unmarshal(requestBody, &searchRequest); err != nil {
+		http_utils.RespondError(w, rest_errors.NewBadRequestError(fmt.Errorf("invalid search request json : %v", err)))
+		return
+	}
+
+	items, searchErr := services.ItemsService.Search(searchRequest)
+	if searchErr != nil {
+		http_utils.RespondError(w, searchErr)
+		return
+	}
+
+	http_utils.RespondJson(w, http.StatusCreated, items)
 }
