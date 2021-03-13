@@ -18,6 +18,7 @@ type itemsServiceInterface interface {
 	Create(items.Item) (*items.Item, *rest_errors.RestErr)
 	Get(string) (*items.Item, *rest_errors.RestErr)
 	Search(queries.EsQuery) ([]items.Item, *rest_errors.RestErr)
+	Update(bool, items.Item) (*items.Item, *rest_errors.RestErr)
 }
 
 type itemsService struct {
@@ -41,4 +42,25 @@ func (s *itemsService) Get(itemId string) (*items.Item, *rest_errors.RestErr) {
 
 func (s *itemsService) Search(q queries.EsQuery) ([]items.Item, *rest_errors.RestErr) {
 	return items.Search(q)
+}
+
+func (s *itemsService) Update(isPartial bool, item items.Item) (*items.Item, *rest_errors.RestErr) {
+	var err *rest_errors.RestErr
+	currentItem, err := s.Get(item.Id)
+	if err != nil {
+		return nil, err
+	}
+	if isPartial {
+		if len(item.Title) > 0 {
+			currentItem.Title = item.Title
+		}
+	} else {
+		currentItem.Title = item.Title
+	}
+
+	if err = currentItem.Update(); err != nil {
+		return nil, err
+	}
+
+	return currentItem, nil
 }

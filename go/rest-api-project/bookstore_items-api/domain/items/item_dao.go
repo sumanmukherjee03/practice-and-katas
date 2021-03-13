@@ -52,6 +52,21 @@ func (i *Item) Get() *rest_errors.RestErr {
 	return nil
 }
 
+func (i *Item) Update() *rest_errors.RestErr {
+	doc, err := i.Doc()
+	if err != nil {
+		return err
+	}
+	res, esUpdateErr := elasticsearch.Client.Update(esItemsIndex, i.Id, doc)
+	if esUpdateErr != nil {
+		return rest_errors.NewInternalServerError(fmt.Errorf("backend update failed"))
+	}
+	if !strings.Contains(res.Result, "updated") && !strings.Contains(res.Result, "noop") {
+		return rest_errors.NewInternalServerError(fmt.Errorf("backend update failed"))
+	}
+	return nil
+}
+
 func Search(q queries.EsQuery) ([]Item, *rest_errors.RestErr) {
 	res, err := elasticsearch.Client.Search(esItemsIndex, q.Build())
 	if err != nil {
@@ -71,4 +86,16 @@ func Search(q queries.EsQuery) ([]Item, *rest_errors.RestErr) {
 		items[index] = i
 	}
 	return items, nil
+}
+
+func (i *Item) Doc() (map[string]interface{}, *rest_errors.RestErr) {
+	var doc map[string]interface{}
+	bytes, err := json.Marshal(i)
+	if err != nil {
+		return doc, rest_errors.NewInternalServerError(fmt.Errorf("could not get json for values of item - %v", err))
+	}
+	if err := json.Unmarshal(bytes, &doc); err != nil {
+		return doc, rest_errors.NewInternalServerError(fmt.Errorf("could not get map for values of item - %v", err))
+	}
+	return doc, nil
 }

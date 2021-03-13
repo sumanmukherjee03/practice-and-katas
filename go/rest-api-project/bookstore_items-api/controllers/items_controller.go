@@ -27,6 +27,7 @@ type itemsControllerInterface interface {
 	Create(http.ResponseWriter, *http.Request)
 	Get(http.ResponseWriter, *http.Request)
 	Search(http.ResponseWriter, *http.Request)
+	Update(http.ResponseWriter, *http.Request)
 }
 
 type itemsController struct {
@@ -107,4 +108,50 @@ func (c *itemsController) Search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http_utils.RespondJson(w, http.StatusCreated, items)
+}
+
+func (c *itemsController) Update(w http.ResponseWriter, r *http.Request) {
+	if err := oauth.Authenticate(r); err != nil {
+		http_utils.RespondError(w, err)
+		return
+	}
+
+	sellerId := oauth.GetCallerId(r)
+	if sellerId == 0 {
+		http_utils.RespondError(w, rest_errors.NewUnauthorizedError(fmt.Errorf("unauthorized request - no valid access token")))
+		return
+	}
+
+	urlParams := mux.Vars(r)
+	itemId := strings.TrimSpace(urlParams["id"])
+
+	if len(itemId) == 0 {
+		http_utils.RespondError(w, rest_errors.NewBadRequestError(fmt.Errorf("item id can not be empty")))
+		return
+	}
+
+	var itemRequest items.Item
+	requestBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http_utils.RespondError(w, rest_errors.NewBadRequestError(fmt.Errorf("invalid request body : %v", err)))
+		return
+	}
+	defer r.Body.Close()
+
+	if err := json.Unmarshal(requestBody, &itemRequest); err != nil {
+		http_utils.RespondError(w, rest_errors.NewBadRequestError(fmt.Errorf("invalid item json : %v", err)))
+		return
+	}
+
+	itemRequest.Id = itemId
+	itemRequest.Seller = sellerId
+	isPartialUpdate := r.Method == http.MethodPatch
+
+	item, updateErr := services.ItemsService.Update(isPartialUpdate, itemRequest)
+	if updateErr != nil {
+		http_utils.RespondError(w, updateErr)
+		return
+	}
+
+	http_utils.RespondJson(w, http.StatusOK, item)
 }

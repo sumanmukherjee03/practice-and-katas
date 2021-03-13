@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	log                      = logger.GetLogger()
-	Client esClientInterface = &esClient{} // Expose a var of type interface and not a concrete struct so that it's easier to mock
+	docType                   = "doc"
+	log                       = logger.GetLogger()
+	Client  esClientInterface = &esClient{} // Expose a var of type interface and not a concrete struct so that it's easier to mock
 )
 
 type esClientInterface interface {
@@ -19,6 +20,7 @@ type esClientInterface interface {
 	Index(string, interface{}) (*elastic.IndexResponse, error)
 	Get(string, string) (*elastic.GetResult, error)
 	Search(string, elastic.Query) (*elastic.SearchResult, error)
+	Update(string, string, map[string]interface{}) (*elastic.UpdateResponse, error)
 }
 
 type esClient struct {
@@ -53,6 +55,7 @@ func (c *esClient) Index(index string, doc interface{}) (*elastic.IndexResponse,
 	ctx := context.Background()
 	res, err := c.client.Index().
 		Index(index).
+		Type(docType).
 		BodyJson(doc).
 		Do(ctx)
 
@@ -67,6 +70,7 @@ func (c *esClient) Get(index string, id string) (*elastic.GetResult, error) {
 	ctx := context.Background()
 	res, err := c.client.Get().
 		Index(index).
+		Type(docType).
 		Id(id).
 		Do(ctx)
 	if err != nil {
@@ -83,6 +87,22 @@ func (c *esClient) Search(index string, query elastic.Query) (*elastic.SearchRes
 		Do(ctx)
 	if err != nil {
 		log.Error(fmt.Sprintf("encountered error when trying to search the index in elasticsearch - index : %s, query : %s", index, query), err)
+		return nil, err
+	}
+	return res, nil
+}
+
+func (c *esClient) Update(index string, id string, doc map[string]interface{}) (*elastic.UpdateResponse, error) {
+	ctx := context.Background()
+	res, err := c.client.Update().
+		Index(index).
+		Type(docType).
+		Id(id).
+		Doc(doc).
+		DetectNoop(true).
+		Do(ctx)
+	if err != nil {
+		log.Error(fmt.Sprintf("encountered error when trying to update document in elasticsearch - index : %s, id : %s", index, id), err)
 		return nil, err
 	}
 	return res, nil
