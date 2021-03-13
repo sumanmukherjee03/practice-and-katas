@@ -54,8 +54,37 @@ func (s *itemsService) Update(isPartial bool, item items.Item) (*items.Item, *re
 		if len(item.Title) > 0 {
 			currentItem.Title = item.Title
 		}
+		if item.Description != (items.Description{}) {
+			if len(item.Description.PlainText) > 0 {
+				currentItem.Description.PlainText = item.Description.PlainText
+			}
+			if len(item.Description.Html) > 0 {
+				currentItem.Description.Html = item.Description.Html
+			}
+		}
+		if len(item.Pictures) > 0 {
+			currentItem.Pictures = append(currentItem.Pictures, item.Pictures...)
+		}
+		if item.Price > 0 {
+			currentItem.Price = item.Price
+		}
+		if item.AvailableQuantity > 0 {
+			currentItem.AvailableQuantity = item.AvailableQuantity
+		}
+		if item.SoldQuantity > 0 {
+			currentItem.SoldQuantity = item.SoldQuantity
+		}
+		if len(item.Video) > 0 {
+			currentItem.Video = item.Video
+		}
 	} else {
 		currentItem.Title = item.Title
+		currentItem.Description = item.Description
+		currentItem.Pictures = item.Pictures
+		currentItem.Video = item.Video
+		currentItem.Price = item.Price
+		currentItem.AvailableQuantity = item.AvailableQuantity
+		currentItem.SoldQuantity = item.SoldQuantity
 	}
 
 	if err = currentItem.Update(); err != nil {
