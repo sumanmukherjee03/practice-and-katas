@@ -1,0 +1,8 @@
+replicaCount: 1
+image:
+  repository: gcr.io/kubernetes-e2e-test-images/echoserver
+  tag: 2.2
+  pullPolicy: IfNotPresent
+service:
+  type: NodePort
+  port: 8080

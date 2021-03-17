@@ -1,0 +1,18 @@
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: sample-api-server-rate-limiting
+  labels:
+    app.kubernetes.io/name: {{ include "sample-api-server.name" . }}
+    helm.sh/chart: {{ include "sample-api-server.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+disabled: false
+config:
+  second: 3
+  hour: 10000
+  policy: local
+  hide_client_headers: false
+  limit_by: header
+  header_name: PLAN-NAME
+plugin: rate-limiting

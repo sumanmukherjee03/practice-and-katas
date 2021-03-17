@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "sample-api-server.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sample-api-server.name" . }}
+    helm.sh/chart: {{ include "sample-api-server.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    kubernetes.io/ingress.class: kong
+    konghq.com/plugins: sample-api-server-rate-limiting
+spec:
+  rules:
+    - host: sample-api-server.local.dev
+      http:
+        paths:
+          - path: "/test"
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "sample-api-server.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
