@@ -26,8 +26,9 @@ var (
 type itemsControllerInterface interface {
 	Create(http.ResponseWriter, *http.Request)
 	Get(http.ResponseWriter, *http.Request)
-	Search(http.ResponseWriter, *http.Request)
 	Update(http.ResponseWriter, *http.Request)
+	Delete(http.ResponseWriter, *http.Request)
+	Search(http.ResponseWriter, *http.Request)
 }
 
 type itemsController struct {
@@ -84,30 +85,7 @@ func (c *itemsController) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http_utils.RespondJson(w, http.StatusCreated, item)
-}
-
-func (c *itemsController) Search(w http.ResponseWriter, r *http.Request) {
-	var searchRequest queries.EsQuery
-	requestBody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http_utils.RespondError(w, rest_errors.NewBadRequestError(fmt.Errorf("invalid request body : %v", err)))
-		return
-	}
-	defer r.Body.Close()
-
-	if err := json.Unmarshal(requestBody, &searchRequest); err != nil {
-		http_utils.RespondError(w, rest_errors.NewBadRequestError(fmt.Errorf("invalid search request json : %v", err)))
-		return
-	}
-
-	items, searchErr := services.ItemsService.Search(searchRequest)
-	if searchErr != nil {
-		http_utils.RespondError(w, searchErr)
-		return
-	}
-
-	http_utils.RespondJson(w, http.StatusCreated, items)
+	http_utils.RespondJson(w, http.StatusOK, item)
 }
 
 func (c *itemsController) Update(w http.ResponseWriter, r *http.Request) {
@@ -154,4 +132,45 @@ func (c *itemsController) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http_utils.RespondJson(w, http.StatusOK, item)
+}
+
+func (c *itemsController) Delete(w http.ResponseWriter, r *http.Request) {
+	urlParams := mux.Vars(r)
+	itemId := strings.TrimSpace(urlParams["id"])
+
+	if len(itemId) == 0 {
+		http_utils.RespondError(w, rest_errors.NewBadRequestError(fmt.Errorf("item id can not be empty")))
+		return
+	}
+
+	deleteErr := services.ItemsService.Delete(itemId)
+	if deleteErr != nil {
+		http_utils.RespondError(w, deleteErr)
+		return
+	}
+
+	http_utils.RespondJson(w, http.StatusOK, itemId)
+}
+
+func (c *itemsController) Search(w http.ResponseWriter, r *http.Request) {
+	var searchRequest queries.EsQuery
+	requestBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http_utils.RespondError(w, rest_errors.NewBadRequestError(fmt.Errorf("invalid request body : %v", err)))
+		return
+	}
+	defer r.Body.Close()
+
+	if err := json.Unmarshal(requestBody, &searchRequest); err != nil {
+		http_utils.RespondError(w, rest_errors.NewBadRequestError(fmt.Errorf("invalid search request json : %v", err)))
+		return
+	}
+
+	items, searchErr := services.ItemsService.Search(searchRequest)
+	if searchErr != nil {
+		http_utils.RespondError(w, searchErr)
+		return
+	}
+
+	http_utils.RespondJson(w, http.StatusCreated, items)
 }

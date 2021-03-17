@@ -67,6 +67,21 @@ func (i *Item) Update() *rest_errors.RestErr {
 	return nil
 }
 
+func (i *Item) Delete() *rest_errors.RestErr {
+	getErr := i.Get()
+	if getErr != nil {
+		return getErr
+	}
+	res, esDeleteErr := elasticsearch.Client.Delete(esItemsIndex, i.Id)
+	if esDeleteErr != nil {
+		return rest_errors.NewInternalServerError(fmt.Errorf("delete failed in backend"))
+	}
+	if !strings.Contains(res.Result, "deleted") {
+		return rest_errors.NewInternalServerError(fmt.Errorf("delete failed in backend"))
+	}
+	return nil
+}
+
 func Search(q queries.EsQuery) ([]Item, *rest_errors.RestErr) {
 	res, err := elasticsearch.Client.Search(esItemsIndex, q.Build())
 	if err != nil {

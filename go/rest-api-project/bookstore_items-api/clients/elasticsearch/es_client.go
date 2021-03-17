@@ -21,6 +21,7 @@ type esClientInterface interface {
 	Get(string, string) (*elastic.GetResult, error)
 	Search(string, elastic.Query) (*elastic.SearchResult, error)
 	Update(string, string, map[string]interface{}) (*elastic.UpdateResponse, error)
+	Delete(string, string) (*elastic.DeleteResponse, error)
 }
 
 type esClient struct {
@@ -103,6 +104,20 @@ func (c *esClient) Update(index string, id string, doc map[string]interface{}) (
 		Do(ctx)
 	if err != nil {
 		log.Error(fmt.Sprintf("encountered error when trying to update document in elasticsearch - index : %s, id : %s", index, id), err)
+		return nil, err
+	}
+	return res, nil
+}
+
+func (c *esClient) Delete(index string, id string) (*elastic.DeleteResponse, error) {
+	ctx := context.Background()
+	res, err := c.client.Delete().
+		Index(index).
+		Type(docType).
+		Id(id).
+		Do(ctx)
+	if err != nil {
+		log.Error(fmt.Sprintf("encountered error when trying to delete document in elasticsearch - index : %s, id : %s", index, id), err)
 		return nil, err
 	}
 	return res, nil

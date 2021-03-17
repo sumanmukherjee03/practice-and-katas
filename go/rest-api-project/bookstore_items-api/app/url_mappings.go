@@ -13,5 +13,6 @@ func mapUrls() {
 	router.HandleFunc("/items/{id}", controllers.ItemsController.Get).Methods(http.MethodGet)
 	router.HandleFunc("/items/{id}", controllers.ItemsController.Update).Methods(http.MethodPatch)
 	router.HandleFunc("/items/{id}", controllers.ItemsController.Update).Methods(http.MethodPut)
+	router.HandleFunc("/items/{id}", controllers.ItemsController.Delete).Methods(http.MethodDelete)
 	router.HandleFunc("/items/search", controllers.ItemsController.Search).Methods(http.MethodPost)
 }

@@ -19,6 +19,7 @@ type itemsServiceInterface interface {
 	Get(string) (*items.Item, *rest_errors.RestErr)
 	Search(queries.EsQuery) ([]items.Item, *rest_errors.RestErr)
 	Update(bool, items.Item) (*items.Item, *rest_errors.RestErr)
+	Delete(string) *rest_errors.RestErr
 }
 
 type itemsService struct {
@@ -92,4 +93,12 @@ func (s *itemsService) Update(isPartial bool, item items.Item) (*items.Item, *re
 	}
 
 	return currentItem, nil
+}
+
+func (s *itemsService) Delete(itemId string) *rest_errors.RestErr {
+	item := items.Item{Id: itemId}
+	if err := item.Delete(); err != nil {
+		return err
+	}
+	return nil
 }
