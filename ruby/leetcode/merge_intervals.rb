@@ -1,72 +1,60 @@
+# Given an array of intervals where intervals[i] = [starti, endi], merge all overlapping intervals,
+# and return an array of the non-overlapping intervals that cover all the intervals in the input.
+#
+#  Example 1:
+#
+#  Input: intervals = [[1,3],[2,6],[8,10],[15,18]]
+#  Output: [[1,6],[8,10],[15,18]]
+#  Explanation: Since intervals [1,3] and [2,6] overlaps, merge them into [1,6].
+#  Example 2:
+#
+#  Input: intervals = [[1,4],[4,5]]
+#  Output: [[1,5]]
+#  Explanation: Intervals [1,4] and [4,5] are considered overlapping.
+#
+#   Constraints:
+#
+#   1 <= intervals.length <= 104
+#   intervals[i].length == 2
+#   0 <= starti <= endi <= 104
+
 # @param {Integer[][]} intervals
 # @return {Integer[][]}
 def merge(intervals)
-  # [[1,3],[2,6],[8,10],[15,18]]
-  sets = []
-  i = 0
-  while i < intervals.length do
-    l = intervals[i].first
-    r = intervals[i].last
+  res = []
 
-    j = 0
-    set_union_happened = false
-    while j < sets.length do
-      l_included = false
-      r_included = false
-      set_l_included = false
-      set_r_included = false
+  # Sort the intervals based on the start of the interval. This O(nlogn)
+  intervals.sort! {|x, y| x.first <=> y.first}
 
-      if l >= sets[j].first && l <= sets[j].last
-        l_included = true
-      end
-      if r >= sets[j].first && r <= sets[j].last
-        r_included = true
-      end
-
-      if sets[j].first >= l && sets[j].first <= r
-        set_l_included = true
-      end
-      if sets[j].last >= l && sets[j].last <= r
-        set_r_included = true
-      end
-
-      if l_included || r_included
-        if l_included && !r_included
-          sets[j][1] = r
-          set_union_happened = true
-        elsif !l_included && r_included
-          sets[j][0] = l
-          set_union_happened = true
-        else
-          set_union_happened = true
-        end
-      end
-
-      if set_l_included || set_r_included
-        if set_l_included && !set_r_included
-          sets[j][0] = l
-          set_union_happened = true
-        elsif !set_l_included && set_r_included
-          sets[j][1] = r
-          set_union_happened = true
-        else
-          sets[j][0] = l
-          sets[j][1] = r
-          set_union_happened = true
-        end
-      end
-
-      break if set_union_happened
-      j += 1
+  # Go through the sorted list of intervals and look at the next interval and see
+  # if the current interval overlaps with the previous interval.
+  # As in, does the first element of the current set lie within the previous set.
+  # If that overlap is there, then the sets should be merged
+  intervals.each do |set|
+    # If the resulting list is empty then insert the first item into the resulting set
+    if res.length == 0
+      res << set
+      next
     end
 
-    sets << intervals[i] unless set_union_happened
-    i += 1
+    last_set = res.last
+    begining_of_last_merged_set = last_set.first
+    end_of_last_merged_set = last_set.last
+    begining_of_current_set = set.first
+    end_of_current_set = set.last
+
+    if begining_of_current_set <= end_of_last_merged_set
+      start = begining_of_last_merged_set
+      if end_of_last_merged_set <= end_of_current_set
+        stop = end_of_current_set
+      else
+        stop = end_of_last_merged_set
+      end
+      res[-1] = [start, stop]
+    else
+      res << set
+    end
   end
 
-  if intervals.length > sets.length
-    return merge(sets)
-  else
-    return sets
-  end
+  res
 end
