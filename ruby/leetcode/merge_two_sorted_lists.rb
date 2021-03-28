@@ -10,6 +10,40 @@
 # Input: l1 = [], l2 = [0]
 # Output: [0]
 
+
+# We can recursively define the result of a merge operation on two lists.
+
+# list1[0] + merge(list1[1:], list2) if list1[0] < list2[0]
+# list2[0] + merge(list1,list2[1:]) otherwise
+
+# Namely, the smaller of the two lists' heads plus the result of a merge on the rest of the elements.
+
+# Definition for singly-linked list.
+# class ListNode
+#     attr_accessor :val, :next
+#     def initialize(val = 0, _next = nil)
+#         @val = val
+#         @next = _next
+#     end
+# end
+# @param {ListNode} l1
+# @param {ListNode} l2
+# @return {ListNode}
+def merge_two_lists(l1, l2)
+  return l1 unless l2
+  return l2 unless l1
+
+  if l1.val < l2.val
+    l1.next = merge_two_lists(l1.next, l2)
+    return l1
+  else
+    l2.next = merge_two_lists(l1,l2.next)
+    return l2
+  end
+end
+
+# We can achieve the same idea via iteration
+
 # Definition for singly-linked list.
 # class ListNode
 #     attr_accessor :val, :next
@@ -26,31 +60,24 @@ def merge_two_lists(l1, l2)
   return l2 unless l1
   return l1 unless l2
 
-  head = l1
-  previous_elm = nil
+  result = ListNode.new()
+  head = result
 
-  while l1 && l2 do
-    # If l1 is small move l1 forward
-    if l1.val <= l2.val
-      l1_next = l1.next
-      previous_elm = l1
-      l1 = l1_next
-    elsif l1.val > l2.val # If l2 is small move l2 forward
-      l2_next = l2.next
-      if head == l1
-        head = l2
-      else
-        previous_elm.next = l2
-      end
-      l2.next = l1
-      previous_elm = l2
-      l2 = l2_next
+  while l1 && l2
+    if l1.val < l2.val
+      head.next = l1
+      l1 = l1.next
+    else
+      head.next = l2
+      l2 = l2.next
     end
+    head = head.next
   end
 
-  if l2 && l2.val >= previous_elm.val
-    previous_elm.next = l2
-  end
+  head.next = l1 if l1
+  head.next = l2 if l2
 
-  return head
+  result = result.next
+
+  return result
 end
