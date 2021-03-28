@@ -25,8 +25,7 @@ module "vpc" {
   enable_dynamodb_endpoint = true
 
   tags = {
-    Owner       = "terraform"
-    Environment = "dev"
+    Owner = "terraform"
   }
 
   vpc_tags = {

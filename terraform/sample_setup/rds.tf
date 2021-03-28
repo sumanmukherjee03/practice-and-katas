@@ -12,9 +12,8 @@ resource "aws_security_group" "sample_app_db" {
   }
 
   tags = {
-    Name        = "sample-app-db-security-group"
-    Owner       = "terraform"
-    Environment = "dev"
+    Name  = "sample-app-db-security-group"
+    Owner = "terraform"
   }
 }
 
@@ -32,16 +31,13 @@ module "sample_app_db" {
   family               = "mysql5.7" # DB parameter group
   major_engine_version = "5.7"      # DB option group
   instance_class       = "db.t3.small"
+  port                 = 3306
 
   allocated_storage = 5
 
   name     = "sample_app"
   username = var.db_username
   password = var.db_password
-
-  create_random_password = true
-  random_password_length = 12
-  port                   = 3306
 
   skip_final_snapshot = true
   deletion_protection = false
@@ -55,7 +51,6 @@ module "sample_app_db" {
   backup_retention_period = 0
 
   tags = {
-    Owner       = "terraform"
-    Environment = "dev"
+    Owner = "terraform"
   }
 }

@@ -1,6 +1,6 @@
 resource "aws_security_group" "sample_app" {
   name        = "sample-app-security-group"
-  description = "Allow HTTP, HTTPS and SSH traffic"
+  description = "Allow HTTP and SSH traffic"
   vpc_id      = module.vpc.vpc_id
 
   ingress {
@@ -19,6 +19,22 @@ resource "aws_security_group" "sample_app" {
     cidr_blocks = ["96.48.69.126/32"]
   }
 
+  ingress {
+    description = "HTTP"
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = [module.vpc.vpc_cidr_block]
+  }
+
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [module.vpc.vpc_cidr_block]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -27,9 +43,8 @@ resource "aws_security_group" "sample_app" {
   }
 
   tags = {
-    Name        = "sample-app-security-group"
-    Owner       = "terraform"
-    Environment = "dev"
+    Name  = "sample-app-security-group"
+    Owner = "terraform"
   }
 }
 
@@ -55,8 +70,7 @@ resource "aws_instance" "sample_app" {
   disable_api_termination     = false
 
   tags = {
-    Name        = "sample-app"
-    Owner       = "terraform"
-    Environment = "dev"
+    Name  = "sample-app"
+    Owner = "terraform"
   }
 }
