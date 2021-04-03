@@ -135,24 +135,40 @@ class BinaryTreeNode
     dest.set_right(src.right)
   end
 
+  # Algorithm to construct tree given it's inorder and preorder traversals
+  #   1) Pick an element from preorder.
+  #       - preorder always has the root of a tree/subtree first.
+  #       - increment a preorder index variable to pick next element in next recursive call.
+  #   2) create a new tree node with the data as picked element.
+  #   3) find the picked element’s index in inorder
+  #       - elements left of that index in inorder represent the left subtree nodes of the node with that value
+  #       - elements right of that index in inorder represent the right subtree nodes of the node with that value
+  #   4) recursively build tree for elements before the inorder index found above and make the built tree as left subtree of the node
+  #   5) recursively build tree for elements after the inorder index and make the built tree as right subtree of the node
+  #   6) return the node
   def self.from_arrays(inorder_arr, preorder_arr)
     klass = self
     preorder_index = 0
 
     # Dont use Proc.new - use lambda
     build_from_array = lambda do |in_arr|
-      return nil if preorder_index >= preorder_arr.length
-      val = preorder_arr[preorder_index]
-      preorder_index += 1
-      node = klass.new(val)
-      return node if in_arr.length == 1
-      in_index = in_arr.index(val)
-      ltree_vals = in_arr[0...in_index]
-      rtree_vals = in_arr[in_index+1..-1]
+      return nil if preorder_index >= preorder_arr.length # guard clause to stop
+      val = preorder_arr[preorder_index] # get value for node
+      preorder_index += 1 # increment preorder index to find the next root in the preorder traversal
+      node = klass.new(val) # build node
+      return node if in_arr.length == 1 # guard caluse to handle tree with just 1 node
+      in_index = in_arr.index(val) # find index of the element from the root above, in inorder array
+      ltree_vals = in_arr[0...in_index] # find elements in the left subtree
+      rtree_vals = in_arr[in_index+1..-1] # find elements in the right subtree
+
+      # build left subtree with elements from inorder array for the left subtree
       l_node = build_from_array.call(ltree_vals)
       node.set_left(l_node) if l_node
+
+      # build right subtree with elements from inorder array for the right subtree
       r_node = build_from_array.call(rtree_vals)
       node.set_right(r_node) if r_node
+
       return node
     end
 
@@ -210,27 +226,44 @@ class BinarySearchTreeNode < BinaryTreeNode
   end
 
   def delete(val)
-    node = self.find(val)
-    return false unless node
-    # If no left or rigth subtree
-    #   If parent is there, remove this child from the parent
-    #   Else set the value of this node to nil
+    node = self.find(val) # First, find the node to be deleted
+    return false unless node # Guard clause - If the node to be deleted couldnt be found, return
+
     if !node.left && !node.right
+      # If no left or rigth subtree
+      #   If parent is there, remove this child from the parent
+      #   Else this is the only node in the tree
+      #     set the value of this node to nil
       if node.parent
         node.parent.remove_child(node)
       else
         node.set_value(nil)
       end
-    # If there is a left and a right subtree
-    #   If the next highest value is not the right child, ie the right child has a left subtree
-    #     Then find the min value node from the right node onwards
-    #     And then make the node to be deleted the node with the min value from above search
-    #       ie, recursively delete the next big node
-    #       and make the value of the current node as the next big node
-    #   If the next highest value node is the right child
-    #     Then make this node the right node
-    #     And make the right subtree of this node the right subtree of the right child
-    elsif node.left && node.right
+
+    elsif node.left && !node.right
+      # Replace the current node with the node from the left subtree if it only has a left subtree
+      node.parent.replace_child(node, node.left)
+
+    elsif !node.left && node.right
+      # Replace the current node with the node from the right subtree if it only has a right subtree
+      node.parent.replace_child(node, node.right)
+
+    else
+      # When there are children in the right subtree
+      #  - find the inorder successor of the node.
+      #  - copy contents of the inorder successor to the node
+      #  - delete the inorder successor node so that it's children can become direct children of the inorder successors parent
+      # Inorder successor can be obtained by finding the minimum value in the right child of the node
+      #
+      # If there is a left and a right subtree
+      #   If the next highest value is not the right child, ie the right child has a left subtree
+      #     Then find the min value node from the right node onwards
+      #     And then make the node to be deleted the node with the min value from above search
+      #       ie, recursively delete the next big node
+      #       and make the value of the current node as the next big node
+      #   If the next highest value node is the right child
+      #     Then make this node the right node
+      #     And make the right subtree of this node the right subtree of the right child
       next_big_node = node.right.find_min
       if next_big_node.value != node.right.value
         self.delete(next_big_node.value)
@@ -238,14 +271,6 @@ class BinarySearchTreeNode < BinaryTreeNode
       else
         node.set_value(node.right.value)
         node.set_right(node.right.right)
-      end
-    # If there is only one subtree, ie, left or right
-    #   Replace the current node with the node from the left or right subtree, which ever it is
-    else
-      if node.left
-        node.parent.replace_child(node, node.left)
-      else
-        node.parent.replace_child(node, node.right)
       end
     end
     return true
