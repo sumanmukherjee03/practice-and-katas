@@ -20,7 +20,7 @@ end
 
 
 ###############################################################################
-############################## LINKED LIST NODE ###############################
+################################# LINKED LIST #################################
 ###############################################################################
 class LinkedList
   attr_accessor :head, :tail
@@ -47,7 +47,7 @@ class LinkedList
   #   Change current tail to become the new node
   #   If there is no head, it means this is the first node - so make head as the current node
   def append(val)
-    node = LinkedListNode.new(val)
+    node = LinkedListNode.new(val, nil)
     if !self.head
       self.head = node
     end
@@ -126,15 +126,18 @@ class LinkedList
   # Change the tail to the node before the current tail and return the result from above
   def delete_tail
     res = self.tail
+    # Handle case when there is only 1 node
     if self.head == self.tail
       self.head = nil
       self.tail = nil
       return res
     end
+    # Traverse to the node before the current tail
     current = self.head
     while current.next.next
       current = current.next
     end
+    # Make the last but one node the new tail
     current.next = nil
     self.tail = current
     res
@@ -151,7 +154,7 @@ class LinkedList
       current = next_node # Update the current node to next node saved from above
     end
     self.tail = self.head
-    self.head = previous
+    self.head = previous # The last previous is the last element of the iteration. So, make that the new head.
     self
   end
 
@@ -278,6 +281,7 @@ class Queue
     self.to_a.to_s
   end
 end
+
 
 =begin
 s = Stack.from_array([2,4,6,7,8,19,21,23,28])

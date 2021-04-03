@@ -57,9 +57,66 @@ def max_sliding_window(nums, k)
 end
 
 
+
+#################### Caterpillar two pointer approach #####################
+
+# @param {Integer[]} nums
+# @param {Integer} k
+# @return {Integer[]}
+def max_sliding_window(nums, k)
+  return [] if nums.length == 0
+  return [] if k == 0
+  return nums if nums.length == 1
+
+  res = [] # This maintains the output - the actual elements of the local maximums
+  local_max = 0 # This maintains the index of the largest element in a sliding window
+
+  # This DS maintains the indexes of elements for the sliding window
+  # At any point this DS holds indexes of elements which are in the current sliding window
+  # And indexes in the deque are sorted by values at indexes from big to small (in decreasing order)
+  deque = Deque.new
+
+  clean_deque = lambda do |index|
+    # Remove the index from the front of the deque which is not in the current sliding window
+    while deque.first && deque.first <= index - k
+      deque.shift
+    end
+
+    # Remove index from the end of the deque for which the elements are smaller than the element at the current index
+    while deque.last && nums[index] > nums[deque.last] do
+      deque.pop
+    end
+  end
+
+  # Perform operation of finding local maximum on first sliding window
+  (0...k).each do |i|
+    clean_deque.call(i) # Remove indexes not in the current sliding window or indexes of elements smaller than the current element
+    deque.push(i) # Push a new index to the deque at the end
+    if nums[i] >= nums[local_max]
+      local_max = i # Note the index of the local maximum in the current sliding window
+    end
+  end
+  res << nums[local_max] # Insert element belonging to the index of local maximum of the sliding window into results
+
+  # Move sliding window of fixed size by 1 element at a time to the right
+  #   Perform operation of finding index of local maximum on sliding window
+  #   Insert element for index of local maximum into results
+  (k...(nums.length)).each do |x|
+    clean_deque.call(x) # Remove indexes not in the current sliding window or indexes of elements smaller than the current element
+    deque.push(x) # Push current index into deque
+    res << nums[deque.first]
+  end
+
+  return res
+end
+
+
+
 #################### dynamic programming approach #####################
 
 # The idea is to split an input array into blocks of k elements. The last block could contain less elements if n % k != 0.
+# A sliding window can be placed within a block or span 2 blocks at a time.
+
 # The pipes represent the boundaries of the blocks.
 # We want to precompute 2 arrays, left and right such that
 # left[i] represents the local maximums upto a block going from left to right
