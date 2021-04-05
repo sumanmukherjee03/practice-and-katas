@@ -33,6 +33,23 @@ class BinaryTreeNode
     self.left_height - self.right_height
   end
 
+  # Find the sum of all elements in the tree starting from this node
+  def sum
+    sum = self.value
+    sum += self.left.sum if self.left
+    sum += self.right.sum if self.right
+    sum
+  end
+
+  # Reverse the tree as if the new version of the tree is a mirror object of itself
+  def reverse
+    l_reverse = self.left ? self.left.reverse : nil
+    r_reverse = self.right ? self.right.reverse : nil
+    self.set_left(r_reverse)
+    self.set_right(l_reverse)
+    self
+  end
+
   # Only sets the value of a node, not it's pointers
   def set_value(val)
     self.value = val
@@ -45,7 +62,7 @@ class BinaryTreeNode
       self.left.parent = nil
     end
     self.left = node
-    self.left.parent = self
+    self.left.parent = self if node
     self
   end
 
@@ -55,12 +72,12 @@ class BinaryTreeNode
       self.right.parent = nil
     end
     self.right = node
-    self.right.parent = self
+    self.right.parent = self if node
     self
   end
 
   # Remove the child subtree from the matching node onwards
-  def remove_child(node)
+  def remove_child_subtree(node)
     if self.left && self.left.value == node.value
       self.left = nil
       return true
@@ -111,6 +128,97 @@ class BinaryTreeNode
     traversal.concat(self.right.postorder) if self.right
     traversal << self.value
     traversal
+  end
+
+  # Levelorder traversal is essentially a depth first traversal of a tree
+  def levelorder
+    queue = [] # FIFO data structure
+    traversal = []
+    queue.push(self)
+    while !queue.empty?
+      node = queue.shift
+      queue.push(node.left) if node.left
+      queue.push(node.right) if node.right
+      traversal.push(node.value)
+    end
+    traversal
+  end
+
+  # BFS or level order traversal but taking into account empty nodes so that it can be used for pretty printing
+  def bfs_with_empty_nodes
+    queue = [] # FIFO data structure
+    traversal = []
+
+    queue.push(self)
+    while !queue.all? {|e| e == 'nil'}
+      node = queue.shift
+      if node != 'nil'
+        if node.left
+          queue.push(node.left)
+        else
+          queue.push('nil')
+        end
+        if node.right
+          queue.push(node.right)
+        else
+          queue.push('nil')
+        end
+        traversal.push(node.value)
+      else
+        queue.push('nil')
+        queue.push('nil')
+        traversal.push('nil')
+      end
+    end
+    traversal
+  end
+
+  def add_depth_to_output
+    each_level = []
+    res = []
+    level = 0
+    array = self.bfs_with_empty_nodes
+    array.each do |elm|
+      each_level.push(elm)
+      if each_level.length > (2**level-1)
+        res.push(each_level)
+        each_level = []
+        level += 1
+      end
+    end
+
+    if each_level.length != 0
+      until each_level.length >= 2**level
+        each_level.push("nil")
+      end
+      res.push(each_level)
+      each_level = []
+    end
+
+    res
+  end
+
+  def pretty_print
+    array = self.add_depth_to_output
+    if(array.length > 0)
+      width=3 #max spacing of each node
+      maxSpace = array[-1].length*width #total space in the last level
+      array.each_with_index do |e,i|
+        startSpace = maxSpace/(2**(i+1))
+        space = maxSpace/(2**i)
+        e.each_with_index do|k, j|
+          if(k == "nil")
+            k =" "
+          end
+          if(j==0)
+            printf("%*s",startSpace,k)
+          else
+            printf("%*s",space,k)
+          end
+        end
+        printf("\n")
+      end
+    end
   end
 
   # Sibling of parent
@@ -176,11 +284,6 @@ class BinaryTreeNode
   end
 end
 
-=begin
-n = BinaryTreeNode.from_arrays(["D","B","E","A","F","C"], ["A","B","D","E","C","F"])
-puts "Result : #{n.inorder}"
-=end
-
 
 ###############################################################################
 ########################### BINARY SEARCH TREE NODE ###########################
@@ -195,7 +298,7 @@ class BinarySearchTreeNode < BinaryTreeNode
       return self.left.insert(val) if self.left
       node = BinarySearchTreeNode.new
       self.set_left(node)
-      return node
+      return self
     end
     # If value is greater than current nodes value go right
     #   Recursively try to insert the same value on the right subtree if a right subtree exists
@@ -204,7 +307,7 @@ class BinarySearchTreeNode < BinaryTreeNode
       return self.right.insert(val) if self.right
       node = BinarySearchTreeNode.new
       self.set_right(node)
-      return node
+      return self
     end
     self
   end
@@ -235,7 +338,7 @@ class BinarySearchTreeNode < BinaryTreeNode
       #   Else this is the only node in the tree
       #     set the value of this node to nil
       if node.parent
-        node.parent.remove_child(node)
+        node.parent.remove_child_subtree(node)
       else
         node.set_value(nil)
       end
@@ -348,3 +451,34 @@ class BinarySearchTree
     self.to_a.map {|node| node.to_s}
   end
 end
+
+
+
+###############################################################################
+############################## SAMPLE RUN #############################
+###############################################################################
+
+=begin
+n = BinaryTreeNode.from_arrays(["D","B","E","A","F","C"], ["A","B","D","E","C","F"])
+puts "Tree : #{n.inorder}"
+puts "Level order traversal : #{n.levelorder}"
+n.pretty_print
+n.reverse
+puts "Inorder traversal of reverse tree : #{n.inorder}"
+puts "Level order traversal of reverse tree : #{n.levelorder}"
+n.pretty_print
+puts "==========================="
+m = BinaryTreeNode.from_arrays([8,4,10,9,11,2,5,1,6,3,7], [1,2,4,8,9,10,11,5,3,6,7])
+puts "Tree : #{m.inorder}"
+puts "Inorder traversal : #{m.inorder}"
+puts "Preorder traversal : #{m.preorder}"
+puts "Postorder traversal : #{m.postorder}"
+puts "Level order traversal : #{m.levelorder}"
+puts "BFS with empty nodes : #{m.bfs_with_empty_nodes}"
+puts "Sum : #{m.sum}"
+m.pretty_print
+puts "------------------------------"
+m.reverse
+puts "Level order traversal of reverse tree : #{m.levelorder}"
+m.pretty_print
+=end
