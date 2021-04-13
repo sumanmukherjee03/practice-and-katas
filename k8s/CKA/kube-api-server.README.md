@@ -25,6 +25,9 @@ Steps involved :
   - the api server then updates the etcd cluster
 
 If not using the kubeadm the kube-apiserver is available for download through the kubernetes release page on google
+```
+wget https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-apiserver
+```
 
 Documentation for flags when starting the kube apiserver :
  - https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
