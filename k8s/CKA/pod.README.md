@@ -5,7 +5,7 @@ You can have multiple containers of different kinds in a single pod.
 Since containers in the same pod share the same network namespace, they can talk to each other via `localhost`.
 
 To run a single standalone pod for example
-`kubectl run nginx --image nginx`
+`kubectl run nginx --image nginx --restart=Never`
 
 `kubectl get pods`
 
@@ -56,6 +56,14 @@ spec:
 kubectl create -f pod-definition.yaml
 kubectl get pods
 kubectl describe pod nginx-pod
+```
+
+To filter pods based on selectors
+```
+kubectl get pods --show-labels
+kubectl get pods --selector app=nginx
+kubectl get pods -l app=nginx
+kubectl get pods --no-headers --selector env=prod,bu=finance,tier=frontend
 ```
 
 ```
