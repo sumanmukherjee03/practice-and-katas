@@ -63,6 +63,7 @@ To filter pods based on selectors
 kubectl get pods --show-labels
 kubectl get pods --selector app=nginx
 kubectl get pods -l app=nginx
+kubectl get pod nginx --watch
 kubectl get pods --no-headers --selector env=prod,bu=finance,tier=frontend
 ```
 
@@ -81,4 +82,43 @@ kubectl run redis --image=redis:alpine --labels=tier=db
 To create a pod and expose it's pod via cluster ip service in 1 single command
 ```
 kubectl run httpd --image=httpd:alpine --port 80 --expose
+```
+
+You can override commands/entrypoints or provide args of docker containers in pod definition templates
+The `command` field is analogous to the `ENTRYPOINT` directive in Dockerfile.
+The `args` field is analogous to the `CMD` directive in Dockerfile.
+In Dockerfile the combination of `ENTRYPOINT` and `CMD` is
+  - use the `ENTRYPOINT` script as the executable with the values of the `CMD` as default arguments.
+That's what the `command` and `args` combination does in pod spec.
+cat `pod-definition.yaml`
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubuntu-wait-pod
+spec:
+  containers:
+    - name: ubuntu-wait-container
+      image: ubuntu-wait
+      command: ["sleep"]
+      args: ["10"]
+      env:
+        - name: COLOR
+          value: green
+```
+
+There are 3 ways to pass env vars into kubernetes pod spec - key/value pair, config maps, secret keys.
+This is the simplest way to pass env vars into a kubernetes pod definition.
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubuntu-wait-pod
+spec:
+  containers:
+    - name: ubuntu-wait-container
+      .....
+      env:
+        - name: COLOR
+          value: green
 ```
