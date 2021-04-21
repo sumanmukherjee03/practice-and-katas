@@ -72,6 +72,7 @@ kubectl describe pod nginx-pod | grep -i image
 kubectl describe pods -o wide
 kubectl delete pod nginx-pod
 kubectl run redis --image=redis --dry-run=client -o yaml > redis-pod-definition.yaml
+kubectl exec app -c webapp -- tail -f /log/webapp.log
 ```
 
 Imperative command to start a standalone pod
@@ -121,4 +122,27 @@ spec:
       env:
         - name: COLOR
           value: green
+```
+
+Below is a crude example of a pod-definition.yaml with init containers
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webapp-pod
+  labels:
+    app: webapp
+spec:
+  containers:
+  - name: webapp-container
+    image: busybox:1.28
+    command: ['sh', '-c', 'echo Starting app && sleep 3600']
+  initContainers:
+  - name: init-redis
+    image: busybox:1.28
+    command: ['sh', '-c', 'until nslookup redis-service; do echo waiting for redis to be up and running; sleep 3; done;']
+  - name: init-db
+    image: busybox:1.28
+    command: ['sh', '-c', 'until nslookup db-service; do echo waiting for db to be up and running; sleep 3; done;']
 ```
