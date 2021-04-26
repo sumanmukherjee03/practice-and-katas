@@ -126,3 +126,9 @@ roleRef:
 
 This should allow us to use the user defined in the static file to query the pods in the cluster.
 `curl -v -k -u "john_doe:welcome2kube" https://localhost:6443/api/v1/pods`
+
+### TLS certificates
+
+In the context of kubernetes, the servers private key and public key signed by the CA are referred to as server certs.
+The public and private key of the CA that signs the server certs are referred to as the root certs.
+And a server can request the client to verify themselves using certificates and these are referred to as client certs.
