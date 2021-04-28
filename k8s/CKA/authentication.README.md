@@ -367,3 +367,42 @@ If you manually setup the cluster, search for service logs
 OR ELSE search for logs in the pods if you set up the cluster with kubeadm
 `kubectl logs etcd-master`
 If kube-apiserver is down then you might have to view the logs from the docker container in the master nodes.
+
+
+KUBECTL COMMANDS TO SIGN CERTIFICATES
+___________________________________________
+
+Assume that a new user has generated a certificate `openssl genrsa -out john.key 2048`.
+Then creates a CSR `openssl req -new -key john.key -subj "/CN=john" -out john.csr`
+He then sends that CSR to an admin who has to get it signed by the kubernetes CA.
+
+The admin creates `john-csr.yaml` with the base64 encoded value of the CSR `cat john.csr | base64`
+```
+apiVersion: certificates.k8s.io/v1beta1
+kind: CertificateSigningRequest
+metadata:
+  name: john
+spec:
+  groups:
+    - system:authenticated
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+  request:
+    .....encoded value of csr......
+```
+The admin submits this CertificateSigningRequest which can be signed by the CA using these commands
+```
+kubectl get csr
+kubectl certificate approve john
+kubectl get csr john -o yaml
+```
+Get the signed certificate from the yaml output and base64 decode it.
+This can then be provided to john so that john can access the kube-apiserver using the new cert through kubectl.
+
+The kubernetes component that signs certificates is the controller-manager.
+The controller manager has controllers called `csr-approving`, `csr-signing` for dealing with certs.
+The controller manager when starting up has these 2 options to get the paths of the root CA cert and key
+  - `--cluster-signing-cert-file`
+  - `--cluster-signing-key-file`
