@@ -350,3 +350,20 @@ kubelet certs
     tlsCertFile: /var/lib/kubelet/node01.crt
     tlsPrivateKeyFile: /var/lib/kubelet/node01.key
     ```
+
+COMMANDS TO INSPECT CERTS
+_______________________________
+
+To decode certs first obtain the path of the certs by looking at the command to start the kube-apiserver.
+Then use the openssl utility to decode certs. For example :
+```
+openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout
+```
+Look for the Subject > CN to get the name of the cert, Validity > Not After to get the expiry date, Issuer > CN to get the CA who issued the cert etc.
+
+Inspect logs to debug cert related issues.
+If you manually setup the cluster, search for service logs
+`journalctl -u etcd.service -l`
+OR ELSE search for logs in the pods if you set up the cluster with kubeadm
+`kubectl logs etcd-master`
+If kube-apiserver is down then you might have to view the logs from the docker container in the master nodes.
