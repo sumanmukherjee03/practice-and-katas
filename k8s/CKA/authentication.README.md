@@ -406,3 +406,6 @@ The controller manager has controllers called `csr-approving`, `csr-signing` for
 The controller manager when starting up has these 2 options to get the paths of the root CA cert and key
   - `--cluster-signing-cert-file`
   - `--cluster-signing-key-file`
+
+You can deny a CSR as an administrator through `kubectl`.
+`kubectl certificate deny rogue-req`
