@@ -118,12 +118,12 @@ In the resources, you can add resourceNames field to further harden which specif
 Create the role using `kubectl create -f engineer-role.yaml`.
 
 To link a user to the role, create another object called RoleBinding.
-`cat john-engineer-binding.yaml`
+`cat engineering-user-role-binding.yaml`
 ```
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: john-engineer-binding
+  name: engineering-user-role-binding
 subjects:
   - kind: User
     name: john
@@ -133,7 +133,7 @@ roleRef:
   name: engineer
   apiGroup: rbac.authorization.k8s.io
 ```
-Create the role binding using `kubectl create -f john-engineer-binding.yaml`
+Create the role binding using `kubectl create -f engineering-user-role-binding.yaml`
 
 Helpful kubectl commands to inspect roles and role bindings.
 ```
@@ -141,8 +141,8 @@ kubectl create role engineer --verb=list --verb=create --verb=delete --resource=
 kubectl get roles
 kubectl get rolebindings
 kubectl describe role engineer
-kubectl create rolebinding engineering-user-binding --role=engineer --user=engineering-user --dry-run=client -o yaml
-kubectl describe rolebinding engineering-user-binding
+kubectl create rolebinding engineering-user-role-binding --role=engineer --user=engineering-user --dry-run=client -o yaml
+kubectl describe rolebinding engineering-user-role-binding
 ```
 
 To check if the current user can access a certain action for a resource use this
@@ -157,6 +157,43 @@ kubectl auth can-i create deployments --as john
 kubectl auth can-i create pods --as john --namespace test
 ```
 
+
+While most resources in kubernetes are namespaced, some resources are cluster scoped.
+For example : nodes, PV, clustersigningrequests, namespaces, clusterroles, clusterrolebindings etc.
+To get an exhaustive list of namespaced and non-namespaced resources run
+```
+kubectl api-resources --namespaced=true
+kubectl api-resources --namespaced=false
+```
+To create RBAC rules for cluster scoped resources or rules for namespaced resources
+across all namespaces you must create ClusterRole and ClusterRoleBinding objects.
+Create a role object `cat cluster-admin-role-with-binding.yaml`
+```
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-admin
+rules:
+  - apigroups: [""]
+    resources: ["nodes"]
+    verbs: ["list","get","create","update","delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admin-role-binding
+subjects:
+  - kind: User
+    name: john
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+```
+To create the resources `kubectl apply -f cluster-admin-role-with-binding.yaml`
 
 -------------------------------------------
 
