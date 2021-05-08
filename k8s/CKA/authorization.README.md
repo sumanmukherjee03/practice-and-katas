@@ -174,9 +174,16 @@ kind: ClusterRole
 metadata:
   name: cluster-admin
 rules:
-  - apigroups: [""]
-    resources: ["nodes"]
-    verbs: ["list","get","create","update","delete"]
+  - apiGroups:
+      - '*'
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - nonResourceURLs:
+      - '*'
+    verbs:
+      - '*'
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

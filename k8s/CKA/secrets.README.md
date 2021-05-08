@@ -111,3 +111,22 @@ spec:
 
 When mounting a secret as a volume, each secret will be available as a separate file in a decoded format in the mounted volume dir,
 ie, /opt/secrets/DB_USER and /opt/secrets/DB_PASSWORD
+
+
+One commonly mounted secret is the docker credentials for pulling private images.
+`docker-registry` is a built in secret type.
+```
+kubectl create secret docker-registry regcred --docker-server=docker-registry-name.io --docker-username=john.doe --docker-password=foobarbaz --docker-email=john.doe@example.com
+```
+This secret can be used in the pod spec like so
+```
+apiVersion: v1
+kind: Pod
+...
+spec:
+  imagePullSecrets:
+  - name: regcred
+  containers:
+  - name: docker-registry-name.io/webapp/webapp:latest
+  ....
+```
