@@ -139,6 +139,8 @@ kubectl get persistentvolume
 kubectl describe persistentvolume pv-vol1
 ```
 
+Persistent volume claim is matched with a persistent volume object based on accessModes, resource requests and also labels if provided.
+You can this use this persistent volume claim in your pod definition to actually use the storage.
 `cat pvc-definition.yaml`
 ```
 apiVersion: v1
@@ -171,10 +173,94 @@ spec:
     - name: webapp
       image: backend-webapp:latest
       volumeMounts:
-      - mountPath: "/opt/data"
+      - mountPath: /opt/data
         name: webapp-vol
   volumes:
     - name: webapp-vol
       persistentVolumeClaim:
         claimName: pv-vol1-claim
+```
+
+
+Persistent volumes on cloud need the EBS or gcloud compute disk id. However that makes it static in nature.
+To be able to provision disk dynamically at runtime we need StorageClass object in kubernetes.
+
+For example `cat sc-definition.yaml`
+```
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: google-storage
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+  replication-type: none
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+```
+The volumeBindingMode set to Immediate means that the volume is created as soon as the PVC is created.
+but if the storage backend is topology constrained then then the volume might get created but the pod cant attach to it and this might result in an unschedulable pod.
+These constraints can be due to node selectors, pod affinity/anti-affinity, taints/tolerations etc.
+The volumeBindingMode: WaitForFirstConsumer ensures that the persistent volume is only created when it is bound to a pod.
+
+Some simple kubectl commands for storage class.
+```
+kubectl get storageclasses
+kubectl get storageclass portworx-vol
+```
+
+Corresponding pvc-definition.yaml file also changes slightly to use the storage class provisioned disk instead of a persistent volume.
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pv-vol-claim
+spec:
+  storageClassName: google-storage
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Mi
+```
+
+
+A storage class internally creates a persistent volume but you got to attach the persistent volume claim to
+the storage class, not the internally created persistent volume.
+For example this is a local provisioned storage class.
+```
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+```
+
+This is the internally provisioned persistent volume as a consequence of creating the storage class above.
+```
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-vol1
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 500Mi
+  local:
+    path: /opt/vol1
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - controlplane
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  volumeMode: Filesystem
 ```
