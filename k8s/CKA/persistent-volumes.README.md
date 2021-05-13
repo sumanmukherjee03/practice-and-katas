@@ -226,6 +226,9 @@ spec:
 ```
 
 
+
+
+
 A storage class internally creates a persistent volume but you got to attach the persistent volume claim to
 the storage class, not the internally created persistent volume.
 For example this is a local provisioned storage class.
@@ -263,4 +266,30 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   volumeMode: Filesystem
+```
+
+
+
+
+
+
+
+volumeBindingMode as WaitForFirstConsumer should be enough to ensure that a volume gets provisioned in a lazy fashion
+and only gets provisioned when the first pod comes up.However, along side that, we can also use allowedTopologies to
+provision volumes in specific zones, for example with EBS or GCE-PD.
+```
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: standard
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-standard
+volumeBindingMode: WaitForFirstConsumer
+allowedTopologies:
+- matchLabelExpressions:
+  - key: failure-domain.beta.kubernetes.io/zone
+    values:
+    - us-central1-a
+    - us-central1-b
 ```
