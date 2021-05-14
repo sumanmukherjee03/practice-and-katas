@@ -10,7 +10,7 @@ First assign eth0 on your machine an IP address from that same network.
 `ip addr add 192.168.1.10 dev eth0`
 
 Say you did this for another machine
-`ip addr add 192.168.1.11 dev eth0`
+`ip addr add 192.168.1.11/24 dev eth0`
 
 To persist these settings across reboots update the settings in `/etc/network/interfaces` file.
 
@@ -126,3 +126,126 @@ search example.com live.example.com
 So, `app` can resolve to both `app.example.com` or `app.live.example.com`.
 
 Tools to query DNS are nslookup and dig. Important to remember though that both of these tools dont query /etc/hosts.
+
+A DNS server used in the kubernetes landscape is coredns. Coredns uses a config file called Corefile.
+The configuration points to /etc/hosts file to load IP to hostname mappings.
+When another server asks coredns to resolve a hostname it returns the IP based on the /etc/hosts file configured in the coredns server.
+
+### Network namespaces
+
+Create 2 network namespaces red and blue.
+```
+ip netns add red
+ip netns add blue
+ip netns
+```
+
+To view interfaces inside the network namespace. Both of these commands do the same thing.
+```
+ip netns exec red ip link
+ip -n red link
+```
+
+Similarly for other things like arp, route etc
+```
+ip netns exec red arp
+ip netns exec red route
+```
+
+You can connect 2 network namespaces using a veth pair, ie a veth interface on each network namespace.
+
+Create a cable with 2 veth devices on each end
+Attach veth devices to corresponding namespaces
+Assign ip address to each veth device
+Bring up each veth device
+```
+ip link add veth-red type veth peer name veth-blue
+ip link set veth-red netns red
+ip link set veth-blue netns blue
+ip -n red addr add 192.168.15.1/24 dev veth-red
+ip -n blue addr add 192.168.15.2/24 dev veth-blue
+ip -n red link set veth-red up
+ip -n blue link set veth-blue up
+ip netns exec red ping 192.168.15.2
+ip netns exec red arp
+```
+You can sever the connection above by deleting one end of the cable (ie, by deleting one veth device) like so
+`ip -n red link del veth-red`
+It automatically delete the other end of the cable, ie the veth-blue.
+
+
+The above is a good way to connect 2 network namespaces. But it doesnt scale well for multiple namespaces.
+Thats when you need a switch. Either the built in linux networking virtual switch Bridge or OpenVSwitch (OVS).
+Bridge is the commonly used switch in docker. A bridge is like an interface device for the host and a switch for the namespaces.
+
+Create a bridge network first
+Bring up the device with the bridge network
+Create a cable with 2 interfaces
+Attach one end of the cable to the network namespace and other end to the bridge network
+Assign ip address to the interface connected to the namespace and bring up that interface
+```
+ip link add v-net-0 type bridge
+ip link set dev v-net-0 up
+ip link add veth-red type veth peer name veth-red-br
+ip link add veth-blue type veth peer name veth-blue-br
+ip link set veth-red netns red
+ip link set veth-red-br master v-net-0
+ip link set veth-blue netns blue
+ip link set veth-blue-br master v-net-0
+ip -n red addr add 192.168.15.1/24 dev veth-red
+ip -n blue addr add 192.168.15.2/24 dev veth-blue
+ip -n red link set veth-red up
+ip -n blue link set veth-blue up
+ip netns exec red ping 192.168.15.2
+ip netns exec red arp
+```
+
+At this point the network namespaces can all talk to each other over the brige.
+However, this is a different network than the host. So, the host interface cant reach the internal network namespaces.
+This is also doable. By assigning an ip address to the interface on the host for the switch, we can reach the namespaces from the host.
+```
+ip addr add 192.168.15.5/24 dev v-net-0
+```
+
+Now from the host you can `ping 192.168.15.1`
+
+However this network on the bridge is internal to the host. A network namespace from the bridge network
+cant ping another host on the outside. For instance say there is a host `192.168.1.4`. The network namespace
+needs a gateway to do that. There are no routes for that in the network namespaces' routing tables.
+The localhost itself can be a router in this case. Because one interface on the localhost has `v-net-0` and the other `eth0`
+ie one interface that connects to the bridge network and one interface that connects to the external LAN network.
+
+
+
+Add a route in the network namespace to route traffic destined for the LAN network via the bridges' `v-net-0` interface
+The blue namespace can only reach the `v-net-0` because it is connected to the bridge via that interface.
+The v-net-0 interface has the IP 192.168.15.5.
+
+But for the namespace to successfully send and receive packets to the external host, we need a NAT of some kind on the host
+that can mask the IP address of outgoing packets destined for the LAN with the host IP instead of the namespace IP.
+This is because the external host 192.168.1.4 would only recognize and know how to respond back to 192.168.1.1 and not 192.168.15.1.
+
+We add a NAT functionality to our host using iptables.
+```
+ip netns exec blue ip route add 192.168.1.0/24 via 192.168.15.5
+iptables -t nat -A POSTROUTING -s 192.168.15.0/24 -j MASQUERADE
+ip netns exec blue ping 192.168.1.4
+```
+
+Finally, from within the namespace you cant reach the internet because there is no default gateway.
+But that can be achieved by making the host as the namesapces' default gateway because the gateway already knows how to reach the internet via the v-net-0 interface.
+The v-net-0 interface has the IP 192.168.15.5.
+```
+ip netns exec blue ip route add default via 192.168.15.5
+ip netns exec blue ping 8.8.8.8
+```
+
+How would a completely external network connect to the network namespaces.
+One option is to expose the internal network to the external network's routing table to be reachable via the host.
+But that's not a scalable solution.
+However, if the external network can reach the host on 192.168.1.1, then another option
+is to forward traffic destined to a specific port of the host to another port on the network namespace.
+This can be achieved via iptables on the host
+```
+iptables -t nat -A PREROUTING --dport 80 --to-destination 192.168.15.2:8080 -j DNAT
+```
