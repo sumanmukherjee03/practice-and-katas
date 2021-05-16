@@ -297,3 +297,35 @@ The output for docker would look like
 `DNAT tcp -- anywhere        anywhere       tcp dpt:8080 to:172.17.0.2:80`
 The DNAT target is used for Destination Network Address Translation, meaning rewrite destination IP address of a packet.
 This is usually used to forward packets coming from outside to a firewall onto a downstream server.
+
+
+
+
+### CNI
+
+Extracting the networking overhead into common programs from different runtime engines like rocket, docker, mesos etc have proven useful for reusable code.
+One such program is `bridge` and like it's name suggests it is used to attach a containers network namespace to the bridge network.
+
+```
+bridge add <container_id> <network_namespace>
+bridge add 7ekjds92ldw /var/run/netns/7ekjds92ldw
+```
+
+The CNI is a set of rules that define how container runtimes needs to solve networking challenges for interoperability across container management systems.
+The bridge program above is a plugin for CNI.
+
+CNI has multiple different plugins like
+  - bridge, vlan, ipvlan etc
+  - IPAM plugins like dhcp, host-local
+  - weave, flannel, cilium, calico etc
+
+However, the docker runtime does not have the same standards as CNI. It is slightly different.
+Which means you cant directly use docker with the CNI plugins mentioned above.
+
+But there are work arounds.
+Create a docker container with a completely isolated network, ie none.
+```
+docker run --network=none nginx
+bridge add 4edkx78h /var/run/netns/4edkx78h
+```
+This is pretty much how kubernetes uses docker.
