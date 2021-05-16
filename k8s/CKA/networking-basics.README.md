@@ -249,3 +249,51 @@ This can be achieved via iptables on the host
 ```
 iptables -t nat -A PREROUTING --dport 80 --to-destination 192.168.15.2:8080 -j DNAT
 ```
+
+
+
+### Docker networking
+
+```
+# Container is not accessible from even inside the host
+docker run --network none nginx
+# Host networking where multiple processes cant listen to the same port on the same host
+docker run --network host nginx
+# Third option is the bridge network where the bridge itself gets an address of 172.17.0.0 by default
+docker run nginx
+```
+
+To list the docker networks
+```
+docker network ls
+```
+What shows in the output above as the `bridge` network is what shows up as `docker0` device
+when you view it on the host via the `ip link` command.
+`ip link add docker0 type bridge` -> docker does something similar to this for creating the bridge network.
+A bridge network is like an interface to the host but like a switch to the internal network namespaces.
+This docker0 interface is usually given the IP 172.17.0.1/16
+When you create a docker image you can view the network namespaces created for the container via `ip netns`.
+You can find the network namespace id of the container via the `NetworkSettings` > `SandboxKey`
+when you run `docker inspect <containerid>`.
+
+Docker attaches one end of the cable that connects the container to the bridge. You can find that via
+`ip link | grep 'master docker0'` --> would look like `veth<containerID_small_hash>@if8`
+The other end of the cable can be found on the network namespace via
+`ip -n <container_network_ns_id> link` --> would look like `eth0@if7`
+The interface within the container gets an internal IP. You can see it via
+`ip -n <container_network_ns_id> addr` --> would look like `172.17.0.3/16`.
+
+Once the nginx image is up and running internally you can access it via `curl http://172.17.0.3:80`
+but you cant access it from outside the host. For that you need port forwarding from the host to the container.
+`docker run -p 8080:80 nginx` --> listen to 8080 on the host and forward traffic to port 80 on the container.
+At this point you can curl from outside the host `curl http://192.168.1.10:8080`
+This is achieved internally by creating a NAT rule in the nat tables prerouting chain for iptables.
+Docker does it the same way except that it adds the rule to the DOCKER chain in nat table.
+`iptables -t nat -A DOCKER -j DNAT --dport 8080 --to-destination 80`.
+
+You can see the iptable rules that docker creates via
+`iptables -nvL -t nat`.
+The output for docker would look like
+`DNAT tcp -- anywhere        anywhere       tcp dpt:8080 to:172.17.0.2:80`
+The DNAT target is used for Destination Network Address Translation, meaning rewrite destination IP address of a packet.
+This is usually used to forward packets coming from outside to a firewall onto a downstream server.
