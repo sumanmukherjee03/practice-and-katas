@@ -72,6 +72,21 @@ default        192.1.2.1   255.255.255.0   UG      0       0    0    eth0       
 
 
 
+Example 3
+----------------
+`route -n`
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         172.17.0.1      0.0.0.0         UG    0      0        0 ens3       | -> genmask 0.0.0.0 is used in the default gateway as the netmask
+10.244.0.0      0.0.0.0         255.255.255.0   U     0      0        0 cni0       | -> gateway of 0.0.0.0 means that the host doesnt need a routing table for this network and doesnt need a gateway to reach this network
+10.244.1.0      172.17.0.49     255.255.255.0   UG    0      0        0 ens3
+172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 ens3
+172.18.0.0      0.0.0.0         255.255.255.0   U     0      0        0 docker0
+
+
+
+
+
 ..... Continuing on from earlier
 In our example of a machine from `192.168.1.0/24` network wanting to connect to another machine on `192.168.2.0/24`
 just having the routes defined is not enough for bidirectional communication. ip routes do not forward traffic by default.
@@ -329,3 +344,15 @@ docker run --network=none nginx
 bridge add 4edkx78h /var/run/netns/4edkx78h
 ```
 This is pretty much how kubernetes uses docker.
+
+
+### Commands
+These are some useful commands to help with debugging network problems
+
+```
+netstat -tupl
+netstat -natupl
+ifconfig -a
+ifconfig ens3
+route get <destination>
+```

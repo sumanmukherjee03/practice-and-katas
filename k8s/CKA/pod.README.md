@@ -7,6 +7,11 @@ Since containers in the same pod share the same network namespace, they can talk
 To run a single standalone pod for example
 `kubectl run nginx --image nginx --restart=Never`
 
+To run a single standalone pod in a specific node for inspecting things
+```
+kubectl run ubuntu --image ubuntu --overrides='{"apiVersion": "v1", "spec": {"template": {"spec": {"nodeSelector": {"kubernetes.io/hostname": "node01"}}}}}' --command sleep 300
+```
+
 `kubectl get pods`
 
 The status of the pod changes from `ContainerCreating` -> `Running`
@@ -108,8 +113,8 @@ spec:
           value: green
 ```
 
-There are 3 ways to pass env vars into kubernetes pod spec - key/value pair, config maps, secret keys.
-This is the simplest way to pass env vars into a kubernetes pod definition.
+There are 4 ways to pass env vars into kubernetes pod spec - key/value pair, config maps, secret keys, pre populated values from fields.
+Here we are using two of the simplest way to pass env vars into a kubernetes pod definition.
 ```
 apiVersion: v1
 kind: Pod
@@ -122,6 +127,11 @@ spec:
       env:
         - name: COLOR
           value: green
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
 ```
 
 Below is a crude example of a pod-definition.yaml with init containers
