@@ -355,4 +355,5 @@ netstat -natupl
 ifconfig -a
 ifconfig ens3
 route get <destination>
+nslookup mysql.db.svc.cluster.local
 ```

@@ -143,3 +143,136 @@ Weave is deployed as daemons on each node in the cluster or as pods on each node
 
 To get the weave peers
 `kubectl get pods -n kube-system | grep 'weave-net'`
+
+
+
+
+
+### Kubernetes services and kube-proxy
+Kubernetes services are not any specific resource, but just IPs and rules allocated to forward traffic to pods
+whether from other pods inside the cluster or from some external source outside the cluster.
+
+The component in each node that is responsible for creating the IP addresses and forwarding rules is `kube-proxy`.
+It is not just an IP. It is the IP and port combination whether that's ClusterIP for in-cluster communication
+or NodePort for external communication. Iptable rules get created and deleted whenever a service gets created or deleted.
+
+When configuring the `kube-proxy` service the `--proxy-mode` can be set to one of userspace|ipvs|iptables.
+iptables is the default mode.
+You can find the `Proxier` mode in the logs of the kube-proxy pod.
+Or inspect the pod in yaml format and get it's config and cat the config from inside the pod to see if the mode has been overriden.
+
+Lets say there's a pod called backend-app with an ip `10.244.3.3` and we created a service which got an ip `10.97.111.21`.
+As you can see the IPs of the pod seem to be in a different range as compared to the service IP range.
+
+The service CIDR range need to be specified when starting up the `kube-apiserver` component.
+  - via the component `--service-cluster-ip-range <CIDR range|default - 10.0.0.0/24>`
+
+This IP range provided for the services must not overlap with the pod networking CIDR range provided in the CNI plugin.
+If it is a weave network, you can find that CIDR range by checking the weave pod logs
+`kubectl logs <pod-name> -n kube-system -c weave | grep ipalloc`
+
+To see the rules created in the iptables NAT table output
+```
+iptables -L -t net | grep backend-app-service
+
+KUBE-SVC-ABCDEFGH  tcp  ---  anywhere  10.97.111.21    /* default/backend-app-service: cluster IP */   tcp  dpt:8080
+DNAT               tcp  ---  anywhere  anywhere        /* default/backend-app-service: */              tcp  to:10.244.3.3:8080
+KUBE-SEP-PQRSTXYV  tcp  ---  anywhere  anywhere        /* default/backend-app-service: */              tcp  dpt:8080
+```
+These rules above comments on them with the name of the service.
+The first 2 rules mean any traffic coming to the service IP 10.97.111.21 on port 8080 should get forwarded
+to the pod with IP 10.244.3.3 on port 8080.
+Of course this is a cluster IP rule. The rules will be slightly different for NodePort where any traffic coming to
+the node IP on a certain port will get forwarded to the pod IP on a specified port.
+
+And lastly the logs for kube-proxy are generally visible in `/var/log/kube-proxy.log`
+
+
+
+
+
+### Kubernetes DNS
+There is DNS records of the nodes themselves which is managed externally either through your own DNS server
+or via a cloud resource like route53.
+There is also DNS entries for pods and finally DNS entries of services.
+
+Kubernetes deploys a DNS server for in-cluster DNS resolution - `coredns`. Pre-1.12 kubernetes used to use kube-dns instead of coredns.
+
+If a pod is trying to reach a service in the same namespace then the DNS is simply the name of the service,
+ie for example `curl http://backend-service`.
+If a pod is trying to reach a service in a separate namespace then the DNS is the <service-name>.<namespace-name>.
+ie for example `curl http://backend-service.prod`. So services in a namespace are grouped in a subdomain with the namespaces' name.
+
+All services are in turn grouped under another subdomain called `svc`.
+ie `curl http://backend-service.prod.svc`.
+
+Finally all services and pods are grouped under a root domain called `cluster.local`.
+So the FQDN of a service will be `curl http://backend-service.prod.svc.cluster.local`.
+
+DNS entries are not created for pods by default but they can be enabled.
+If enabled, a pod with an ip of 10.244.20.11 will have a DNS record of
+`curl http://10-244-20-11.prod.pod.cluster.local`.
+
+
+
+The PODS in the cluster have their `/etc/resolv.conf` files pointing to the coredns server so that
+other pod and service DNS records can be resolved. The DNS server stores service names to pod IP mapping
+for service DNS entries and dashed ip name to ip mapping for pod DNS entries.
+
+The coredns pods run an executable called `./Coredns` with configuration contained in a file called Corefile.
+An example Corefile would look like this
+```
+.:53 {
+  errors
+  health
+  kubernetes cluster.local in-addr.arpa ip6.arpa {
+    pods insecure
+    upstream
+    fallthrough in-addr.arpa ip6.arpa
+  }
+  prometheus :9153
+  proxy . /etc/resolv.conf
+  cache 30
+  reload
+}
+```
+The directives like `errors`, `health`, `kubernetes` etc are all plugins of coredns.
+The plugin that makes coredns work with kubernetes is `kubernetes` and as you can see that's where the top level
+domain name for the cluster is being set as arguments passed to that plugin.
+In the options passed to the kubernetes plugin, the `pods` option is what tells coredns kubernetes plugin to create
+DNS records for pods.
+The Corefile of coredns is passed as a configmap to the coredns deployment.
+You can get the configmap via
+`kubectl get configmap coredns -n kube-system -o yaml`.
+Everytime a new pod or service is created or deleted the DNS entries are created or deleted simultaneously by coredns.
+
+When coredns is deployed in the cluster it creates a `service` by the name of `kube-dns` by default.
+It is the IP of this service which is configured as the `nameserver` in `/etc/resolv.conf` on the PODs.
+This is done by the kubelet when it creates a pod in the node. The config file on the kubelet has the required options set.
+`cat /var/lib/kubelet/config.yaml`
+```
+...
+clusterDNS:
+  - 10.96.0.10
+clusterDomain: cluster.local
+...
+```
+
+The `/etc/resolv.conf` file in the pod looks similar to this
+```
+nameserver 10.96.0.10
+search default.svc.cluster.local svc.cluster.local cluster.local
+```
+
+So, from within a pod if you run `host backend-service` it will return the FQDN of the service.
+Because of the `search` directive set in the pods resolv.conf file.
+However the search entry is only for service. The DNS for a pod cant be resolved via a shortname.
+For that you need to enter the full FQDN like `host 10-244-20-11.prod.pod.cluster.local`
+
+
+
+Some helpful commands to get the coredns config
+```
+kubectl get deployment coredns -n kube-system -o yaml
+kubectl get configmap coredns -n kube-system -o yaml
+```

@@ -201,3 +201,29 @@ spec:
         capabilities:
           add: ["MAC_ADMIN", "SYS_TIME"]
 ```
+
+
+
+-------------------------------------------------------------
+
+### sample pod definition that can run a web service
+
+`cat pod-definition.yaml`
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webapp-pod
+  labels:
+    app: webapp
+spec:
+  containers:
+  - args:
+      - -c
+      - while true; do echo -e "HTTP/1.1 200 OK\n\n This is a sample web server!" | nc -l -p 80 -q 1; done
+    command:
+      - /bin/sh
+    image: nicolaka/netshoot
+    name: webapp
+```
