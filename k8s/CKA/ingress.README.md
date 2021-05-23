@@ -36,7 +36,8 @@ Nginx and GCP loadbalancer is maintained by the kubernetes team.
 ### ingress controller
 
 This is an example of an ingress controller deployment for nginx.
-You need a configmap first to manage the configuration for the nginx server and you can mount that
+You need a configmap first to manage the configuration for the nginx server and that is passed along to the binary when starting the nginx server.
+This configmap contains nginx specific configuration like timeouts.
 For the nginx deployment we use a special image from kubernetes.
 The container the POD_NAME and POD_NAMESPACE env vars to operate.
 Expose the ports 80 and 443 via a service.
@@ -51,6 +52,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: nginx-configuration
+data:
+  proxy-connect-timeout: "10"
+  proxy-read-timeout: "120"
+  proxy-send-timeout: "120"
 
 ---
 
@@ -146,6 +151,8 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: ingress-online-store
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
     - host: accessories.bestdealscom
@@ -186,6 +193,30 @@ spec:
 REMEMBER : If none of the paths above match, the ingress resource is gonna forward the traffic to `default-http-backend:80`.
 So, we should not forget to deploy such a service.
 If you dont have a hostname it will match anything (or wildcard) for the hostname.
+Take note of the annotation `nginx.ingress.kubernetes.io/reqrite-target` which can be used to rewrite urls.
+
+Here's another example with a rewrite
+```
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  name: rewrite
+  namespace: default
+spec:
+  rules:
+  - host: rewrite.bar.com
+    http:
+      paths:
+      - backend:
+          serviceName: http-svc
+          servicePort: 80
+        path: /something(/|$)(.*)
+```
+Here rewrite.bar.com/something rewrites to rewrite.bar.com/ and rewrite.bar.com/something/new rewrites to rewrite.bar.com/new
+
+More on nginx ingress controller here : https://kubernetes.github.io/ingress-nginx/examples/
 
 
 Some helpful kubectl commands for ingress resources
