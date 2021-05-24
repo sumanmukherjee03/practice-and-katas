@@ -52,6 +52,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: nginx-configuration
+  namespace: ingress-namespace
 data:
   proxy-connect-timeout: "10"
   proxy-read-timeout: "120"
@@ -59,10 +60,11 @@ data:
 
 ---
 
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx-ingress-controller
+  namespace: ingress-namespace
 spec:
   replicas: 1
   selector:
@@ -73,6 +75,7 @@ spec:
       labels:
         name: nginx-ingress
     spec:
+      serviceAccount: nginx-ingress-serviceaccount
       containers:
         - name: nginx-ingress-controller
           image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.21.0
@@ -100,6 +103,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nginx-ingress
+  namespace: ingress-namespace
 spec:
   type: NodePort
   ports:
@@ -119,6 +123,67 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  name: nginx-ingress-serviceaccount
+  namespace: ingress-namespace
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nginx-ingress-role
+  namespace: ingress-namespace
+  labels:
+    app.kubernetes.io/name: nginx-ingress
+    app.kubernetes.io/part-of: nginx-ingress
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - pods
+  - secrets
+  - namespaces
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resourceNames:
+  - ingress-controller-leader-nginx
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  verbs:
+  - get
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nginx-ingress-role-binding
+  namespace: ingress-namespace
+  labels:
+    app.kubernetes.io/name: nginx-ingress
+    app.kubernetes.io/part-of: nginx-ingress
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: nginx-ingress-role
+subjects:
+- kind: ServiceAccount
   name: nginx-ingress-serviceaccount
 ```
 
@@ -147,7 +212,7 @@ This one is a more complicated example for an ingress resource with rules and pa
 `cat ingress-online-store.yaml`
 
 ```
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress-online-store
