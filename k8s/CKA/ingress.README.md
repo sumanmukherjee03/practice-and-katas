@@ -155,7 +155,7 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-    - host: accessories.bestdealscom
+    - host: accessories.bestdeals.com
       http:
         paths:
           - path: /watches
@@ -170,7 +170,7 @@ spec:
             backend:
               serviceName: belt-store-service
               servicePort: 8082
-    - host: clothes.bestdealscom
+    - host: clothes.bestdeals.com
       http:
         paths:
           - path: /shirts
@@ -193,7 +193,11 @@ spec:
 REMEMBER : If none of the paths above match, the ingress resource is gonna forward the traffic to `default-http-backend:80`.
 So, we should not forget to deploy such a service.
 If you dont have a hostname it will match anything (or wildcard) for the hostname.
-Take note of the annotation `nginx.ingress.kubernetes.io/reqrite-target` which can be used to rewrite urls.
+Take note of the annotation `nginx.ingress.kubernetes.io/reqrite-target` which can be used to rewrite urls before forwarding it to the backend service.
+Here the urls are getting rewritten before being forwarded to the services.
+  - accessories.bestdeals.com/watches rewrites to <watch-store-service>:8080/
+  - accessories.bestdeals.com/hats rewrites to <hat-store-service>:8081/
+  - accessories.bestdeals.com/belts rewrites to <belt-store-service>:8082/
 
 Here's another example with a rewrite
 ```
