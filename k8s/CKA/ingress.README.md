@@ -82,6 +82,7 @@ spec:
       args:
         - /nginx-ingress-controller
         - --configmap=$(POD_NAMESPACE)/nginx-configuration
+        - --default-backend-service=<namespace_of_default_backend_service>/default-http-backend
       env:
         - name: POD_NAME
           valueFrom:
@@ -255,14 +256,18 @@ spec:
               serviceName: skirt-store-service
               servicePort: 8086
 ```
-REMEMBER : If none of the paths above match, the ingress resource is gonna forward the traffic to `default-http-backend:80`.
+REMEMBER : If none of the paths above match, the ingress resource is gonna forward the traffic to `<namespace_of_default_backend_service>/default-http-backend:80`.
+If you do not pass that cli option to the nginx ingress controller binary it will always default to the `default-http-backend:80` service:port in the default namespace.
 So, we should not forget to deploy such a service.
+
 If you dont have a hostname it will match anything (or wildcard) for the hostname.
+
 Take note of the annotation `nginx.ingress.kubernetes.io/reqrite-target` which can be used to rewrite urls before forwarding it to the backend service.
 Here the urls are getting rewritten before being forwarded to the services.
   - accessories.bestdeals.com/watches rewrites to <watch-store-service>:8080/
   - accessories.bestdeals.com/hats rewrites to <hat-store-service>:8081/
   - accessories.bestdeals.com/belts rewrites to <belt-store-service>:8082/
+
 
 Here's another example with a rewrite
 ```
