@@ -144,6 +144,12 @@ curl -fsSLo weave-daemonset.yaml "https://cloud.weave.works/k8s/net?k8s-version=
 kubectl apply -f weave-daemonset.yaml
 ```
 
+Another alternative to using calico is to use flannel for pod networking.
+However, flannel does not support NetworkPolicy in kubernetes.
+```
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/2140ac876ef134e0ed5af15c65e414cf26827915/Documentation/kube-flannel.yml
+```
+
 NOTES
 ----------------
 Some trivial commands for getting OS/network related information
