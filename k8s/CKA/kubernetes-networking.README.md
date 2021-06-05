@@ -33,8 +33,8 @@ ip link set dev v-net-0 up
 
 Lets give the bridge devices in each node an ip address
 `ip addr add 10.244.1.1/24 dev v-net-0` -> on node01
-`ip addr add 10.244.2.1/24 dev v-net-0` -> on node01
-`ip addr add 10.244.3.1/24 dev v-net-0` -> on node01
+`ip addr add 10.244.2.1/24 dev v-net-0` -> on node02
+`ip addr add 10.244.3.1/24 dev v-net-0` -> on node03
 
 Next we create a script that runs every time a container comes up on a node or gets deleted from a node- `cat container-net.sh`
 ```
@@ -117,7 +117,7 @@ picked from `--cni-bin-dir` to run the script for network configuration when a c
 
 If the conf dir is not listed search in `/etc/cni/net.d`. That would be the default location.
 
-For IP Address Management or IPAM CNI comes with 2 builtin plugins - DHCP and host-local
+For IP Address Management (IPAM) CNI comes with 2 builtin plugins - DHCP and host-local
 which can handle unique ip address allocation to the pods.
 The cni configuration file (`cat /etc/cni/net.d/net-script.conf`) has a section for ipam where
 the plugin that does IPAM is configured under the key called `type`.

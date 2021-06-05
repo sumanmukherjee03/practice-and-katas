@@ -17,7 +17,7 @@ If the node comes up online after the pod eviction timeout was over, it comes up
 The better way to upgrade a node is to start by draining the node.
 `kubectl drain node01 --ignore-daemonsets`.
 This evicts pods on a node and are recreated on other nodes.
-Along with that the node is also marked as cordoned or unschedulable.
+Along with that, the node is also marked as cordoned or unschedulable.
 
 If there are pods on this node that are not controlled by a replica set or deployment, then the node needs to be drained by force.
 But remember, that standalone pod running in that node will be lost forever.
@@ -28,7 +28,7 @@ Once you perform the upgrade on that cordoned node and restart it, you need to u
 
 If you want to debug things on a node, then you can cordon it.
 `kubectl cordon node01`.
-This doesnt evict the pods on that node but simply does not schedule any new pods on it.
+This doesnt evict the existing pods on that node but simply does not schedule any new pods on it.
 
 ### backup
 
@@ -40,11 +40,11 @@ OR
 
 You can backup the etcd cluster itself
 When you configure etcd in the master, you choose a data directory `--data-dir=/var/lib/etcd` .
-That's the dir you can choose to backup with your backup tool.
+That's the dir you can choose to backup etcd with your backup tool.
 
 OR
 
-You can take a snapshot of the etcd database
+You can take a snapshot of the etcd database.
 
 To interact with etcd server via etcdctl you can setup an alias to make life easier
 The paths for the certs and keys here are just examples. You can find them from describing the etcd pod
@@ -79,6 +79,7 @@ Upgrade can be planned and performed with kubeadm
 kubeadm upgrade plan
 kubeadm upgrade apply v1.20.0
 ```
+
 Remember, kubeadm does not install or upgrade kubelets. So, that needs to be done manually.
 kubeadm will upgrade all the controlplane components (master components) for us.
 
