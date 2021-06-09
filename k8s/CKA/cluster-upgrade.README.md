@@ -38,17 +38,21 @@ You can also backup your cluster using velero from HeptIO which can backup the c
 
 OR
 
-You can backup the etcd cluster itself
+You can backup the data of the etcd cluster itself by backing up the dir where etcd stores it's data.
 When you configure etcd in the master, you choose a data directory `--data-dir=/var/lib/etcd` .
 That's the dir you can choose to backup etcd with your backup tool.
+This however runs the risk that when the etcd cluster is being restored
+if the IPs of the nodes are different, the state of the cluster wont match the IP of the nodes and can cause problems.
+This is especially true in the case of a HA etcd cluster.
 
 OR
 
 You can take a snapshot of the etcd database.
 
-To interact with etcd server via etcdctl you can setup an alias to make life easier
-The paths for the certs and keys here are just examples. You can find them from describing the etcd pod
-or by looking at the etcd systemd file which is used to run the etcd service.
+To interact with etcd first you need a etcd-client - `apt-get install -y etcd-client`.
+To interact with etcd server via etcdctl you can setup an alias to make life easier.
+The paths for the certs and keys here are just examples.
+You can find them from describing the etcd pod or by looking at the etcd systemd file which is used to run the etcd service.
 
 `alias etcdctl='ETCDCTL_API=3 etcdctl --cert /etc/kubernetes/pki/etcd/server.crt --cacert /etc/kubernetes/pki/etcd/ca.crt --key /etc/kubernetes/pki/etcd/server.key --endpoints="https://127.0.0.1:2379"'`
 
@@ -97,6 +101,7 @@ apt-cache madison kubeadm
 
 1. First upgrade kubeadm and then upgrade the controlplane
 ```
+kubeadm version
 apt-get -y -qq update
 kubectl version --short
 apt install -y kubeadm=1.20.0-00
@@ -126,7 +131,10 @@ Once, the master is done, it's time to upgrade the worker nodes.
 1. Drain worker node. Remember this command needs to be run either from master or from outside the cluster.
 `kubectl drain node01 --ignore-daemonsets`
 
-2. Upgrade worker node - kubeadm, kubelet versions, upgrade node config so that the kubelet can pick up the new config and then restart kubelet
+2. Upgrade worker node
+Install the proper version of kubeadm and kubelet.
+Upgrade node config so that the kubelet can pick up the new configuration with the proper version.
+Only after that restart the kubelet service.
 ```
 apt-get -y -qq update
 apt install -y kubeadm=1.20.0-00

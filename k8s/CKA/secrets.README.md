@@ -105,7 +105,7 @@ spec:
           readOnly: true
   volumes:
     - name: app-secrets-volume
-      configMap:
+      secret:
         name: app-secrets
 ```
 
