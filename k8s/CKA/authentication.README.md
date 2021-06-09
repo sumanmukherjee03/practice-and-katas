@@ -7,7 +7,7 @@ There are different ways to authenticate with the kubernetes server
   4. external auth providers like LDAP/SAML etc
   5. service accounts - for machines
 
-While kubernetes does not natively create users, it can create and manage serviceaccounts.
+While Kubernetes does not natively create users, it can create and manage serviceaccounts.
 
 ```
 kubectl create serviceaccount sa1
@@ -18,7 +18,7 @@ All user access is managed by the kube-apiserver.
 
 ### basic auth (with username/password or bearer token based)
 
-For basic auth, you can have a csv file with password/username/userid and use that static file as the source of authentication.
+For basic auth, you can have a csv file with `password,username,userid` and use that static file as the source of authentication.
 The file has 3 columns `password,username,userid`. This file is passed as an option to the kube-apiserver.
 
 For example `cat /etc/systemd/system/kube-apiserver.service`
@@ -50,22 +50,25 @@ spec:
 ```
 The change to this file will automatically restart the kube-apiserver
 
+Essentially look for the option `--basic-auth-file` passed to the `kube-apiserver`.
+
 While authenticating pass the basic auth info to the api
 `curl -v -k -u "<username>:<password>" https://master-node-ip:6443/api/v1/pods`
 
 You can also have a group in the csv file to assign users to a group.
 
-Similar to a static username/password file, you can also have a credentials file with username/tokens.
+Similar to a static username/password/userid file, you can also have a credentials file with username/tokens/userid instead.
 While authenticating pass the bearer token info to the api
 `curl -v -k -H "Authorization: Bearer <token>" https://master-node-ip:6443/api/v1/pods`
 
 In a kubeadm setup consider volume mounting this static credentials file.
 Here's a more detailed setup.
 
-`cat /tmp/credentials/user-credentials.csv`
+For example - `cat /tmp/credentials/user-credentials.csv`
 ```
 welcome2kube,john_doe,uuid001
 ```
+The format of the file above is <password>,<username>,<userid>
 
 For example `cat /etc/kubernetes/manifests/kube-apiserver.yaml`
 ```
@@ -169,7 +172,7 @@ Kubernetes needs at least one certificate authority for the cluster to generate 
 You can have more than one CA - one for all the components of the cluster and one specifically for etcd.
 If you have a separate CA for etcd then use that to sign the etcd server certs and also the kube-apiserver client certs used for talking to etcd.
 
-But for conveneince lets assume we have just one CA. The CA also has it's own cert and key, say ca.cert and ca.key.
+But for convenience lets assume we have just one CA. The CA also has it's own cert and key, say ca.cert and ca.key. These are also referred to as the root certs.
 
 
 COMMANDS TO GENERETE CERTS :
@@ -188,8 +191,8 @@ Client certs for user or kubectl
     Next we generate the client key and certs for the admin user
     The subject name CN in the csr is the name the kubectl client authenticates with.
     So, in audit logs this is the name we will see. However, the name can be anything.
-    While signing use the ca.crt and ca.key instead of self signing the crt. That's the main difference from the commands above for generating the ca.crt.
-    Also, when generating the csr, remember to mention the group that this kube-admin user belongs to with `"/O=system:masters"` in the `-subj` parameter.
+    While signing, use the ca.crt and ca.key instead of self signing the crt. That's the main difference from the commands above for generating the ca.crt.
+    Also, when generating the csr, remember to mention the group that this kube-admin user belongs to, with something like `"/O=system:masters"` in the `-subj` parameter.
     This `system:masters` group should already exist in the kubernetes cluster with admin privileges.
     ```
     openssl genrsa -out admin.key 2048
@@ -200,11 +203,7 @@ Client certs for user or kubectl
     This client cert and key generated for the kube-admin and the CA cert can be used when making api calls to the kube-apiserver later on like so
     `curl https://kube-apiserver:6443/api/v1/pods --key admin.key --cert admin.crt --cacert ca.crt`.
 
-    Similarly generate all the other client certificats. Only difference from the above client certs and keys being
-    that the names should be prefixed with `system:` in the `CN` section of the `-subj` parameter.
-    So, `CN=system:kube-scheduler` , `CN=system:kube-controller-manager` , `CN=system:kube-proxy` and so on.
-
-    This is one way.The other way is to move all this to `kube-config.yaml` and use it via kubectl
+    This is one way of using the client certs. The other way is to move all this to `kube-config.yaml` and use it via kubectl
     ```
     apiVersion: v1
     kind: Config
@@ -219,6 +218,10 @@ Client certs for user or kubectl
           client-certificate: admin.crt
           client-key: admin.key
     ```
+
+    Similarly generate all the other client certificats. Only difference from the above client certs and keys being
+    that the names should be prefixed with `system:` in the `CN` section of the `-subj` parameter.
+    So, `CN=system:kube-scheduler` , `CN=system:kube-controller-manager` , `CN=system:kube-proxy` and so on.
 
 ETCD server certs
     Here's the commands to generate the certs for etcd-server.
@@ -292,7 +295,7 @@ kube-apiserver certs
     It's important to note that the kube-apiserver acts as a client when talking to the kubelet and etcd.
     As such we need to generate certs for kube-apiserver to work as client certs for talking to etcd cluster and kubelet.
     The process would be similar to the above except for that the alternate names are not going to be needed.
-    Lets say we call these files `apiserver-etcd-client.crt` and `apiserver-etcd-client.key`.
+    Lets say we call these files `apiserver-etcd-client.crt` and `apiserver-etcd-client.key` and `apiserver-kubelet-client.crt` and `apiserver-kubelet-client.key`.
 
     If you had a non kubeadm setup then `cat /etc/systemd/system/kube-apiserver.service`
     ```
@@ -308,8 +311,8 @@ kube-apiserver certs
       --etcd-keyfile=/var/lib/kubernetes/apiserver-etcd-client.key \
       --etcd-servers=https://127.0.0.1:2379 \
       --kubelet-certificate-authority=/var/lib/kubernetes/ca.crt \
-      --kubelet-client-certificate=/var/lib/kubernetes/apiserver-etcd-client.crt \
-      --kubelet-client-key=/var/lib/kubernetes/apiserver-etcd-client.key \
+      --kubelet-client-certificate=/var/lib/kubernetes/apiserver-kubelet-client.crt \
+      --kubelet-client-key=/var/lib/kubernetes/apiserver-kubelet-client.key \
       --kubelet-https=true \
       --client-ca-file=/var/lib/kubernetes/ca.crt \
       --tls-cert-file=/var/lib/kubernetes/apiserver.crt \
@@ -319,7 +322,7 @@ kube-apiserver certs
     ```
     The api server needs the ca.crt to verify it's client. Also, note it is the same ca.crt that is passed as an option
     for the kube-apiserver to verify the server certs of the etcd cluster and the kubelets.
-    Not how the client certificates are separate for the kube-apiserver here.
+    Note how the client certificates are separate for the kube-apiserver here.
 
 kubelet certs
     The certs and keys for the kubelets will be different on each node. They need the node name as part of the certificate name.
@@ -373,7 +376,7 @@ KUBECTL COMMANDS TO SIGN CERTIFICATES
 ___________________________________________
 
 Assume that a new user has generated a certificate `openssl genrsa -out john.key 2048`.
-Then creates a CSR `openssl req -new -key john.key -subj "/CN=john" -out john.csr`
+Then he creates a CSR `openssl req -new -key john.key -subj "/CN=john" -out john.csr`
 He then sends that CSR to an admin who has to get it signed by the kubernetes CA.
 
 The admin creates `john-csr.yaml` with the base64 encoded value of the CSR `cat john.csr | base64`

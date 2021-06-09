@@ -88,6 +88,6 @@ and a node is not found to place the pod on, then the pod will not be placed at 
 before the nodes were labelled or affinity rules were applied, those will not be evicted.
 
 Another node affinity type to come in the future is `requiredDuringSchedulingRequiredDuringExecution`
-which will evict pods from nodes which dont satify the affinity requirements.
+which will evict pods from nodes that don't satisfy the affinity requirements.
 
 You can learn more about the complex rules of node affinity here : https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
