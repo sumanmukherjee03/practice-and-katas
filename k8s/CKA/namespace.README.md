@@ -8,7 +8,7 @@ kube-public is the namespace where resources that should be made available to al
 
 You can have multiple namespaces in the cluster.
 To reach db pod in the same namespace you can reach via the dns `db-service`.
-However, to reach a DB service in another namespace, say in database namespace, you can reach via
+However, to reach a DB service in another namespace, say in `database` namespace, you can reach via
 `db-service.database.svc.cluster.local`.
 
 In this DNS above, the `cluster.local` is the default domain name of the kubernetes cluster.

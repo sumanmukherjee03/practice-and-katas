@@ -9,7 +9,7 @@ Docker stores data in the host filesystem within
   - volumes
 
 In docker there are 2 kinds of volumes - volume mount and bind mount.
-"Volume mount" mounts a created volume in docker into the docker container
+"Volume mount" mounts a volume created in docker into the docker container
 where as a "bind mount" mounts a host directory into the docker container.
 
 ```
@@ -25,8 +25,10 @@ docker run -v /data/mysql:/var/lib/mysql mysql
 docker run -mount type=bind,src=/data/mysql,dst=/var/lib/mysql mysql
 ```
 
-The thing that manages the layered file system architecture, moving layers, copy on write for layers etc is storage drivers.
-Different docker storage drivers available for docker are :
+The thing that manages the layered file system architecture, moving layers, copy on write for layers etc, all of which are used for building docker images is storage drivers.
+These storage drivers are not what manages volumes in docker. It is different to storage drivers.
+Storage drivers are only for image layers.
+Different storage drivers available for docker are :
   - aufs : default for ubuntu
   - device mapper : could be the default for centos, rhel
   - btrfs
@@ -79,7 +81,8 @@ spec:
 This form of volume mount isnt useful in a cluster though because the directory is not being shared across multiple hosts.
 
 To fix this in aws for instance you could store the data in ebs volumes by doing something like this.
-Remember however that ebs volumes are zone specific. In kubernetes that is accounted for with allowed topologies.
+Remember however that ebs volumes are zone specific. In kubernetes that is accounted for with allowed topologies, as in node affinity for particular zones.
+However, this is pre-provisioned storage in ebs, for example something created with terraform.
 ```
 apiVersion: v1
 kind: Pod
@@ -102,12 +105,13 @@ spec:
         type: gp2
 ```
 
-To get away from the users having to define storage in pod definition files and manage storage more centrally
+To get away from the users having to define storage in pod definition files and to manage storage more centrally
 persistent volumes is used. Users can then carve out a chunk of storage from these centrally managed storage.
 The access modes are:
   - ReadWriteOnce : the volume can be mounted as read-write by a single node
   - ReadOnlyMany : the volume can be mounted read-only by many nodes
   - ReadWriteMany : the volume can be mounted as read-write by many nodes
+Persistent volumes are meant to be a cluster wide resource and are hence not namespaced.
 
 For example `cat pv-definition.yaml`
 ```
@@ -130,8 +134,10 @@ To create the persistent volume `kubectl create -f pv-definition.yaml`
 
 The persistent volume is not deleted by default when the claim is deleted.
 However that can be controlled with the `persistentVolumeReclaimPolicy` field.
-The valid values are `Retain`, `Recycle`, `Delete`. The Recycle is an useful option as it wipes out the data
-and frees up the volume again to be reclaimed.
+The valid values are `Retain`, `Recycle`, `Delete`. `Recycle` is an useful value for reclaim policy as it wipes out the data
+and frees up the volume again to be reclaimed by another pod.
+Important to note that the EBS volume is not created by some kubernetes cloud provisioner, rather it is pre-created with something like terraform.
+Only the use of the ebs volume is managed through a persistent volume here.
 
 Useful commands to inspect persistent volumes
 ```
@@ -147,6 +153,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: pv-vol1-claim
+  namespace: default
 spec:
   accessModes:
     - ReadWriteMany
@@ -162,12 +169,13 @@ kubectl describe persistentvolumeclaim pv-vol1-claim
 kubectl delete persistentvolumeclaim pv-vol1-claim
 ```
 
-Persistent volume claims can be used in pods like so :
+Finally, persistent volume claims can be used in pods like so :
 ```
 apiVersion: v1
 kind: Pod
 metadata:
   name: webapp
+  namespace: default
 spec:
   containers:
     - name: webapp
@@ -181,7 +189,11 @@ spec:
         claimName: pv-vol1-claim
 ```
 
+Important to remember that PersistentVolumeClaim can be a namespaced resource.
+If a pvc is deleted but it is attached to an active pod, the pvc isnt immediately deleted.
+Instead the deletion is postponed until the pod it is currently attached to has been removed.
 
+--------------------------------------------------
 Persistent volumes on cloud need the EBS or gcloud compute disk id. However that makes it static in nature.
 To be able to provision disk dynamically at runtime we need StorageClass object in kubernetes.
 
@@ -199,10 +211,11 @@ reclaimPolicy: Delete
 allowVolumeExpansion: true
 volumeBindingMode: Immediate
 ```
-The volumeBindingMode set to Immediate means that the volume is created as soon as the PVC is created.
-but if the storage backend is topology constrained then then the volume might get created but the pod cant attach to it and this might result in an unschedulable pod.
+The `volumeBindingMode` set to `Immediate` means that the volume is created as soon as the PVC is created.
+But if the storage backend is topology constrained, then the volume might get created but a pod cant attach to it and this might result in an unschedulable pod.
+For example a pod created on a node in one zone cant attach to a volume created in another zone.
 These constraints can be due to node selectors, pod affinity/anti-affinity, taints/tolerations etc.
-The volumeBindingMode: WaitForFirstConsumer ensures that the persistent volume is only created when it is bound to a pod.
+The `volumeBindingMode: WaitForFirstConsumer` ensures that the persistent volume is only created when it is bound to a pod.
 
 Some simple kubectl commands for storage class.
 ```
@@ -226,9 +239,6 @@ spec:
 ```
 
 
-
-
-
 A storage class internally creates a persistent volume but you got to attach the persistent volume claim to
 the storage class, not the internally created persistent volume.
 For example this is a local provisioned storage class.
@@ -250,7 +260,7 @@ metadata:
   name: pv-vol1
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   capacity:
     storage: 500Mi
   local:
@@ -258,20 +268,16 @@ spec:
   nodeAffinity:
     required:
       nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - controlplane
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+              - controlplane
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   volumeMode: Filesystem
 ```
-
-
-
-
-
+The above is just an example. It isnt something that we would ever manually create.
 
 
 volumeBindingMode as WaitForFirstConsumer should be enough to ensure that a volume gets provisioned in a lazy fashion
@@ -287,9 +293,9 @@ parameters:
   type: pd-standard
 volumeBindingMode: WaitForFirstConsumer
 allowedTopologies:
-- matchLabelExpressions:
-  - key: failure-domain.beta.kubernetes.io/zone
-    values:
-    - us-central1-a
-    - us-central1-b
+  - matchLabelExpressions:
+    - key: failure-domain.beta.kubernetes.io/zone
+      values:
+        - us-central1-a
+        - us-central1-b
 ```

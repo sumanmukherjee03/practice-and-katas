@@ -9,39 +9,8 @@ To run a single standalone pod for example
 
 To run a single standalone pod in a specific node for inspecting things
 ```
-kubectl run ubuntu --image ubuntu --overrides='{"apiVersion": "v1", "spec": {"template": {"spec": {"nodeSelector": {"kubernetes.io/hostname": "node01"}}}}}' --command sleep 300
+kubectl run ubuntu --image ubuntu --overrides='{"apiVersion": "v1", "spec": {"template": {"spec": {"nodeSelector": {"kubernetes.io/hostname": "node01"}}}}}' --restart=Never --command sleep 300
 ```
-
-`kubectl get pods`
-
-The status of the pod changes from `ContainerCreating` -> `Running`
-
-Structure of pod-definition.yaml
-
-A kubernetes definition file always has 4 top level definition fields.
-```
-apiVersion:
-kind:
-metadata:
-spec:
-```
-
-For versions :
-POD -> v1
-Service -> v1
-ReplicaSet -> apps/v1
-Deployment -> apps/v1
-
-For kind :
-Pod, ReplicaSet, Deployment etc
-
-Metadata is in the form of a dictionary :
-```
-name: nginx-pod
-labels:
-  app: nginx
-```
-
 
 pod-definition.yaml
 ```
@@ -145,16 +114,16 @@ metadata:
     app: webapp
 spec:
   containers:
-  - name: webapp-container
-    image: busybox:1.28
-    command: ['sh', '-c', 'echo Starting app && sleep 3600']
+    - name: webapp-container
+      image: busybox:1.28
+      command: ['sh', '-c', 'echo Starting app && sleep 3600']
   initContainers:
-  - name: init-redis
-    image: busybox:1.28
-    command: ['sh', '-c', 'until nslookup redis-service; do echo waiting for redis to be up and running; sleep 3; done;']
-  - name: init-db
-    image: busybox:1.28
-    command: ['sh', '-c', 'until nslookup db-service; do echo waiting for db to be up and running; sleep 3; done;']
+    - name: init-redis
+      image: busybox:1.28
+      command: ['sh', '-c', 'until nslookup redis-service; do echo waiting for redis to be up and running; sleep 3; done;']
+    - name: init-db
+      image: busybox:1.28
+      command: ['sh', '-c', 'until nslookup db-service; do echo waiting for db to be up and running; sleep 3; done;']
 ```
 
 
@@ -206,7 +175,7 @@ spec:
 
 -------------------------------------------------------------
 
-### sample pod definition that can run a web service
+### sample pod definition that can run a long lived web service
 
 `cat pod-definition.yaml`
 
@@ -219,11 +188,11 @@ metadata:
     app: webapp
 spec:
   containers:
-  - args:
-      - -c
-      - while true; do echo -e "HTTP/1.1 200 OK\n\n This is a sample web server!" | nc -l -p 80 -q 1; done
-    command:
-      - /bin/sh
-    image: nicolaka/netshoot
-    name: webapp
+    - command:
+        - /bin/sh
+      args:
+        - -c
+        - while true; do echo -e "HTTP/1.1 200 OK\n SUCCESS" | nc -l -p 80 -q 1; done
+      image: nicolaka/netshoot
+      name: webapp
 ```

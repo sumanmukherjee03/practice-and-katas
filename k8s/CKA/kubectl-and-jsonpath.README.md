@@ -30,7 +30,7 @@ Some sample jsonpath queries with kubectl
 ```
 kubectl get nodes -o json
 kubectl get pods -o json
-kubectl get pods -o=jsonpath='{.items[0].spec.containers[*].image}'
+kubectl get pods -o jsonpath='{.items[0].spec.containers[*].image}'
 kubectl get pod nginx -o jsonpath='{$.spec.containers[*].image}'
 kubectl get nodes -o jsonpath='{.items[*].metadata.name}'
 kubectl get nodes -o jsonpath='{.items[*].status.nodeInfo.architecture}'

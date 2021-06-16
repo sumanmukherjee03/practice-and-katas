@@ -1,7 +1,7 @@
 ## kubeconfig
 
 With kubectl when the kubeconfig does not have any details or does not exist, you can still run the commands with cli flags like so
-`kubectl get pods --server kubernetes-cluster:6443 --client-key kube-admin.key --client-certificate kube-admin.crt --certificate-authority ca.crt`
+`kubectl get pods --server <kubernetes-api-server-url>:6443 --client-key kube-admin.key --client-certificate kube-admin.crt --certificate-authority ca.crt`
 
 If you move these into a configuration file you can pass the path of that file into kubectl
 `kubectl get pods --kubeconfig /path/to/kubeconfig`
@@ -36,7 +36,7 @@ contexts:
 Some useful kubeconfig commands
 ```
 kubectl config view
-kubectl config use-context dev@eks
+kubectl config use-context engineer@kubernetes-cluster
 ```
 
 Regarding the certificate for the cluster, instead of using the field `certificate-authority` and providing

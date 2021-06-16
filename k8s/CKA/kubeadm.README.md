@@ -1,12 +1,13 @@
 ## kubeadm
 
 We are assuming that you already have 3 VMs ready with ubuntu bionic base image.
+The very bare minimum required for the VMs is 2 GB RAM, 2 CPUs, Linux (Debian/Rhel), Unique hostnames and Swap disabled (for kubelet to work).
 The sample cluster we talk about creating here consists of a single master and 2 workers.
 The nodes have been setup in the `192.168.56.0/24` CIDR range.
 
 ### Pre-requisites before creating cluster with kubeadm
 
-On your VM switch to the root user to install and configure all the pre-requisites.
+In your VM switch to the root user to install and configure all the pre-requisites.
 
 This is a set of instructions provided in this documentation for setting up a kubernetes cluster via kubeadm
   - https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
@@ -14,17 +15,23 @@ This is a set of instructions provided in this documentation for setting up a ku
 1. To ensure that iptables on the nodes can see bridged traffic we must check that `br_netfilter` module is loaded by the kernel.
 ```
 lsmod | grep 'br_netfilter'
+modprobe --dry-run br_netfilter
 modprobe br_netfilter
 ```
 
-2. We must set the following to 1 in `sysctl` config
+2. We must set the following to 1 in `sysctl` config.
+sysctl is the linux utility that allows for setting and getting attributes for the kernel like system limits, security settings etc.
 ```
 cat <<EOF | tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-iptables = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 EOF
-
 sysctl --system
+```
+Another way to update the required sysctl settings is via
+```
+sysctl net.bridge.bridge-nf-call-iptables = 1
+sysctl net.bridge.bridge-nf-call-ip6tables = 1
 ```
 
 3. Install docker container runtime
@@ -36,6 +43,7 @@ apt-get update; apt-get install -y containerd.io docker-ce docker-ce-cli
 ```
 
 4. Setup the configuration for the docker daemon (See the link here - https://kubernetes.io/docs/setup/production-environment/container-runtimes/#docker)
+In particular configure the docker daemon to use systemd for the management of container's cgroups.
 ```
 cat <<EOF | sudo tee /etc/docker/daemon.json
 {
@@ -49,7 +57,7 @@ cat <<EOF | sudo tee /etc/docker/daemon.json
 EOF
 ```
 
-5. Restart the docker daemon once the configuration is set
+5. Reload the systemd daemon so that it picks up the new docker daemon config and then Restart the docker daemon once the configuration is set
 ```
 systemctl enable docker
 systemctl daemon-reload
@@ -64,7 +72,7 @@ echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https:/
 apt-get update
 ```
 
-7. Install kubelet, kubeadm and kubectl and mark them as hold to prevent automatic upgrades
+7. Install kubelet, kubeadm and kubectl and mark them as hold to prevent automatic upgrades in ubuntu machines
 ```
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
@@ -75,8 +83,8 @@ apt-mark hold kubelet kubeadm kubectl
 
 1. The cluster components need to be initialized on the `master` node.
 Some important things to consider are the pod networking CNI plugin - like weave or calico etc.
-The pod networking CIDR which should not coincide with the node CIDR.
-We will also need the apiserver advertise url ie, the master node if it is a single master node cluster or the loadbalancer url if a HA cluster.
+The pod networking CIDR should not coincide with the node CIDR.
+We will also need the apiserver advertise url ie, the master node ip if it is a single master node cluster or the loadbalancer url if it is a HA cluster (ie multiple masters).
 ```
 kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address=192.168.56.2
 ```
@@ -98,11 +106,11 @@ As a pre-requisite enable the kernel bridge module setting to let the bridge tra
 kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
 ```
 
-4. Create the calico custom resources for pod networking
+4. Create the calico custom resources for pod networking. More details here - https://docs.projectcalico.org/getting-started/kubernetes/quickstart
+Calico uses a different pod cidr by default. Make sure what you put in the calico custom-resources.yaml is what you have provided to kubeadm.
 ```
 cat << EOF | tee $HOME/calico-custom-resources.yaml
 # This section includes base Calico installation configuration.
-# For more information, see: https://docs.projectcalico.org/v3.19/reference/installation/api#operator.tigera.io/v1.Installation
 apiVersion: operator.tigera.io/v1
 kind: Installation
 metadata:
@@ -122,15 +130,18 @@ EOF
 To see the calico pods run `watch kubectl get pods -n calico-system`
 Then run `kubectl create -f $HOME/calico-custom-resources.yaml`
 
-5. kubeadm join 192.168.56.2:6443 --token st1zft.1eh6dk8ygvpx2eym --discovery-token-ca-cert-hash sha256:94d4d8184229faa660259cf35b294367c3659be3368f570ae8e8b6d12d135b41
-How to list/create the kubeadm join token that can be used by the worker nodes to join a kubernetes cluster
+5. Next go to a worker node and make that worker node join the master
+```
+kubeadm join 192.168.56.2:6443 --token st1zft.1eh6dk8ygvpx2eym --discovery-token-ca-cert-hash sha256:94d4d8184229faa660259cf35b294367c3659be3368f570ae8e8b6d12d135b41
+```
+How to list/create the kubeadm join token that can be used by the worker nodes to join a kubernetes cluster if you lost the one from before.
 ```
 kubeadm init
 kubeadm token list
 kubeadm token create --print-join-command
 ```
 
-6.
+6. Verify that pods can be scheduled
 kubectl get nodes
 kubectl run nginx --image=nginx
 kubectl -n kube-system get cm kubeadm-config -o yaml

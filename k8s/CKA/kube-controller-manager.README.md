@@ -45,7 +45,6 @@ Some options are :
 ```
 The `--controllers` option tells us which controllers are enabled. All are enabled by default.
 
-
-If deployed via kubeadm the kube-controller-manager is available as a pod in the kube-system namespace as `kube-controller-manager-master`
+If deployed via kubeadm the kube-controller-manager is available as a pod in the kube-system namespace as `kube-controller-manager-master` or `kube-controller-manager-controlplane`.
 You can view the pod definition file located in
 `cat /etc/kubernetes/manifests/kube-controller-manager.yaml`.

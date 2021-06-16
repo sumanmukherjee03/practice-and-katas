@@ -9,7 +9,7 @@ During a HA setup of the controlplane/master it is necessary to consider 3 thing
       Also, the loadbalancer should be listening to 6443, the default port to which the apiserver listens.
 
   - controller-manager and scheduler
-      The controller components like the replication controller and scheduler needs to run as active and standby mode on the different nodes.
+      The controller components like the replication controller, deployment controller etc and the scheduler needs to run as active and standby mode on the different nodes for a HA cluster.
       You cant have the scheduler or controllers active on multiple master nodes because that
       might result in creating more pods than are needed and the states wont reconcile properly.
       The active and standby mode is achieved via a leader election process.
@@ -18,7 +18,9 @@ During a HA setup of the controlplane/master it is necessary to consider 3 thing
           Which ever process for the controller manager creates the lock gets the lease to act as the controller manager
           for a duration after which it can either renew the lock or if that master node goes away, a new controlplane
           node can acquire the lock during re-election and become the active kube-controller-manager.
-            `kube-controller-manager --leader-elect true --leader-elect-lease-duration 15s --leader-elect-renew-deadline 10s --leader-elect-retry-period 2s ...`
+              ```
+              kube-controller-manager --leader-elect true --leader-elect-lease-duration 15s --leader-elect-renew-deadline 10s --leader-elect-retry-period 2s ...
+              ```
       The scheduler has the same cli options and follows a similar approach.
 
   - etcd

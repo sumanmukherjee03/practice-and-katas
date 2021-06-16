@@ -6,14 +6,15 @@ which forwards traffic via the service to a container port of 5000 say.
 For clients to not have to remember the port 35000, we can add a proxy server like nginx in front of the service.
 This is where an ingress comes into play. Ingress does what the proxy server does. Point your DNS to the ingress proxy server.
 
-In the cloud a service type load balancer will create a loadbalancer per service.
-So, external DNS -> loadbalancer:35000 -> pod:5000
-If you add another service that will have a loadbalancer as well.
+In the cloud, a service of type `loadbalancer` will create a loadbalancer per service.
+So, external DNS -> loadbalancer:35000 -> pod:5000 is how traffic flows.
+If you add another service that will need a loadbalancer as well.
 But you would want to forward traffic to the appropriate loadbalancer based on path.
-You also want to handle SSL at one place. This again is a good candidate for a reverse proxy. And hence an Ingress.
+You also want to handle SSL at one place only and not multiple times, ie one per load balancer.
+This use case again is a good candidate for a reverse proxy. And hence an Ingress.
 Also, a loadbalancer per service will rack up cloud cost pretty rapidly.
 
-Essentially Ingress is a layer 7 loadbalancer. Of course ingress still has to be exposed via a NodePort or a cloud loadbalancer.
+Essentially Ingress is a layer 7 loadbalancer. Ingress still has to be exposed via a NodePort or a cloud loadbalancer.
 
 Ingress controller and ingress resources combined together does what a reverse proxy would do.
 Ingress controllers are not enabled by default when you create a kubernetes cluster. So, it has to be created via some kind of deployment.
@@ -26,7 +27,7 @@ There are a few different kinds of ingress controllers
   - Traefik
   - Istio
 
-Nginx and GCP loadbalancer is maintained by the kubernetes team.
+Nginx and GCP loadbalancer are the only ones in the list that are maintained by the kubernetes team.
 
 
 
@@ -39,7 +40,7 @@ This is an example of an ingress controller deployment for nginx.
 You need a configmap first to manage the configuration for the nginx server and that is passed along to the binary when starting the nginx server.
 This configmap contains nginx specific configuration like timeouts.
 For the nginx deployment we use a special image from kubernetes.
-The container the POD_NAME and POD_NAMESPACE env vars to operate.
+The image needs the POD_NAME and POD_NAMESPACE env vars to operate at runtime as the container.
 Expose the ports 80 and 443 via a service.
 The ingress controller monitors the ingress resources and configures the nginx server as things change in our cluster.
 However, to be able to do this the ingress controller needs additional permissions.
@@ -138,36 +139,36 @@ metadata:
     app.kubernetes.io/name: nginx-ingress
     app.kubernetes.io/part-of: nginx-ingress
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - pods
-  - secrets
-  - namespaces
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resourceNames:
-  - ingress-controller-leader-nginx
-  resources:
-  - configmaps
-  verbs:
-  - get
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - create
-- apiGroups:
-  - ""
-  resources:
-  - endpoints
-  verbs:
-  - get
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - pods
+      - secrets
+      - namespaces
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resourceNames:
+      - nginx-configuration
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+    verbs:
+      - get
 
 ---
 
@@ -184,8 +185,8 @@ roleRef:
   kind: Role
   name: nginx-ingress-role
 subjects:
-- kind: ServiceAccount
-  name: nginx-ingress-serviceaccount
+  - kind: ServiceAccount
+    name: nginx-ingress-serviceaccount
 ```
 
 
@@ -195,16 +196,16 @@ subjects:
 
 ### ingress resources
 
-Sample routing `cat ingress-warehouse.yaml`
+Sample routing `cat ingress-backend.yaml`
 This one is extremely simple as it forwards all traffic to a backend service.
 ```
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: ingress-warehouse
+  name: ingress-backend
 spec:
   backend:
-    serviceName: warehouse-service
+    serviceName: backend-service
     servicePort: 8080
 ```
 
@@ -262,7 +263,7 @@ So, we should not forget to deploy such a service.
 
 If you dont have a hostname it will match anything (or wildcard) for the hostname.
 
-Take note of the annotation `nginx.ingress.kubernetes.io/reqrite-target` which can be used to rewrite urls before forwarding it to the backend service.
+Take note of the annotation `nginx.ingress.kubernetes.io/rewrite-target` which can be used to rewrite urls before forwarding it to the backend service.
 Here the urls are getting rewritten before being forwarded to the services.
   - accessories.bestdeals.com/watches rewrites to <watch-store-service>:8080/
   - accessories.bestdeals.com/hats rewrites to <hat-store-service>:8081/

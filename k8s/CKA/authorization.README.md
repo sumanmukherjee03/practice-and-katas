@@ -69,21 +69,21 @@ Meaning any user which has a name prefix of `system:node:` and a group of `syste
 
 ### ABAC
 
-You can create a policy for an user like so in a policy file
+You can create a policy for an user in this way via a policy file
 ```
 {"kind": "Policy", "spec": {"user": "eng-user", "namespace": "*", "resource": "pods", "apiGroup": "*"}}
 {"kind": "Policy", "spec": {"user": "qa-user", "namespace": "test", "resource": "pods", "apiGroup": "*"}}
 ```
 and pass the policy file to the kube-apiserver at start for the policies to take effect.
 This can be done for groups too, as in add another line with a policy to the policy file for a group.
-However, everytime this policy file is changed, the kube-apiserver needs to be restarted. As such this is not the preferred solution for authorization.
+However, everytime this policy file is changed, the kube-apiserver needs to be restarted. As such this is not the preferred solution for authorization in kubernetes.
 
 
 ### Webhook
 
 If you want an external authorization mechanism, that's where the webhook mechanism of kubernetes authorization comes into play.
-For example `eng-user` requests access for a resource to `kube-apiserver`. The `kube-apiserver` asks `Open Policy Agent` if the user can access a resource
-and that response is returned back and the user is allowed access or NOT.
+For example `eng-user` requests access for a resource to `kube-apiserver`. The `kube-apiserver` asks `Open Policy Agent` if the user can access a resource or not
+and that response is returned back and the user is allowed access or NOT based on that response.
 
 
 ### AlwaysAllow
@@ -114,7 +114,7 @@ rules:
 ```
 For the core group leave the group section as an empty string. For other groups specify the group.
 Roles and RoleBindings are namespace specific.
-In the resources, you can add resourceNames field to further harden which specific resources to target for the authorization.
+In the section for target resources, you can add the `resourceNames` field to further harden which specific resources to target for the authorization.
 Create the role using `kubectl create -f engineer-role.yaml`.
 
 To link a user to the role, create another object called RoleBinding.
@@ -165,6 +165,7 @@ To get an exhaustive list of namespaced and non-namespaced resources run
 kubectl api-resources --namespaced=true
 kubectl api-resources --namespaced=false
 ```
+
 To create RBAC rules for cluster scoped resources or rules for namespaced resources
 across all namespaces you must create ClusterRole and ClusterRoleBinding objects.
 Create a role object `cat cluster-admin-role-with-binding.yaml`

@@ -35,8 +35,8 @@ spec:
         - name: COLOR
           valueFrom:
             configMapKeyRef:
-              name: app-config
-              value: COLOR
+              name: app-config # name of the config map
+              value: COLOR # name of the key from which to load the value
 ```
 
 OR load it as a volume in the pod spec and read the config map in the application
@@ -62,13 +62,12 @@ spec:
 
 
 You can create the config map in an imperative or declarative way using a manifest.
-
 `kubectl create configmap app-config --from-literal=COLOR=blue --from-literal=STAGE=dev`
 
 OR
 
 `kubectl create configmap app-config --from-file=app-config.properties`
-where `app-config.properties` can be as simple as
+where `app-config.properties` can be a simple file containing
 ```
 COLOR=blue
 STAGE=dev

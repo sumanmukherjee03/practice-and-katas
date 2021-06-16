@@ -10,7 +10,7 @@ deployment-definition.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  app: app-replicaset
+  name: app-replicaset
   labels:
     app: frontend
 spec:
@@ -52,12 +52,12 @@ kubectl create deployment nginx --image=nginx --replicas=2
 kubectl scale deployment --replicas=3
 ```
 
-To change the image in a deployment
+To change the image in a deployment and record the change in annotations of the deployment
 ```
-kubectl set image deployment nginx nginx=nginx:1.18
+kubectl set image deployment/nginx nginx=nginx:1.18 --record
 ```
 
-To expose a port from a running container via a service with a cluster ip
+To expose a port from a running container via a service with a cluster IP
 ```
 kubectl expose deployment nginx --port 80
 ```

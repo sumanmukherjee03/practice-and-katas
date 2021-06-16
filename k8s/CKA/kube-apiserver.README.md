@@ -1,15 +1,15 @@
 ## kube-apiserver
 
-kubectl talks to the api server, which in turn talks to etcd and retrieves information to form responses.
+kubectl talks to the kube-apiserver, which in turn talks to etcd and retrieves information to form responses.
 
 ```
-kubectl get nodes
+kubectl get nodes -o wide
 ```
 
 The api can be invoked with simple curl commands too.
 
 For example - this is the equivalent of creating a pod
-`curl -X /api/v1/namespaces/default/pods ...`
+`curl -X POST /api/v1/namespaces/default/pods ...`
 
 Steps involved :
   - kube api server authenticates the incoming request
@@ -22,7 +22,7 @@ Steps involved :
   - the api server then passes that information to the kubelet in the appropriate node
   - the kubelet then creates the pod and instructs the container runtime to deploy the image
   - the kubelet passes the information of the state back to the api-server
-  - the api server then updates the etcd cluster
+  - the api server then updates the etcd cluster with the status of the pod
 
 If not using the kubeadm the kube-apiserver is available for download through the kubernetes release page on google
 ```
@@ -32,7 +32,8 @@ wget https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux
 Documentation for flags when starting the kube apiserver :
  - https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
 
-Some security related flags
+The kube-apiserver needs client certs+keys and the ca cert for authenticating with etcd server and kubelet.
+These are the flags the kube-apiserver needs to be started with.
 ```
   --etcd-ca-file=/var/lib/kubernetes/ca.pem
   --etcd-certfile=/var/lib/kubernetes/kubernetes.pem
@@ -44,8 +45,8 @@ Some security related flags
   --kubelet-https=true
 ```
 
-kubeadm deploys the kube-apiserver as a pod in the kube-system namespace.
-The pod is `kube-apiserver-master`.
+If deploying via kubeadm, it deploys the kube-apiserver as a pod in the kube-system namespace.
+The pod is called `kube-apiserver-master` or `kube-apiserver-controlplane`.
 You can view the pod definition file located in
 `cat /etc/kubernetes/manifests/kube-apiserver.yaml`.
 
