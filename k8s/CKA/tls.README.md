@@ -14,7 +14,7 @@ Asymetric encryption
     A user can generate a public key (or what we are calling as public lock) and a private key with `ssh-keygen -t rsa -b 4096 -C client@example.com`.
     And the server admin can place the public key (or public lock) of the user on the server door in ~/.ssh/authorized_keys file.
     This lock can only be opened with the users private key.
-    So, user generates lock and key. Gives the lock to the server admnin and server admin puts it on the servers door.
+    So, user generates lock and key. Gives the lock to the server admin and server admin puts it on the servers door.
 
   Asymetric encryption with web traffic :
     With web traffic, in symetric encryption the key that encrypts the data is sent over the wire to the server from the user

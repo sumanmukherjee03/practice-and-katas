@@ -67,12 +67,13 @@ If this is not working check if there are CNI pods available, like calico/weave/
 To check if a service is resolving DNS from inside a pod, try to get into a busybox pod and run this inside
   nslookup <service-name>.default.svc.cluster.local
     Depending on the kubelets `--cluster-domain` flag the root domain may be `cluster.local` or something else.
+    Another place to lookup the cluster domain is the coredns config.
 
 Or test the same thing above by trying this from a node, ie by passing a DNS server to resolve the in cluster DNS records.
   nslookup <service-name>.default.svc.cluster.local <kube-dns-service-ip>
 
 If you can resolve FQDN but not the short names of the services from inside pods
-  Check /etc/resolv.conf inside the simple busybox pod to see if the domain entries for `search` are there or not
+  Check /etc/resolv.conf inside a simple busybox pod to see if the domain entries for `search` are there or not
   and if the nameserver is pointing to the kube-dns service or not.
 
 
@@ -191,7 +192,7 @@ One more reason why coredns pod could be crashing is because coredns detects a l
 Ways to work around the issue :
   - Add `resolvConf: <path_to_real_resolvconf>"` in the kubelet config
     so that the kubelet can pass this to the pods instead of the default `/etc/resolv.conf`
-      For systems using `systemd-resolved`, that path is `/run/systemd/resolve/resolv.conf`
+      For systems using `systemd-resolved`, the actual resolv.conf being used is `/run/systemd/resolve/resolv.conf`
   - Disable local dns cache and restore `/etc/resolv.conf` to the original
     This is because ubuntu by default ships with dnsmasq installed and a dns query first hits
     the dns cache. If it is not found there it is forwarded to the DNS servers configured for the domain.
@@ -272,7 +273,7 @@ default via 10.32.0.1 dev eth0
 10.32.0.0/12 dev eth0 scope link  src 10.32.0.4
 ```
 
-This is an example of what iptables might look like for a service when kube-proxy isn't in a working state
+This is an example of what iptables might look like for a service when kube-proxy IS NOT in a working state
 ```
 node01 $ iptables-save | grep webapp-service
 -A KUBE-EXTERNAL-SERVICES -p tcp -m comment --comment "application/webapp-service has no endpoints" -m addrtype --dst-type LOCAL -m tcp --dport 30081 -j REJECT --reject-with icmp-port-unreachable

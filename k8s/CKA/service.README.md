@@ -12,7 +12,7 @@ One purpose of a service is to listen to a port on a node and forward the reques
 This is an example of a nodeport service
 
 3 types of services
-  - NodePort : exposes an internal port of a pod to a port on the host
+  - NodePort : exposes an internal port of a pod via a port on the host
   - ClusterIp : creates a virtual ip inside the cluster to enable communication between the services, for example a frontend pod to a backend pod
   - LoadBalancer : creates a loadbalancer in supported cloud providers to balance the load to your pods for an application
 
@@ -22,7 +22,8 @@ This is an example of a nodeport service
 ### NodePort
 
 The service is like a virtual server inside the node. It is listening to a port of 80.
-And forwarding to the target port on the pod - 80. Inside the cluster the service gets it's own IP address.
+And forwarding to the target port on the pod - 80.
+Inside the cluster the service gets it's own IP address.
 This is called the cluster ip of the service.
 And finally there is the port on the host to access the service externally which is known as the node port, ie 30008.
 NodePorts can be in a valid range of 30000 - 32767
@@ -33,8 +34,8 @@ NodePorts can be in a valid range of 30000 - 32767
     |          ________________         ___________     |
     |          |  Service     |       |           |     |
     |          |              |       |   Pod     |     |
-    |NodePort  |              |Port   |           |     |
-    |30008     |              |80     |TargetPort |     |
+    |NodePort  |Port          |       |           |     |
+    |30008     |80            |       |TargetPort |     |
     |          |              |       |80         |     |
     |          ________________       |___________|     |
     |            10.106.1.12            10.244.0.2      |
@@ -87,7 +88,7 @@ To expose a deployment using nodeport, start by creating a service template with
 ```
 kubectl expose deployment webapp-deployment --name=webapp-service --target-port=8080 --port=8080 --type=NodePort --dry-run=client -o yaml
 ```
-Then edit the yaml file to add a known node port.
+Then edit the yaml file to add a known node port. There is no cli option to pass the desired node port.
 
 OR
 
@@ -151,7 +152,7 @@ To view the services
 
 NodePort is great for exposing a service externally but it is not a convenient way to use the apps for end users,
 because you need the ip of all the hosts and the 30000+ port number to access the apps. This inconvenience is solved
-by using a loadbalancer type service. Kubernetes has capability to create loadbalancers of azure, gcp and aws.
+by using a loadbalancer type service. Kubernetes has capability to create loadbalancers in azure, gcp and aws.
 
 If you dont have a cloud which is supported by kubernetes, it is analogous to create a separate VM with something
 like nginx configured to serve as the load balancer.

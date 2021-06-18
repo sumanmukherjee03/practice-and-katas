@@ -19,7 +19,7 @@ that happened in the annotations of the deployment.
 ```
 kubectl set image deployment/webapp-deployment nginx=nginx:1.9.1 --record
 ```
-This also causes a rolling update but the process is dirty.
+This also causes a rolling update but the process is dirty because this change wont be captured in the manifest file which can be version copntrolled.
 
 During deployment kubernetes maintains 2 replicasets, one original and a new one. As pods are created in the new
 replicaset, pods are also simultaneously terminated in the old replicaset. To undo a deployment if something went wrong

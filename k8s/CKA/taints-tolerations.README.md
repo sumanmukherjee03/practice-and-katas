@@ -7,13 +7,18 @@ To taint a node in the cluster, run a command like this :
 `kubectl taint nodes node01 key=value:taint-effect`
 
 The taint effects can be NoSchedule|PreferNoSchedule|NoExecute
-  - NoSchedule : Dont schedule any new pods but dont evicts existing ones
-  - PreferNoSchedule : Try not to schedule any new pods, but it is not guranteed
+  - NoSchedule : Don't schedule any new pods but don't evicts existing ones
+  - PreferNoSchedule : Try not to schedule any new pods, but it is not guaranteed
   - NoExecute : Evict existing pods running on this node
 
-For example to isolate a node completely
+For example to taint and isolate a node completely
 ```
-kubectl taint nodes node01 color=blue:NoExecute
+kubectl taint node node01 color=blue:NoExecute
+```
+
+And when inspection is finished to remove the taint again
+```
+kubectl taint node node01 color=blue:NoExecute-
 ```
 
 To add a toleration to a pod add it to the pod definition yaml.
