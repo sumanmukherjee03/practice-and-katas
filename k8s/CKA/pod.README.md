@@ -126,55 +126,6 @@ spec:
       command: ['sh', '-c', 'until nslookup db-service; do echo waiting for db to be up and running; sleep 3; done;']
 ```
 
-
------------------------------------------------------------
-
-### security context
-Kubernetes allows you to set security context on pods or individual containers.
-Setting on a pod is applied to all containers and setting on a container overrides the setting on a pod.
-
-`cat pod-definition.yaml`
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-pod
-  labels:
-    app: nginx
-spec:
-  containers:
-    - name: nginx-container
-      image: nginx
-  securityContext:
-    runAsUser: 1000
-```
-
-OR to set the security context at the container level
-
-`cat pod-definition.yaml`
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-pod
-  labels:
-    app: nginx
-spec:
-  containers:
-    - name: nginx-container
-      image: nginx
-      securityContext:
-        runAsUser: 1000
-        capabilities:
-          add: ["MAC_ADMIN", "SYS_TIME"]
-```
-
-
-
--------------------------------------------------------------
-
 ### sample pod definition that can run a long lived web service
 
 `cat pod-definition.yaml`
