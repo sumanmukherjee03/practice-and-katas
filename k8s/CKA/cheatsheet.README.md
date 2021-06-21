@@ -24,4 +24,7 @@ kubectl create deployment frontend --image nginx --replicas=2
 kubectl scale deployment frontend --replicas=3
 kubectl set image deployment/frontend nginx=nginx:1.18 --record
 kubectl expose deployment nginx --port 80
+kubectl expose deployment webapp --name=webapp-service --port=8080 --target-port=8080 --type=NodePort --dry-run=client -o yaml
+kubectl get svc -o wide
+kubectl get endpoints -o wide
 ```
