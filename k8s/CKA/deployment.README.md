@@ -49,7 +49,7 @@ kubectl create deployment nginx --image=nginx --dry-run=client -o yaml
 Another easy way to quickly create and scale a deployment is provided below.
 ```
 kubectl create deployment nginx --image=nginx --replicas=2
-kubectl scale deployment --replicas=3
+kubectl scale deployment nginx --replicas=3
 ```
 
 To change the image in a deployment and record the change in annotations of the deployment
