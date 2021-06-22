@@ -27,4 +27,49 @@ kubectl expose deployment nginx --port 80
 kubectl expose deployment webapp --name=webapp-service --port=8080 --target-port=8080 --type=NodePort --dry-run=client -o yaml
 kubectl get svc -o wide
 kubectl get endpoints -o wide
+
+kubectl get nodes -o wide
+kubectl label nodes node01 size=large
+kubectl create serviceaccount sa1
+kubectl get serviceaccounts
+curl -v -k -u '<username>:<password>' https://master-loadbalancer:6443/api/v1/pods
+curl -v -k -H 'Authorization: Bearer <token>' https://master-loadbalancer:6443/api/v1/pods
+curl -v -k https://master-loadbalancer:6443/api/v1/pods --key admin.key --cert admin.crt --cacert ca.crt
+
+kubectl get csr
+kubectl csr approve john
+kubectl get csr john -o yaml
+kubectl certificate deny rogue-req
+
+kubectl proxy; curl -k http://localhost:6443/apis;
+
+kubectl api-resources --namespaced=true
+kubectl api-resources --namespaced=false
+
+kubectl create role engineer --verb=create --verb=get --verb=list --verb=delete --resource=pods --dry-run=client -o yaml
+kubectl get roles
+kubectl get rolebindings
+kubectl describe role engineer
+kubectl create rolebinding engineering-user-role-binding --role=engineer --user=engineering-user --dry-run=client -o yaml
+kubectl describe rolebinding engineering-user-role-binding
+
+kubectl auth can-i create deployments
+kubectl auth can-i delete pods
+kubectl auth can-i delete pods --as john
+kubectl auth can-i delete pods --as john --namespace prod
+
+ETCDCTL_API=3 etcdctl snapshot save snapshot.db --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key --cacert=/etc/kubernetes/pki/etcd/ca.crt --endpoints=https://127.0.0.1:2379
+ETCDCTL_API=3 etcdctl snapshot status snapshot.db --cert=/etcd/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key --cacert=/etc/kubernetes/pki/etcd/ca.crt --endpoints=https://127.0.0.1:2379
 ```
+
+
+
+
+
+
+
+
+
+
+
+

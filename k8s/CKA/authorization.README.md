@@ -66,7 +66,6 @@ In the kubelet client certificate, the cert should have the group specified via 
 and the cert name to be something like `CN=system:node:node01`.
 Meaning any user which has a name prefix of `system:node:` and a group of `system:nodes` will be granted the privileges similar to a kubelet.
 
-
 ### ABAC
 
 You can create a policy for an user in this way via a policy file
@@ -75,8 +74,9 @@ You can create a policy for an user in this way via a policy file
 {"kind": "Policy", "spec": {"user": "qa-user", "namespace": "test", "resource": "pods", "apiGroup": "*"}}
 ```
 and pass the policy file to the kube-apiserver at start for the policies to take effect.
-This can be done for groups too, as in add another line with a policy to the policy file for a group.
-However, everytime this policy file is changed, the kube-apiserver needs to be restarted. As such this is not the preferred solution for authorization in kubernetes.
+This can be done for groups too, as in, add another line with a policy to the policy file for a group.
+However, everytime this policy file is changed, the kube-apiserver needs to be restarted.
+As such this is not the preferred solution for authorization in kubernetes.
 
 
 ### Webhook
