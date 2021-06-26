@@ -58,8 +58,24 @@ kubectl auth can-i delete pods
 kubectl auth can-i delete pods --as john
 kubectl auth can-i delete pods --as john --namespace prod
 
+kubectl version --short
+kubeadm token list
+apt-get -y -qq update; apt install -y kubeadm=1.20.0-00; kubeadm upgrade plan; kubeadm upgrade apply v1.20.0; kubectl get nodes; kubectl drain controlplane --ignore-daemonsets; apt-get install -y kubelet=1.20.0-00; apt-get install -y kubectl=1.20.0-00; systemctl daemon-reload; systemctl restart kubelet; kubectl uncordon controlplane;
+kubectl drain node01 --ignore-daemonsets
+ssh node01; apt-get install -y kubeadm=1.20.0-00; apt-get install -y kubelet=1.20.0-00; kubeadm upgrade node; systemctl daemon-reload; systemctl restart kubelet
+kubectl uncordon node01
+
 ETCDCTL_API=3 etcdctl snapshot save snapshot.db --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key --cacert=/etc/kubernetes/pki/etcd/ca.crt --endpoints=https://127.0.0.1:2379
 ETCDCTL_API=3 etcdctl snapshot status snapshot.db --cert=/etcd/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key --cacert=/etc/kubernetes/pki/etcd/ca.crt --endpoints=https://127.0.0.1:2379
+systemctl kube-apiserver stop
+ETCDCTL_API=3 etcdctl snapshot restore snapshot.db --data-dir=/var/lib/etcd-from-backup --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key --cacert=/etc/kubernetes/pki/etcd/ca.crt
+sed -i -e 's#--data-dir=/var/lib/etcd#--data-dir=/var/lib/etcd-from-backup#g' /etc/systemd/system/etcd.service
+systemctl daemon-reload; systemctl etcd restart; systemctl kube-apiserver restart
+
+kubectl create configmap app-config --from-literal=COLOR=blue --from-literal=ENVIRONMENT=staging
+kubectl create configmap app-config --from-file=app-config.properties
+kubectl get configmaps
+kubectl describe configmap app-config
 ```
 
 
