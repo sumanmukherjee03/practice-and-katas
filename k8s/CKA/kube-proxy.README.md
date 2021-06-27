@@ -13,7 +13,7 @@ Then, how do pods talk to each other via a service?
 
 That's where kube-proxy comes in. kube-proxy is a process that runs on each worker node in the kubernetes cluster.
 Everytime a service object is created, the job of the kube-proxy is to create the appropriate iptable rules,
-such that traffic can be forward from a pod on a node to other pods exposed through services.
+such that traffic can be forward from a pod on a node to other pods exposed via services.
 It creates iptable rules to forward traffic directed towards the ip of the service to the actual pods that are backing the service.
 
 So, if there's a pod with an ip of 10.32.0.15 exposed via a service with IP 10.96.0.12,
@@ -42,4 +42,4 @@ If deployed it via the kubeadm tool, you can view the kube-proxy pods via
 
 When deployed via kubeadm, kube-proxy is deployed as a daemonset so that it runs on every node.
 
-`kubectl get daemon-set -n kube-system`
+`kubectl get daemonset kube-proxy -n kube-system`

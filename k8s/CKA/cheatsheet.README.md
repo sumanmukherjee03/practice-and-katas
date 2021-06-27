@@ -1,10 +1,12 @@
 ## cheatsheet
-
-This is a file with not much explanation but only commands.
-
 ```
 kubectl cluster-info
 kubectl cluster-info dump
+kubectl get pods --server https://master-loadbalancer:6443 --client-key kube-admin.key --client-certificate kube-admin.crt --certificate-authority ca.crt
+kubectl get pods --kubeconfig /path/to/kubeconfig
+kubectl config view
+kubectl config current-context
+kubectl config use-context engineer@kubernetes-cluster
 kubectl get all --all-namespaces
 kubectl get pods --all-namespaces
 kubectl -n kube-system get pods -o wide
@@ -18,7 +20,6 @@ kubectl describe pod webapp-pod | grep -i image
 kubectl get pod nginx --watch
 kubectl run --rm --restart=Never --image=nikola/netshoot --command /bin/sh -c 'while true; do echo "HTTP/1.1 200 OK\n SUCCESS" | nc -l -p 80 -q 1; done' --port 80 --expose
 kubectl get pods -l tier=webapp -o jsonpath='{{range .items}}{{.status.podIP}}{{"\n"}}{{end}}'
-
 kubectl get deployments
 kubectl create deployment frontend --image nginx --replicas=2
 kubectl scale deployment frontend --replicas=3
@@ -76,16 +77,42 @@ kubectl create configmap app-config --from-literal=COLOR=blue --from-literal=ENV
 kubectl create configmap app-config --from-file=app-config.properties
 kubectl get configmaps
 kubectl describe configmap app-config
+
+kubectl get daemonsets
+kubectl describe daemonsets monitoring-agent-daemon
+
+cat /etc/systemd/system/kube-apiserver.service
+ps -aux | grep kube-apiserver
+
+cat /etc/systemd/system/kube-controller-manager.service
+ps -aux | grep kube-controller-manager
+
+cat /etc/systemd/system/kubelet.service | grep '--config'
+cat /var/lib/kubelet/kubelet-config.yaml | grep '--pod-manifest-path'
+
+kubectl -n kube-system get daemonset kube-proxy
+kubectl get events | grep -i <custom-scheduler-name>
+
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.capacity.cpu}{"\n"}{end}'
+kubectl get nodes -o custom-columns=NODE:.metadata.name,CPU:.status.capacity.cpu
+kubectl get pv -o custom-columns=NAME:.metadata.name,CAPACITY:.spec.capacity.storage --sort-by=.spec.capacity.storage
+kubectl config view --kubeconfig=/path/to/kubeconfig -o jsonpath='{$.contexts[?(@.context.user == "aws-user")].name}{"\n"}'
+
+kubectl create ns dev
+kubectl get ns --no-headers
+kubectl create quota dev-ns-count --hard=count/deployments.apps=2,count/replicasets.apps=4,count/pods=10,count/secrets=4 --namespace=dev
+kubectl describe quota compute-quota
+kubectl get quota --namespace=dev
+
+kubectl get pv
+kubectl describe pv pv-vol1
+kubectl get pvc
+kubectl describe pvc pv-vol1-claim
+kubectl delete pvc pv-vol1-claim
+kubectl get storageclass portworx-vol
+
+kubectl taint node node01 color=green:NoExecute
+kubectl taint node node01 color=green:NoExecute-
+kubectl explain pod --recursive | grep -A5 tolerations
+kubectl taint node controlplane node-role.kubernetes.io/master:NoSchedule-
 ```
-
-
-
-
-
-
-
-
-
-
-
-

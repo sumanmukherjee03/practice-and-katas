@@ -75,3 +75,27 @@ spec:
     limits.memory: 10Gi
 ```
 To create the resource quota run `kubectl create -f compute-quota.yaml`
+
+
+To restrict the count of objects in a namespace we can define quotas.
+object-counts-quota.yaml
+```
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: object-counts
+spec:
+  hard:
+    configmaps: "10"
+    persistentvolumeclaims: "4"
+    pods: "100"
+    replicationcontrollers: "20"
+    secrets: "10"
+    services: "10"
+    services.loadbalancers: "2"
+```
+
+You can also create quotas through kubectl
+```
+kubectl create quota dev-ns-counts --hard=count/deployments.apps=2,count/replicasets.apps=4,count/pods=10,count/secrets=4 --namespace=dev
+```

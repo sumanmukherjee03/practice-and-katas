@@ -31,7 +31,7 @@ Also, if you are running the scheduler in HA mode, we need to ensure that the
 corresponding lock object used in leader election by the scheduler is also named differently.
 The reason for needing a lock object is because only one scheduler in HA cluster can be active at a time and others on standby.
 Otherwise, multiple schedulers may try and place a new pod in multiple different nodes and cause more than the desired number of pods to be started.
-To be able to do this the leader election process uses a lock object, default being `leases`.
+To be able to do this the leader election process uses a lock object, the default lock object being `leases`.
 
 If using the kubeadm tool, the manifest for the default scheduler from `/etc/kubernetes/manifests/kube-scheduler.yaml`
 can be copied over to something like `/etc/kubernetes/manifests/custom-scheduler.yaml` and updated with customer scheduler
@@ -51,13 +51,14 @@ spec:
       - --address=127.0.0.1
       - --kubeconfig=/etc/kubernetes/custom-scheduler.conf
       - --leader-elect=true                                   # This is required if the master is a HA cluster
+      - --leader-elect-resource-lock=leases
       - --scheduler-name=custom-scheduler
       - --lock-object-name=custom-scheduler                   # This is DEPRECATED in favour of --leader-elect-resource-name. The default value for the flag is "kube-scheduler".
 .....
       image: custom-scheduler
       name: custom-scheduler
 ```
-The `--leader-elect-resource-lock=leases` option which is the default determines what kind of object is used for locking during leader election.
+The `--leader-elect-resource-lock=leases` option which is the default, determines what kind of object is used for locking during leader election.
 Possible options are - leases, endpoints, configmaps, endpointleases, configmapleases.
 
 Use the kubectl create command to create this new scheduler in the kube-system namespace.
