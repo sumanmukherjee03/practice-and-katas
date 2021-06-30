@@ -226,14 +226,17 @@ spec:
       http:
         paths:
           - path: /watches
+            pathType: Prefix
             backend:
               serviceName: watch-store-service
               servicePort: 8080
           - path: /hats
+            pathType: Prefix
             backend:
               serviceName: hat-store-service
               servicePort: 8081
           - path: /belts
+            pathType: Prefix
             backend:
               serviceName: belt-store-service
               servicePort: 8082
@@ -241,18 +244,22 @@ spec:
       http:
         paths:
           - path: /shirts
+            pathType: Prefix
             backend:
               serviceName: shirt-store-service
               servicePort: 8083
           - path: /pants
+            pathType: Prefix
             backend:
               serviceName: pant-store-service
               servicePort: 8084
           - path: /blouses
+            pathType: Prefix
             backend:
               serviceName: blouse-store-service
               servicePort: 8085
           - path: /skirts
+            pathType: Prefix
             backend:
               serviceName: skirt-store-service
               servicePort: 8086
@@ -284,10 +291,11 @@ spec:
   - host: rewrite.bar.com
     http:
       paths:
-      - backend:
-          serviceName: http-svc
-          servicePort: 80
-        path: /something(/|$)(.*)
+        - backend:
+            serviceName: http-svc
+            servicePort: 80
+          path: /something(/|$)(.*)
+          pathType: Prefix
 ```
 Here rewrite.bar.com/something rewrites to rewrite.bar.com/ and rewrite.bar.com/something/new rewrites to rewrite.bar.com/new
 

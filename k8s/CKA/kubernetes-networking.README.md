@@ -173,7 +173,7 @@ If it is a weave network, you can find that CIDR range by checking the weave pod
 
 To see the rules created in the iptables NAT table output
 ```
-iptables -L -t net | grep backend-app-service
+iptables -L -t nat | grep backend-app-service
 
 KUBE-SVC-ABCDEFGH  tcp  ---  anywhere  10.97.111.21    /* default/backend-app-service: cluster IP */   tcp  dpt:8080
 DNAT               tcp  ---  anywhere  anywhere        /* default/backend-app-service: */              tcp  to:10.244.3.3:8080

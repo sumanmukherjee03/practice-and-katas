@@ -19,7 +19,7 @@ kubectl exec -it webapp -c app -- nslookup db-service
 kubectl describe pod webapp-pod | grep -i image
 kubectl get pod nginx --watch
 kubectl run --rm --restart=Never --image=nikola/netshoot --command /bin/sh -c 'while true; do echo "HTTP/1.1 200 OK\n SUCCESS" | nc -l -p 80 -q 1; done' --port 80 --expose
-kubectl get pods -l tier=webapp -o jsonpath='{{range .items}}{{.status.podIP}}{{"\n"}}{{end}}'
+kubectl get pods -l tier=webapp -o jsonpath='{range .items[*]}{.status.podIP}{"\n"}{end}'
 kubectl get deployments
 kubectl create deployment frontend --image nginx --replicas=2
 kubectl scale deployment frontend --replicas=3
@@ -66,6 +66,8 @@ kubectl drain node01 --ignore-daemonsets
 ssh node01; apt-get install -y kubeadm=1.20.0-00; apt-get install -y kubelet=1.20.0-00; kubeadm upgrade node; systemctl daemon-reload; systemctl restart kubelet
 kubectl uncordon node01
 
+ETCDCTL_API=3 etcdctl cluster-health --endpoints=https://127.0.0.1:2379
+ETCDCTL_API=3 etcdctl endpoint health --endpoints=https://127.0.0.1:2379
 ETCDCTL_API=3 etcdctl snapshot save snapshot.db --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key --cacert=/etc/kubernetes/pki/etcd/ca.crt --endpoints=https://127.0.0.1:2379
 ETCDCTL_API=3 etcdctl snapshot status snapshot.db --cert=/etcd/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key --cacert=/etc/kubernetes/pki/etcd/ca.crt --endpoints=https://127.0.0.1:2379
 systemctl kube-apiserver stop
@@ -83,16 +85,21 @@ kubectl describe daemonsets monitoring-agent-daemon
 
 cat /etc/systemd/system/kube-apiserver.service
 ps -aux | grep kube-apiserver
+cat /etc/kubernetes/manifests/kube-apiserver.yaml
+cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep -i '--authorization-mode'
 
 cat /etc/systemd/system/kube-controller-manager.service
 ps -aux | grep kube-controller-manager
+cat /etc/kubernetes/manifests/kube-controller-manager.yaml | grep -i '--controllers'
 
 cat /etc/systemd/system/kubelet.service | grep '--config'
 cat /var/lib/kubelet/kubelet-config.yaml | grep '--pod-manifest-path'
 
 kubectl -n kube-system get daemonset kube-proxy
+
 kubectl get events | grep -i <custom-scheduler-name>
 
+kubectl get nodes -o jsonpath='{range .items[*]}{.status.nodeInfo.osImage}{"\n"}{end}'
 kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.capacity.cpu}{"\n"}{end}'
 kubectl get nodes -o custom-columns=NODE:.metadata.name,CPU:.status.capacity.cpu
 kubectl get pv -o custom-columns=NAME:.metadata.name,CAPACITY:.spec.capacity.storage --sort-by=.spec.capacity.storage
@@ -115,4 +122,25 @@ kubectl taint node node01 color=green:NoExecute
 kubectl taint node node01 color=green:NoExecute-
 kubectl explain pod --recursive | grep -A5 tolerations
 kubectl taint node controlplane node-role.kubernetes.io/master:NoSchedule-
+
+kubectl logs web -f
+kubectl logs web --previous
+kubectl exec cassandra -- cat /var/log/cassandra/system.log
+
+kubectl -n kube-system exec etcd-master -- sh -c "ETCDCTL_API=3 etcdctl get / --prefix --keys-only --limit=10 --key=/etc/kubernetes/pki/etcd/server.key --cert=/etc/kubernetes/pki/etcd/server.crt --cacert=/etc/kubernetes/pki/etcd/ca.crt"
+
+kubectl describe ingress ingress-online-store
+
+kubectl -n kube-system get deployment coredns -o yaml
+kubectl -n kube-system get svc kube-dns
+kubectl -n kube-system get configmap coredns -o yaml | grep -A 15 '.:53'
+cat /var/lib/kubelet/config.yaml | grep -C5 -i -E '(clusterDNS|clusterDomain)'
+kubectl run --rm --restart=Never busybox --image=busybox --command cat /etc/resolv.conf
+
+kubectl -n kube-system edit system:kube-scheduler
+kubectl get events | grep -i 'scheduled'
+kubectl -n kube-system exec -it etcd-controlplane -c etcd -- /bin/sh -c 'ETCDCTL_API=3 etcdctl endpoint health --key=/etc/kubernetes/pki/etcd/server.key --cert=/etc/kubernetes/pki/etcd/server.crt --cacert=/etc/kubernetes/pki/etcd/ca.crt --endpoints=https://127.0.0.1:2379'
+kubectl exec busybox -it -- nslookup nginx-resolver-service
+kubectl exec busybox -it -- nslookup 10-244-1-7.default.pod.cluster.local
+kubectl expose pod nginx-resolver --name=nginx-resolver-service --port=80 --target-port=80
 ```
