@@ -16,6 +16,8 @@
 
 1. For reversing a linked list if there is only a next pointer
   - maintain 3 variables previous, current and next
+2. When detecting a cycle in a single link linked list with Floyd Cycle Detection algo
+  - Remember that the node forming the cycle has 2 links which point to it as next
 
 
 ### Double Link Linked List
