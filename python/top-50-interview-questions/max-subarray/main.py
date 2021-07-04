@@ -82,6 +82,10 @@ def maximumSubarray03(arr):
 #  MaxSumAtIndex(4) = max(arr[4], arr[4] + MaxSumAtIndex(3))
 #  MaxSumAtIndex(3) = max(arr[3], arr[3] + MaxSumAtIndex(2))
 #    Formula : local_max[i] = max(arr[i], arr[i] + local_max[i-1])
+#  In layman's terms max subarray is either
+#    - sum of the previous subarray with highest sum + the current number
+#    - OR the current number
+#        The 2 conditions combined above gurantees the contiguosness of the subarray
 def maximumSubarray04(arr):
     globalMax = float('-inf')
     localMax = 0

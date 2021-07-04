@@ -32,6 +32,21 @@
 1. To count the number of possible permutations of a string you can use a mathematical formula
   - Given a string "cabcbcacc" -> {a: 2, b: 2, c: 5} -> 9!/(2! x 2! x 5!)
 
+
+### String traversal
+
+1. You can use a hash table to store the information if a char has been visited or not
+2. You can maintain an array of size 128, each position representing an ascii code to store the index of last occurance of a char.
+      This is usually helpful in sliding window technique.
+3. For substring problems consider a dynamic sliding window technique with 2 pointers.
+    - The stop pointer can move as an iteration
+    - The start pointer can change position based on some condition
+
+
+### Max subarray
+
+1. Dynamic programming with Kadane's algo
+
 ### BFS and DFS
 
 _DFS_
