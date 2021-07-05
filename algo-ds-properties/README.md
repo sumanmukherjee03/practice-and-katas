@@ -19,6 +19,10 @@
   - in this case we need to modify links and not values, like in the case of a double link linked list
 2. When detecting a cycle in a single link linked list with Floyd Cycle Detection algo
   - Remember that the node forming the cycle has 2 links which point to it as next
+3. To find the middle of a linked list, use a slow and fast pointer. Move the fast pointer 2X the speed.
+      That way by the time the fast pointer reaches the end the slow pointer has reached the middle only.
+4. For palindrome, one solution with lower time complexity is to reverse the right half from the middle.
+      Then compare element by element between the left half and the reversed right half.
 
 
 ### Double Link Linked List

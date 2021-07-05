@@ -31,4 +31,3 @@ def reverseList(list):
         previous = current
         current = nextNode
     list.head = previous
-
