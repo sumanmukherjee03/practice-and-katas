@@ -10,8 +10,8 @@ class LinkedList:
         self.head = head
 
 
-#  This is the bubble sort implementation
-# The nested loop iomplementation here is a little cumbersome because we are changing links
+# This is the bubble sort implementation
+# The nested loop iomplementation here is a little cumbersome because we are changing links instead of swapping data
 # Time complexity O(n^2)
 def sortList01(list):
     if not list.head:
@@ -51,3 +51,53 @@ def sortList02(list):
                 j.data, j.next.data = j.next.data, j.data
             j = j.next # Here increment the pointer and move to the next node because we havent changed the links here
         i = i.next
+
+
+#  Time complexity of this is O(nlogn)
+def sortList03(list):
+    if not list.head:
+        return list
+    if not list.head.next:
+        return list
+
+    def getMidNode(node):
+        slow = node
+        fast = node
+        while fast.next.next:
+            slow = slow.next
+            fast = fast.next.next
+        return slow
+
+    def mergeLists(l, r):
+        res = LinkedList.new()
+        resPtr = None
+        prev_l = None
+        prev_r = None
+        while l and r:
+            node = Node.new()
+            if l.data < r.data:
+                node.data = l.data
+                prev_l = l
+                l = l.next
+            else:
+                node.data = r.data
+                prev_r = r
+                r = r.next
+            if not res.head:
+                res.head = node
+                resPtr = res.head
+            else:
+                resPtr.next = node
+        if l:
+            prev_l.next = None
+            resPtr.next = l
+        else:
+            prev_r.next = None
+            resPtr.next = r
+        return res
+
+    mid = getMidNode(list.head)
+    left = list.head
+    right = mid.next
+    mid.next = None
+    return mergeLists(sortList03(left), sortList03(right))

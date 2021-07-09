@@ -2,8 +2,9 @@
 
 1. All nodes on left subtree are smaller than the root, and all nodes on the right subtree are greater than the root
 2. A child of a BST is also a BST
-3. Inorder traversal of a BST produces a sorted array
+3. Inorder traversal of a BST produces a sorted array and can be used to validate if a BST is valid or not
 4. We can insert, delete and find nodes in O(h) time, h being the height of the subtree
+5. Value of any node of a BST lies between the value of it's closest left parent and closest right parent
 
 
 ### PROPERTIES OF A PALINDROME
