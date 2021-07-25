@@ -37,7 +37,7 @@ def getValuesByLevel02(root):
         return []
 
     queue = []
-    out = []
+    out = [] # Maintains the nodes level by level
     queue.append([root, 0])
 
     while len(queue) > 0:
