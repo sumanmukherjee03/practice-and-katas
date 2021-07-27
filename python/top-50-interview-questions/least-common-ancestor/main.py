@@ -49,4 +49,4 @@ def lowestCommonAncestor01(root, num1, num2):
 
 
 
-
+#  There is another solution to this problem but that is harder to visualize
