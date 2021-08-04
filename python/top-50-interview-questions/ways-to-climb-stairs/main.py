@@ -25,11 +25,29 @@
 #  away from it or 3 steps away from it or 4 steps away from it.
 #  f(n) = f(n-2) + f(n-3) + f(n-4)
 
-def waysToClimb(n, possibleSteps):
+#  If the set of possibleSteps is of length m, then the time complexity is O(m^n)
+#  This can be improved with dynamic programing
+def waysToClimb01(n, possibleSteps):
     if n == 0:
         return 1
     noWays = 0
     for steps in possibleSteps:
         if n-steps > 0:
-            noWays += waysToClimb(n-steps, possibleSteps)
+            noWays += waysToClimb01(n-steps, possibleSteps)
     return noWays
+
+
+#  With dynamic programming consider an array that holds the number of ways to climb n steps.
+#  So, for possibleSteps = {2,3,4}
+#  arr[i] = arr[i-2] + arr[i-3] + arr[i-4]
+#
+#  arr = 1          0         1         1         2         2         4       5
+#       n=0        n=1       n=2       n=3       n=4       n=5       n=6      n=7
+def waysToClimb02(n, possibleSteps):
+    arr = [0] * (n+1) # n+1 because to consider n steps we need to also consider the 0th step
+    arr[0] = 1
+    for i in range(1,n+1):
+        for j in possibleSteps:
+            if i-j >= 0:
+                arr[i] += arr[i-j]
+    return arr[n]
