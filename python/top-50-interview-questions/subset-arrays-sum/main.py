@@ -18,9 +18,25 @@
 #  Here i is the index in the array you are considering
 #  And s is the local sum you are considering to check if it has reached k or not
 #  Time complexity is O(2^n)
-def subsetsThatSumUpToK(arr, k, i = 0, s = 0):
+def subsetsThatSumUpToK01(arr, k, i = 0, s = 0):
     if s == k:
         return 1
     if s > k or i >= len(arr):
         return 0
-    return subsetsThatSumUpToK(arr, k, i+1, s + arr[i]) + subsetsThatSumUpToK(arr, k, i+1, s)
+    return subsetsThatSumUpToK01(arr, k, i+1, s + arr[i]) + subsetsThatSumUpToK01(arr, k, i+1, s)
+
+#  We can improve the time complexity from O(2^n) by using memoization. There are multiple calls made to the same function
+#  with the same parameters. We can store these results in a hash table.
+#  This will reduce the time xomplexity to O(nk)
+def subsetsThatSumUpToK02(arr, k, i = 0, s = 0, memoiz = {}):
+    key = str(i) + "_" + str(s)
+    if memoiz.get(key) is not None:
+        return memoiz[key]
+    elif s == k:
+        return 1
+    elif s > k or i >= len(arr):
+        return 0
+    else:
+        noSubsets = subsetsThatSumUpToK02(arr, k, i+1, s + arr[i], memoiz) + subsetsThatSumUpToK02(arr, k, i+1, s, memoiz)
+        memoiz[key] = noSubsets
+        return noSubsets
