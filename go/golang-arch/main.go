@@ -48,22 +48,35 @@ func main() {
 }
 
 func handleEncode(w http.ResponseWriter, r *http.Request) {
-	p := &person{
+	if r.Method != "GET" {
+		log.Error("ERROR - This path only handles a GET request")
+		return
+	}
+	p1 := &person{
 		FirstName: "John",
 		LastName:  "Doe",
 	}
-	err := json.NewEncoder(w).Encode(p)
+	p2 := &person{
+		FirstName: "Jane",
+		LastName:  "Doe",
+	}
+	ps := []*person{p1, p2}
+	err := json.NewEncoder(w).Encode(ps)
 	if err != nil {
-		log.Info(fmt.Sprintf("ERROR >> Could not encode into json - %v", err))
+		log.Error(fmt.Sprintf("ERROR - Could not encode into json - %v", err))
 	}
 }
 
 func handleDecode(w http.ResponseWriter, r *http.Request) {
-	var p person
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		log.Info(fmt.Sprintf("ERROR >> Could not decode json - %v", err))
+	var ps []person
+	if r.Method != "POST" {
+		log.Error("ERROR - This path only handles a POST request")
+		return
 	}
-	log.Info(p)
+	if err := json.NewDecoder(r.Body).Decode(&ps); err != nil {
+		log.Error(fmt.Sprintf("ERROR - Could not decode json - %v", err))
+	}
+	log.Info(ps)
 }
 
 func errorf(format string, args ...interface{}) {
