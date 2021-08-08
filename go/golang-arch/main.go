@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
-	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -26,6 +28,7 @@ type person struct {
 }
 
 func main() {
+	log.SetFormatter(&log.JSONFormatter{})
 	signals := make(chan os.Signal)
 
 	// The Notify function will pass the incoming signals that you provided, in this case os.Interrupt
@@ -39,49 +42,28 @@ func main() {
 		errorf("Received OS signal - %v", s)
 	}()
 
-	if len(os.Args) != 2 {
-		errorf("The provided args is not valid. You need to provide at least one output type - slurp|stream")
-	}
+	http.HandleFunc("/encode", handleEncode)
+	http.HandleFunc("/decode", handleDecode)
+	http.ListenAndServe(":8080", nil)
+}
 
-	outType := os.Args[1]
-	if _, ok := allowedOutTypes[outType]; !ok {
-		errorf("The provided output type is not valid - %s", outType)
-	}
-
-	p1 := &person{
+func handleEncode(w http.ResponseWriter, r *http.Request) {
+	p := &person{
 		FirstName: "John",
 		LastName:  "Doe",
 	}
-
-	p2 := &person{
-		FirstName: "Jane",
-		LastName:  "Doe",
+	err := json.NewEncoder(w).Encode(p)
+	if err != nil {
+		log.Info(fmt.Sprintf("ERROR >> Could not encode into json - %v", err))
 	}
+}
 
-	persons := []*person{
-		p1,
-		p2,
+func handleDecode(w http.ResponseWriter, r *http.Request) {
+	var p person
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		log.Info(fmt.Sprintf("ERROR >> Could not decode json - %v", err))
 	}
-
-	switch outType {
-	case slurpOutputType:
-		b, err := json.Marshal(persons)
-		if err != nil {
-			errorf("The persons slice is not marshalable : %v", err)
-		}
-		fmt.Fprintf(os.Stdout, string(b)+"\n")
-	case streamOutputType:
-		ticker := time.NewTicker(3 * time.Second)
-		for _, p := range persons {
-			b, err := json.Marshal(p)
-			if err != nil {
-				errorf("The person is not marshalable : %v", err)
-			}
-			<-ticker.C
-			fmt.Fprintf(os.Stdout, string(b)+"\n")
-		}
-		ticker.Stop()
-	}
+	log.Info(p)
 }
 
 func errorf(format string, args ...interface{}) {
