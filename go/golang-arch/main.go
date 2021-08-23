@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/form3tech-oss/jwt-go"
+	"github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -26,9 +27,31 @@ var (
 		slurpOutputType:  true,
 		streamOutputType: true,
 	}
-	letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-	privateKey  []byte
+	letterRunes  = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	currentKeyId string
+	keys         = map[string]key{}
 )
+
+type key struct {
+	key       []byte
+	createdAt time.Time
+}
+
+type UserClaims struct {
+	jwt.StandardClaims       // This struct contains the basic required fields like Issuer, ExpiresAt, Subject etc
+	SessionID          int64 // pretty common to include a session id in the custom claims section
+}
+
+// It is recommended taht you use a custom Valid method for the UserClaims struct
+func (uc *UserClaims) Valid() error {
+	if !uc.VerifyExpiresAt(time.Now().UnixNano(), true) {
+		return fmt.Errorf("ERROR - JWT token has expired")
+	}
+	if uc.SessionID == 0 {
+		return fmt.Errorf("ERROR - JWT token has invalid session id")
+	}
+	return nil
+}
 
 type person struct {
 	FirstName string `json:"first_name,omitempty"`
@@ -36,9 +59,8 @@ type person struct {
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
 	log.SetFormatter(&log.JSONFormatter{})
-	privateKey = []byte(randStringRunes(64))
+	generateKey()
 	signals := make(chan os.Signal)
 
 	// The Notify function will pass the incoming signals that you provided, in this case os.Interrupt
@@ -55,6 +77,17 @@ func main() {
 	http.HandleFunc("/encode", handleEncode)
 	http.HandleFunc("/decode", handleDecode)
 	http.ListenAndServe(":8080", nil)
+}
+
+func generateKey() error {
+	privateKey := []byte(randStringRunes(64))
+	id, err := uuid.NewV4()
+	if err != nil {
+		return fmt.Errorf("ERROR - could not generate uuid - %v", err)
+	}
+	keys[id.String()] = key{key: privateKey, createdAt: time.Now()}
+	currentKeyId = id.String()
+	return nil
 }
 
 func handleEncode(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +145,7 @@ func signMessage(msg []byte) ([]byte, error) {
 	// Later this same key is used to verify the signature as well.
 	// The length of the private key should match whatever hashing algo you have chosen.
 	// For sha512, that size is 64
-	h := hmac.New(sha512.New, privateKey)
+	h := hmac.New(sha512.New, keys[currentKeyId].key)
 	_, err := h.Write(msg)
 	if err != nil {
 		return nil, fmt.Errorf("ERROR - Encountered error while hashing message - %v", err)
@@ -139,8 +172,46 @@ func checkSig(msg, signature []byte) error {
 // JWT tokens can be signed with HMAC or with RSA/ECDSA. The difference being that the HMAC signing
 // requires the private key to be shared because it's the same key that signs a message and validates a signature.
 // Whereas with RSA/ECDSA, you can sign a message with a private key but can validate with a public key.
-type UserClaims struct {
-	jwt.StandardClaims
+func createToken(c *UserClaims) (string, error) {
+	// To create a jwt token from a claim, you need an object that satisfies the SigningMethod interface.
+	t := jwt.NewWithClaims(jwt.SigningMethodHS512, c)
+	// Use a private key for signing and public key for validation if using something like RSA or ECDSA.
+	// OR if you are using something like HMAC then use the same shared key for signing and validation.
+	return t.SignedString(keys[currentKeyId].key)
+}
+
+func parseToken(signedToken string) (*UserClaims, error) {
+	// ParseWithClaims checks the signature of the token and also checks if the token is valid.
+	// The keyFunc passed at the end of jwt.ParseWithClaims takes an unverified token, inspects it's headers
+	// for instance the key id (kid) and returns the key that needs to be used to verify the signature.
+	t, err := jwt.ParseWithClaims(signedToken, &UserClaims{}, func(t *jwt.Token) (interface{}, error) {
+		// Verify that the algo with which the token is signed is the same as what you are expecting.
+		if t.Method.Alg() != jwt.SigningMethodHS512.Alg() {
+			return nil, fmt.Errorf("ERROR - The signing algo of the token and what we expected do not match, so cant use the shared key to verify signature")
+		}
+		// There can be multiple private keys with which a token could have been encrypted as well.
+		// It is possible to pull down the key id information from the header.
+		// Using multiple keys allows us to be able to easily rotate keys.
+		keyId, ok := t.Header["kid"].(string)
+		if !ok {
+			return nil, fmt.Errorf("ERROR - Invalid key id")
+		}
+		k, ok := keys[keyId]
+		if !ok {
+			return nil, fmt.Errorf("ERROR - key id is not valid")
+		}
+		return k.key, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("ERROR - Encountered an error when parsing the token - %v", err)
+	}
+	// The Valid field is populated when ParseWithClaims is called
+	if !t.Valid {
+		return nil, fmt.Errorf("ERROR - Token is not valid")
+	}
+	// The token Claims field is a jwt.Claims interface. So, we need to type cast it into our concrete struct type UserClaims.
+	claims := t.Claims.(*UserClaims)
+	return claims, nil
 }
 
 func errorf(format string, args ...interface{}) {
