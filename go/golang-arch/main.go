@@ -79,17 +79,6 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
-func generateKey() error {
-	privateKey := []byte(randStringRunes(64))
-	id, err := uuid.NewV4()
-	if err != nil {
-		return fmt.Errorf("ERROR - could not generate uuid - %v", err)
-	}
-	keys[id.String()] = key{key: privateKey, createdAt: time.Now()}
-	currentKeyId = id.String()
-	return nil
-}
-
 func handleEncode(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		log.Error("ERROR - This path only handles a GET request")
@@ -122,7 +111,11 @@ func handleDecode(w http.ResponseWriter, r *http.Request) {
 	log.Info(ps)
 }
 
-// How to generate a hashed string from a password using a plain text password
+// ----------------------------------------------------------------------------------------------------
+// --------------------- Basic auth plaintext password bcrypt hashing and verifying -------------------
+// ----------------------------------------------------------------------------------------------------
+
+// How to generate a hashed string from a password using a plain text password for basic auth
 func hashPassword(password string) ([]byte, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -131,6 +124,7 @@ func hashPassword(password string) ([]byte, error) {
 	return bytes, nil
 }
 
+// How to compare a hashed password and a user provided password to validate a login
 func comparePassword(hashedPassword []byte, password string) error {
 	err := bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
 	if err != nil {
@@ -138,6 +132,10 @@ func comparePassword(hashedPassword []byte, password string) error {
 	}
 	return nil
 }
+
+// ----------------------------------------------------------------------------------------------------
+// ----------------------------- HMAC Message signing and verifying signature -------------------------
+// ----------------------------------------------------------------------------------------------------
 
 func signMessage(msg []byte) ([]byte, error) {
 	// hmac.New takes any hashing function that returns a hash.Hash interface
@@ -154,8 +152,8 @@ func signMessage(msg []byte) ([]byte, error) {
 	return signature, nil
 }
 
-// You get the message and the signature. Send it across to the user as the Bearer token.
-// The user sends it back to you. So you get the original message and the signature again.
+// Server gets the message and the signature. Server sends it to the user as the Bearer token.
+// The user sends it back to the server. So you get the original message and the signature again.
 // Then you compare the message and the signature to verify if the message has been tampered with.
 func checkSig(msg, signature []byte) error {
 	newSignature, err := signMessage(msg)
@@ -167,6 +165,10 @@ func checkSig(msg, signature []byte) error {
 	}
 	return nil
 }
+
+// ----------------------------------------------------------------------------------------------------
+// ----------------------------- JWT token creation and parsing and verifying -------------------------
+// ----------------------------------------------------------------------------------------------------
 
 // {JWT Standard fields}.{Your fields}.Signature
 // JWT tokens can be signed with HMAC or with RSA/ECDSA. The difference being that the HMAC signing
@@ -180,10 +182,12 @@ func createToken(c *UserClaims) (string, error) {
 	return t.SignedString(keys[currentKeyId].key)
 }
 
+// This func is used when a user passes back a token with claims and we need to parse it, verify signature, validate it
+// and extract the claims information so that we can use information from the claim to deduce other things.
 func parseToken(signedToken string) (*UserClaims, error) {
 	// ParseWithClaims checks the signature of the token and also checks if the token is valid.
 	// The keyFunc passed at the end of jwt.ParseWithClaims takes an unverified token, inspects it's headers
-	// for instance the key id (kid) and returns the key that needs to be used to verify the signature.
+	// for things like the key id (kid) or something similar and returns the key that needs to be used to verify the signature.
 	t, err := jwt.ParseWithClaims(signedToken, &UserClaims{}, func(t *jwt.Token) (interface{}, error) {
 		// Verify that the algo with which the token is signed is the same as what you are expecting.
 		if t.Method.Alg() != jwt.SigningMethodHS512.Alg() {
@@ -194,7 +198,7 @@ func parseToken(signedToken string) (*UserClaims, error) {
 		// Using multiple keys allows us to be able to easily rotate keys.
 		keyId, ok := t.Header["kid"].(string)
 		if !ok {
-			return nil, fmt.Errorf("ERROR - Invalid key id")
+			return nil, fmt.Errorf("ERROR - Invalid or missing header for key id")
 		}
 		k, ok := keys[keyId]
 		if !ok {
@@ -209,9 +213,24 @@ func parseToken(signedToken string) (*UserClaims, error) {
 	if !t.Valid {
 		return nil, fmt.Errorf("ERROR - Token is not valid")
 	}
-	// The token Claims field is a jwt.Claims interface. So, we need to type cast it into our concrete struct type UserClaims.
+	// The tokens' Claims field is a jwt.Claims interface. So, we need to type cast it into our concrete struct type UserClaims.
 	claims := t.Claims.(*UserClaims)
 	return claims, nil
+}
+
+// ----------------------------------------------------------------------------------------------------
+// ------------------------------------------- Helper funcs -------------------------------------------
+// ----------------------------------------------------------------------------------------------------
+
+func generateKey() error {
+	privateKey := []byte(randStringRunes(64))
+	id, err := uuid.NewV4()
+	if err != nil {
+		return fmt.Errorf("ERROR - could not generate uuid - %v", err)
+	}
+	keys[id.String()] = key{key: privateKey, createdAt: time.Now()}
+	currentKeyId = id.String()
+	return nil
 }
 
 func errorf(format string, args ...interface{}) {
