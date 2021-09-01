@@ -81,13 +81,36 @@ func main() {
 		errorf("Received OS signal - %v", s)
 	}()
 
+	fmt.Println("Starting web server")
+	http.HandleFunc("/", handleHome)
 	http.HandleFunc("/encode", handleEncode)
 	http.HandleFunc("/decode", handleDecode)
-	http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/show_cookie_example", handleShowCookieExample)
+	http.HandleFunc("/submit_cookie_example", handleSubmitCookieExample)
+	http.ListenAndServe(":8000", nil)
+}
+
+func handleHome(w http.ResponseWriter, r *http.Request) {
+	html := `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Golang Arch for simple webapp depicting usage of various encryption examples</title>
+</head>
+<body>
+  <h1>Home page</h1>
+  <p>This is the home page for this application. It is a simple webapp depicting the usage of various ways of encrytion/decryption, hashing, generating digests etc required in authentication mechanism</p>
+</body>
+</html>
+	`
+	if _, err := io.WriteString(w, html); err != nil {
+		log.Error("ERROR - Could not write html to the response writer")
+		return
+	}
 }
 
 func handleEncode(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
+	if r.Method != http.MethodGet {
 		log.Error("ERROR - This path only handles a GET request")
 		return
 	}
@@ -103,12 +126,13 @@ func handleEncode(w http.ResponseWriter, r *http.Request) {
 	err := json.NewEncoder(w).Encode(ps)
 	if err != nil {
 		log.Error(fmt.Sprintf("ERROR - Could not encode into json - %v", err))
+		return
 	}
 }
 
 func handleDecode(w http.ResponseWriter, r *http.Request) {
 	var ps []person
-	if r.Method != "POST" {
+	if r.Method != http.MethodPost {
 		log.Error("ERROR - This path only handles a POST request")
 		return
 	}
@@ -116,6 +140,65 @@ func handleDecode(w http.ResponseWriter, r *http.Request) {
 		log.Error(fmt.Sprintf("ERROR - Could not decode json - %v", err))
 	}
 	log.Info(ps)
+}
+
+func handleShowCookieExample(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		log.Error("ERROR - This path only handles a GET request")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	c, err := r.Cookie("session")
+	if err != nil {
+		c = &http.Cookie{}
+	}
+	html := `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HMAC Example</title>
+</head>
+<body>
+  <h1>Form for HMAC</h1>
+<p>Cookie value : ` + c.Value + `</p>
+  <form action="/submit_cookie_example" method="post">
+    <input type="email" name="email" />
+    <input type="submit" />
+  </form>
+</body>
+</html>
+	`
+	if _, err := io.WriteString(w, html); err != nil {
+		log.Error("ERROR - Could not write html to the response writer")
+		return
+	}
+}
+
+func handleSubmitCookieExample(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		log.Error("ERROR - This path only handles a POST request")
+		http.Redirect(w, r, "/show_cookie_example", http.StatusSeeOther) // http.StatusSeeOther - go to this other location and dont forward form values
+		return
+	}
+	email := r.FormValue("email")
+	if len(email) == 0 {
+		log.Error("ERROR - The email sent via the form is an empty string")
+		http.Redirect(w, r, "/show_cookie_example", http.StatusSeeOther)
+		return
+	}
+	signedCookieValue, err := signMessage([]byte(email))
+	if err != nil {
+		log.Error("ERROR - Could not create a signature for the value to put in the cookie")
+		http.Redirect(w, r, "/show_cookie_example", http.StatusSeeOther)
+		return
+	}
+	cookieVal := fmt.Sprintf("%s|%s", string(signedCookieValue), email)
+	c := &http.Cookie{
+		Name:  "session",
+		Value: cookieVal,
+	}
+	http.SetCookie(w, c)
+	http.Redirect(w, r, "/show_cookie_example", http.StatusSeeOther)
 }
 
 // ----------------------------------------------------------------------------------------------------
