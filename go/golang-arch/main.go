@@ -1,10 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/sha512"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"os"
@@ -30,6 +35,7 @@ var (
 	letterRunes  = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 	currentKeyId string
 	keys         = map[string]key{}
+	aesSecretKey []byte
 )
 
 type key struct {
@@ -60,7 +66,8 @@ type person struct {
 
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
-	generateKey()
+	generateHMACKey()
+	generateAESKey()
 	signals := make(chan os.Signal)
 
 	// The Notify function will pass the incoming signals that you provided, in this case os.Interrupt
@@ -112,7 +119,99 @@ func handleDecode(w http.ResponseWriter, r *http.Request) {
 }
 
 // ----------------------------------------------------------------------------------------------------
+// ----------------------------------- Base64 encoding and decoding -----------------------------------
+// ------------------------- This part is about base64 encoding and decoding --------------------------
+// ----------------------------------------------------------------------------------------------------
+
+func b64encode(msg string) string {
+	return base64.StdEncoding.EncodeToString([]byte(msg))
+}
+
+func b64decode(msg string) (string, error) {
+	bytes, err := base64.StdEncoding.DecodeString(msg)
+	if err != nil {
+		return "", fmt.Errorf("Could not base64 decode string because of error - %v", err)
+	}
+	return string(bytes), nil
+}
+
+// ----------------------------------------------------------------------------------------------------
+// ---------------------------------- AES encryption and decryption -----------------------------------
+// ------------------------ This part is about aes encryption and decryption --------------------------
+// --------------------- AES uses a symetric key for encryption and decryption ------------------------
+// ----------------------------------------------------------------------------------------------------
+
+// The same password and same initialization vector (or called salt here) needs to be used for encryption and decryption mechanism
+// Also, important to remember that the salt size needs to be at least aes.BlockSize in length
+// Usually, the encrypted message is sent to the client along with the initialization vector.
+// And the password/secret is shared between the server and the client.
+// That way the client can use the shared secret and the initialization vector to decode the encrypted message
+func aesEncryptDecrypt(key []byte, msg string) (string, error) {
+	// AES-128 requires a 16 bit key and AES-256 requires a 32 bit key
+	// In this step we are generating the cipher that we will use to encrypt our input message
+	b, err := aes.NewCipher(key)
+	if err != nil {
+		return "", fmt.Errorf("Could not generate cipher to encrypt message - %v", err)
+	}
+
+	// This is an initialization vector of all zeros. We could have used some random chars as well.
+	// However a salt generated from random chars need to be sent back to the client to decrypt.
+	// To keep things simple we are using an initialization vector of all zeros.
+	iv := make([]byte, aes.BlockSize)
+
+	// Pass the cipher and a salt/initialization vector to cipher.NewCTR
+	// to get back a stream where the encrypted message will get written to
+	s := cipher.NewCTR(b, iv)
+
+	// Use the stream above and an empty bytes buffer to create a stream writer.
+	// The stream writer will take your input message, encrypt it and write it out to the bytes buffer.
+	buff := &bytes.Buffer{}
+	sw := cipher.StreamWriter{
+		S: s,
+		W: buff,
+	}
+
+	// The stream writer is gonna take your input message and write it out to the bytes buffer mentioned above
+	if _, err := sw.Write([]byte(msg)); err != nil {
+		return "", fmt.Errorf("Could not encrypt message - %v", err)
+	}
+
+	// Finally, get the bytes from the bytes buffer
+	out := buff.Bytes()
+	return string(out), nil
+}
+
+// This is a similar function as the one above except it is different in the sense that it wraps around a writer.
+// This can be any writer. A bytes buffer or a http response stream writer.
+// So, whatever message you pass to this encrypted stream writer, it takes it, encrypts it and writes it to the destination writer.
+// Example use case :
+// wtr := &bytes.Buffer{}
+// encWriter, err := encryptedWriter(wtr, aesSecretKey)
+// _, err := io.WriteString(encWriter, "This is the message i am trying to encrypt")
+// if err != nil {
+// panic(err)
+// }
+// encrypted := wtr.String()
+// fmt.Println(encrypted)
+func encryptedWriter(w io.Writer, key []byte) (io.Writer, error) {
+	b, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, fmt.Errorf("Could not generate cipher to encrypt input - %v", err)
+	}
+
+	// Make an initialization vector of all 0 bytes. That way the initialization vector/salt is of 16 bytes but it is the same value always.
+	iv := make([]byte, aes.BlockSize)
+
+	s := cipher.NewCTR(b, iv)
+	return cipher.StreamWriter{
+		S: s,
+		W: w,
+	}, nil
+}
+
+// ----------------------------------------------------------------------------------------------------
 // --------------------- Basic auth plaintext password bcrypt hashing and verifying -------------------
+// ---------------------------------- This part is about hashing --------------------------------------
 // ----------------------------------------------------------------------------------------------------
 
 // How to generate a hashed string from a password using a plain text password for basic auth
@@ -135,6 +234,7 @@ func comparePassword(hashedPassword []byte, password string) error {
 
 // ----------------------------------------------------------------------------------------------------
 // ----------------------------- HMAC Message signing and verifying signature -------------------------
+// ---------------------------------- This part is about signing --------------------------------------
 // ----------------------------------------------------------------------------------------------------
 
 func signMessage(msg []byte) ([]byte, error) {
@@ -222,7 +322,7 @@ func parseToken(signedToken string) (*UserClaims, error) {
 // ------------------------------------------- Helper funcs -------------------------------------------
 // ----------------------------------------------------------------------------------------------------
 
-func generateKey() error {
+func generateHMACKey() error {
 	privateKey := []byte(randStringRunes(64))
 	id, err := uuid.NewV4()
 	if err != nil {
@@ -230,6 +330,15 @@ func generateKey() error {
 	}
 	keys[id.String()] = key{key: privateKey, createdAt: time.Now()}
 	currentKeyId = id.String()
+	return nil
+}
+
+func generateAESKey() error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(randStringRunes(64)), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("Could not generate aes secret key - %v", err)
+	}
+	aesSecretKey = hashedPassword[:32]
 	return nil
 }
 
