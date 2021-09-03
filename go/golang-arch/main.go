@@ -26,6 +26,7 @@ import (
 const (
 	slurpOutputType  = "slurp"
 	streamOutputType = "stream"
+	cookieSeparator  = "|"
 )
 
 var (
@@ -153,22 +154,13 @@ func handleShowCookieExample(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		c = &http.Cookie{}
 	}
-	var verified bool
-	if len(c.Value) > 0 {
-		arr := strings.Split(c.Value, "|")
-		sig, err := b64decode(arr[0])
-		if err != nil {
-			log.Error("ERROR - The cookie is not base64 encoded")
-			verified = false
-		} else {
-			email := arr[1]
-			if err := checkSig([]byte(email), []byte(sig)); err != nil {
-				log.Error("ERROR - The cookie signature is not valid")
-				verified = false
-			}
-			verified = true
-		}
+
+	verified := true
+	if err := validateCookie(c); err != nil {
+		log.Errorf("ERROR - Encountered error in verifying cookie : %v", err)
+		verified = false
 	}
+
 	html := `
 <!DOCTYPE html>
 <html>
@@ -210,7 +202,7 @@ func handleSubmitCookieExample(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/show_cookie_example", http.StatusSeeOther)
 		return
 	}
-	cookieVal := fmt.Sprintf("%s|%s", b64encode(string(signedCookieValue)), email)
+	cookieVal := fmt.Sprintf("%s%s%s", b64encode(string(signedCookieValue)), cookieSeparator, email)
 	c := &http.Cookie{
 		Name:  "session",
 		Value: cookieVal,
@@ -461,4 +453,23 @@ func boolToString(v bool) string {
 		return "true"
 	}
 	return "false"
+}
+
+func validateCookie(c *http.Cookie) error {
+	if len(c.Value) == 0 {
+		return nil
+	}
+	xs := strings.SplitN(c.Value, cookieSeparator, 2)
+	if len(xs) != 2 {
+		return fmt.Errorf("Format of cookie is not valid")
+	}
+	sig, err := b64decode(xs[0])
+	if err != nil {
+		return fmt.Errorf("The cookie signature is not base64 encoded")
+	}
+	email := xs[1]
+	if err := checkSig([]byte(email), []byte(sig)); err != nil {
+		return fmt.Errorf("The cookie signature is not valid")
+	}
+	return nil
 }
