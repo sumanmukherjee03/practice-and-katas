@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -152,6 +153,22 @@ func handleShowCookieExample(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		c = &http.Cookie{}
 	}
+	var verified bool
+	if len(c.Value) > 0 {
+		arr := strings.Split(c.Value, "|")
+		sig, err := b64decode(arr[0])
+		if err != nil {
+			log.Error("ERROR - The cookie is not base64 encoded")
+			verified = false
+		} else {
+			email := arr[1]
+			if err := checkSig([]byte(email), []byte(sig)); err != nil {
+				log.Error("ERROR - The cookie signature is not valid")
+				verified = false
+			}
+			verified = true
+		}
+	}
 	html := `
 <!DOCTYPE html>
 <html>
@@ -160,7 +177,7 @@ func handleShowCookieExample(w http.ResponseWriter, r *http.Request) {
 </head>
 <body>
   <h1>Form for HMAC</h1>
-<p>Cookie value : ` + c.Value + `</p>
+  <p>Cookie value : ` + c.Value + `</p>` + `<p>Signature verfied : ` + boolToString(verified) + `</p>
   <form action="/submit_cookie_example" method="post">
     <input type="email" name="email" />
     <input type="submit" />
@@ -180,6 +197,7 @@ func handleSubmitCookieExample(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/show_cookie_example", http.StatusSeeOther) // http.StatusSeeOther - go to this other location and dont forward form values
 		return
 	}
+	// Form value takes the name of a form field to extract the value from
 	email := r.FormValue("email")
 	if len(email) == 0 {
 		log.Error("ERROR - The email sent via the form is an empty string")
@@ -192,7 +210,7 @@ func handleSubmitCookieExample(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/show_cookie_example", http.StatusSeeOther)
 		return
 	}
-	cookieVal := fmt.Sprintf("%s|%s", string(signedCookieValue), email)
+	cookieVal := fmt.Sprintf("%s|%s", b64encode(string(signedCookieValue)), email)
 	c := &http.Cookie{
 		Name:  "session",
 		Value: cookieVal,
@@ -436,4 +454,11 @@ func randStringRunes(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
+}
+
+func boolToString(v bool) string {
+	if v {
+		return "true"
+	}
+	return "false"
 }
