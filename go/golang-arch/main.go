@@ -440,9 +440,6 @@ func crudeValidateJwtCookieVal(c *http.Cookie) error {
 		return nil
 	}
 	token, err := jwt.ParseWithClaims(c.Value, &CrudeJwtClaims{}, func(t *jwt.Token) (interface{}, error) {
-		if t.Method.Alg() != jwt.SigningMethodHS512.Alg() {
-			return nil, fmt.Errorf("ERROR - The signing algo of the token and what we expected do not match, so cant use the shared key to verify signature")
-		}
 		return crudeJwtHmacSigningKey, nil
 	})
 	if err != nil {
