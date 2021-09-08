@@ -24,9 +24,10 @@ import (
 )
 
 const (
-	slurpOutputType  = "slurp"
-	streamOutputType = "stream"
-	cookieSeparator  = "|"
+	slurpOutputType        = "slurp"
+	streamOutputType       = "stream"
+	cookieSeparator        = "|"
+	crudeJwtHmacSigningKey = []byte("ThisIsASharedSecretKeyToSignJWTTokensWithHMAC")
 )
 
 var (
@@ -59,6 +60,11 @@ func (uc *UserClaims) Valid() error {
 		return fmt.Errorf("ERROR - JWT token has invalid session id")
 	}
 	return nil
+}
+
+type CrudeJwtClaims struct {
+	jwt.StandardClaims
+	Email string `json:"email"`
 }
 
 type person struct {
@@ -156,7 +162,8 @@ func handleShowCookieExample(w http.ResponseWriter, r *http.Request) {
 	}
 
 	verified := true
-	if err := validateCookie(c); err != nil {
+	// if err := validateHmacCookieVal(c); err != nil {
+	if err := crudeValidateJwtCookieVal(c); err != nil {
 		log.Errorf("ERROR - Encountered error in verifying cookie : %v", err)
 		verified = false
 	}
@@ -196,13 +203,15 @@ func handleSubmitCookieExample(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/show_cookie_example", http.StatusSeeOther)
 		return
 	}
-	signedCookieValue, err := signMessage([]byte(email))
+	// signedCookieValue, err := signMessage([]byte(email))
+	signedCookieValue, err := crudeCreateJwtToken(email)
 	if err != nil {
-		log.Error("ERROR - Could not create a signature for the value to put in the cookie")
+		log.Error("ERROR - Could not create a signed token for the value to put in the cookie : %v", err)
 		http.Redirect(w, r, "/show_cookie_example", http.StatusSeeOther)
 		return
 	}
-	cookieVal := fmt.Sprintf("%s%s%s", b64encode(string(signedCookieValue)), cookieSeparator, email)
+	// cookieVal := fmt.Sprintf("%s%s%s", b64encode(string(signedCookieValue)), cookieSeparator, email)
+	cookieVal := signedCookieValue
 	c := &http.Cookie{
 		Name:  "session",
 		Value: cookieVal,
@@ -367,7 +376,7 @@ func checkSig(msg, signature []byte) error {
 // JWT tokens can be signed with HMAC or with RSA/ECDSA. The difference being that the HMAC signing
 // requires the private key to be shared because it's the same key that signs a message and validates a signature.
 // Whereas with RSA/ECDSA, you can sign a message with a private key but can validate with a public key.
-func createToken(c *UserClaims) (string, error) {
+func createJwtToken(c *UserClaims) (string, error) {
 	// To create a jwt token from a claim, you need an object that satisfies the SigningMethod interface.
 	t := jwt.NewWithClaims(jwt.SigningMethodHS512, c)
 	// Use a private key for signing and public key for validation if using something like RSA or ECDSA.
@@ -377,7 +386,7 @@ func createToken(c *UserClaims) (string, error) {
 
 // This func is used when a user passes back a token with claims and we need to parse it, verify signature, validate it
 // and extract the claims information so that we can use information from the claim to deduce other things.
-func parseToken(signedToken string) (*UserClaims, error) {
+func parseJwtToken(signedToken string) (*UserClaims, error) {
 	// ParseWithClaims checks the signature of the token and also checks if the token is valid.
 	// The keyFunc passed at the end of jwt.ParseWithClaims takes an unverified token, inspects it's headers
 	// for things like the key id (kid) or something similar and returns the key that needs to be used to verify the signature.
@@ -409,6 +418,40 @@ func parseToken(signedToken string) (*UserClaims, error) {
 	// The tokens' Claims field is a jwt.Claims interface. So, we need to type cast it into our concrete struct type UserClaims.
 	claims := t.Claims.(*UserClaims)
 	return claims, nil
+}
+
+func crudeCreateJwtToken(email string) (string, error) {
+	c := CrudeJwtClaims{
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(15 * time.Minute).Unix(),
+		},
+		Email: email,
+	}
+	t := jwt.NewWithClaims(jwt.SigningMethodHS512, c)
+	ss, err := t.SignedString(crudeJwtHmacSigningKey)
+	if err != nil {
+		return "", fmt.Errorf("ERROR - Encountered problem while signing jwt token - %v", err)
+	}
+	return ss, nil
+}
+
+func crudeValidateJwtCookieVal(c *http.Cookie) error {
+	if len(c.Value) == 0 {
+		return nil
+	}
+	token, err := jwt.ParseWithClaims(c.Value, &CrudeJwtClaims{}, func(t *jwt.Token) (interface{}, error) {
+		if t.Method.Alg() != jwt.SigningMethodHS512.Alg() {
+			return nil, fmt.Errorf("ERROR - The signing algo of the token and what we expected do not match, so cant use the shared key to verify signature")
+		}
+		return crudeJwtHmacSigningKey, nil
+	})
+	if err != nil {
+		return fmt.Errorf("ERROR - Encountered an error when parsing the token - %v", err)
+	}
+	if !token.Valid {
+		return fmt.Errorf("ERROR - Token is not valid")
+	}
+	return nil
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -455,7 +498,7 @@ func boolToString(v bool) string {
 	return "false"
 }
 
-func validateCookie(c *http.Cookie) error {
+func validateHmacCookieVal(c *http.Cookie) error {
 	if len(c.Value) == 0 {
 		return nil
 	}
