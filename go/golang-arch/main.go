@@ -392,6 +392,7 @@ func parseJwtToken(signedToken string) (*UserClaims, error) {
 	// for things like the key id (kid) or something similar and returns the key that needs to be used to verify the signature.
 	t, err := jwt.ParseWithClaims(signedToken, &UserClaims{}, func(t *jwt.Token) (interface{}, error) {
 		// Verify that the algo with which the token is signed is the same as what you are expecting.
+		// This is an important thing to check because someone could hack the token to change the Signing algo to None and delete the signature.
 		if t.Method.Alg() != jwt.SigningMethodHS512.Alg() {
 			return nil, fmt.Errorf("ERROR - The signing algo of the token and what we expected do not match, so cant use the shared key to verify signature")
 		}
@@ -440,6 +441,9 @@ func crudeValidateJwtCookieVal(c *http.Cookie) error {
 		return nil
 	}
 	token, err := jwt.ParseWithClaims(c.Value, &CrudeJwtClaims{}, func(t *jwt.Token) (interface{}, error) {
+		if t.Method.Alg() != jwt.SigningMethodHS512.Alg() {
+			return nil, fmt.Errorf("ERROR - The signing algo of the token and what we expected do not match, so cant use the shared key to verify signature")
+		}
 		return crudeJwtHmacSigningKey, nil
 	})
 	if err != nil {
