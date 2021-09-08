@@ -427,7 +427,7 @@ func crudeCreateJwtToken(email string) (string, error) {
 		},
 		Email: email,
 	}
-	t := jwt.NewWithClaims(jwt.SigningMethodHS512, c)
+	t := jwt.NewWithClaims(jwt.SigningMethodHS512, &c)
 	ss, err := t.SignedString(crudeJwtHmacSigningKey)
 	if err != nil {
 		return "", fmt.Errorf("ERROR - Encountered problem while signing jwt token - %v", err)
