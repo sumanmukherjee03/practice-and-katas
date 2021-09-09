@@ -206,7 +206,7 @@ func handleSubmitCookieExample(w http.ResponseWriter, r *http.Request) {
 	// signedCookieValue, err := signMessage([]byte(email))
 	signedCookieValue, err := crudeCreateJwtToken(email)
 	if err != nil {
-		log.Error("ERROR - Could not create a signed token for the value to put in the cookie : %v", err)
+		log.Error(fmt.Sprintf("ERROR - Could not create a signed token for the value to put in the cookie : %v", err))
 		http.Redirect(w, r, "/show_cookie_example", http.StatusSeeOther)
 		return
 	}
