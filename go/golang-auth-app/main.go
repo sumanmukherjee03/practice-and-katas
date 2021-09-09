@@ -24,10 +24,9 @@ import (
 )
 
 const (
-	slurpOutputType        = "slurp"
-	streamOutputType       = "stream"
-	cookieSeparator        = "|"
-	crudeJwtHmacSigningKey = []byte("ThisIsASharedSecretKeyToSignJWTTokensWithHMAC")
+	slurpOutputType  = "slurp"
+	streamOutputType = "stream"
+	cookieSeparator  = "|"
 )
 
 var (
@@ -35,10 +34,11 @@ var (
 		slurpOutputType:  true,
 		streamOutputType: true,
 	}
-	letterRunes  = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-	currentKeyId string
-	keys         = map[string]key{}
-	aesSecretKey []byte
+	letterRunes            = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	currentKeyId           string
+	keys                   = map[string]key{}
+	aesSecretKey           []byte
+	crudeJwtHmacSigningKey = []byte("ThisIsASharedSecretKeyToSignJWTTokensWithHMAC")
 )
 
 type key struct {
