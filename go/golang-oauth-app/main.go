@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
+	"io"
 	"net/http"
 
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
 )
@@ -25,8 +26,6 @@ import (
 
 // In this example we are using a sample github oauth2 app registered for playing with oauth.
 
-var github
-
 var githubOAuthConfig = &oauth2.Config{
 	ClientID:     "052b8521298530d2d897",
 	ClientSecret: "186975de0888546e28f8f5f0d9a573aff582ed13",
@@ -35,7 +34,7 @@ var githubOAuthConfig = &oauth2.Config{
 
 func main() {
 	http.HandleFunc("/", indexHandler)
-	http.HandlerFunc("/oauth/github", githubOAuthHandler)
+	http.HandleFunc("/oauth/github", githubLoginHandler)
 	http.ListenAndServe(":8001", nil)
 }
 
@@ -53,14 +52,14 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
     </form>
   </body>
 </html>
-	`)
+	`
 	if _, err := io.WriteString(w, html); err != nil {
 		log.Error("ERROR - Could not write html to the response writer")
 		return
 	}
 }
 
-func githubOAuthHandler(w http.ResponseWriter, r *http.Request) {
+func githubLoginHandler(w http.ResponseWriter, r *http.Request) {
 	// The state variable being passed to AuthCodeURL is generally a uuid representing a login attempt.
 	// It usually is an id maintained in a DB. The id represents a login attempt and has an expiration time associated with it,
 	// Usually the login attempt is not valid after that expiration time.
