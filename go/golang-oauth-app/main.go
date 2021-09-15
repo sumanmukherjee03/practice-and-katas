@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -26,15 +28,35 @@ import (
 
 // In this example we are using a sample github oauth2 app registered for playing with oauth.
 
-var githubOAuthConfig = &oauth2.Config{
-	ClientID:     "052b8521298530d2d897",
-	ClientSecret: "186975de0888546e28f8f5f0d9a573aff582ed13",
-	Endpoint:     github.Endpoint,
+const (
+	githubOAuthAppClientIDEnvVar     = "GITHUB_OAUTH2_APP_CLIENT_ID"
+	githubOAuthAppClientSecretEnvVar = "GITHUB_OAUTH2_APP_CLIENT_SECRET"
+)
+
+var githubOAuthConfig *oauth2.Config
+
+func init() {
+	githubOAuthAppClientID, ok := os.LookupEnv(githubOAuthAppClientIDEnvVar)
+	if !ok {
+		fmt.Fprintf(os.Stderr, "Github oauth2 app client id not provided in env var %s", githubOAuthAppClientIDEnvVar)
+		os.Exit(2)
+	}
+	githubOAuthAppClientSecret, ok := os.LookupEnv(githubOAuthAppClientSecretEnvVar)
+	if !ok {
+		fmt.Fprintf(os.Stderr, "Github oauth2 app client secret not provided in env var %s", githubOAuthAppClientSecretEnvVar)
+		os.Exit(2)
+	}
+	githubOAuthConfig = &oauth2.Config{
+		ClientID:     githubOAuthAppClientID,
+		ClientSecret: githubOAuthAppClientSecret,
+		Endpoint:     github.Endpoint,
+	}
 }
 
 func main() {
 	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/oauth/github", githubLoginHandler)
+	http.HandleFunc("/oauth2/github", githubOAuthLoginHandler)
+	http.HandleFunc("/oauth2/receive", githubOAuthReceiveHandler)
 	http.ListenAndServe(":8001", nil)
 }
 
@@ -59,10 +81,17 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func githubLoginHandler(w http.ResponseWriter, r *http.Request) {
+func githubOAuthLoginHandler(w http.ResponseWriter, r *http.Request) {
 	// The state variable being passed to AuthCodeURL is generally a uuid representing a login attempt.
 	// It usually is an id maintained in a DB. The id represents a login attempt and has an expiration time associated with it,
 	// Usually the login attempt is not valid after that expiration time.
 	redirectURL := githubOAuthConfig.AuthCodeURL("0000")
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+}
+
+// After login and granting permissions the github oauth login page will redirect us to
+// http://localhost:8001/oauth2/receive?code=<a_unique_token>&state=0000
+// Note here that the state containing the uuid for the session is passed back to us as a query param in the callback url
+// This callback url was set in the github oauth application setup
+func githubOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 }
