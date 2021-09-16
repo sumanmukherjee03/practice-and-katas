@@ -1,4 +1,4 @@
-module github.com/sumanmukherjee03/practice-and-katas/go/golang-oauth-app
+module github.com/sumanmukherjee03/practice-and-katas/go/golang-oauth-google-app
 
 go 1.14
 
