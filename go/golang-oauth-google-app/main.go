@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -76,6 +77,7 @@ func main() {
 ///////////////////////////////////// HTTP HANDLER FUNCS /////////////////////////////////////
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
+	msg := r.FormValue("msg")
 	html := `
 <!DOCTYPE html>
 <html lang="en">
@@ -84,6 +86,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
     <title>index</title>
   </head>
   <body>
+    <p>` + msg + `</p>
     <form action="/oauth2/google" method="post" accept-charset="utf-8">
       <input type="submit" value="Login with Google" name="submit" id="submit"/>
     </form>
@@ -144,14 +147,16 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	cookieState, err := r.Cookie(googleOAuthStateCookieName)
 	if err != nil {
 		log.Error("ERROR - The state cookie could not be found in the request which indicates that the cookie must have expired")
-		http.Error(w, "Cookie to protect against CSRF attack not found or must have expired", http.StatusBadRequest)
+		msg := url.QueryEscape("Cookie to protect against CSRF attack not found or must have expired")
+		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
 		return
 	}
 
 	// Check if the session is a valid one or not. This is required to protect against CSRF attacks
 	if state != cookieState.Value {
 		log.Error("ERROR - The state returned back from the google oauth login doesnt match what is in the cookie")
-		http.Error(w, "Login with google either has an invalid state", http.StatusBadRequest)
+		msg := "Login with google either has an invalid state"
+		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
 		return
 	}
 
@@ -159,7 +164,8 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	for _, s := range googleOAuthScopes {
 		if !strings.Contains(scope, s) {
 			log.Error("ERROR - The scope returned back from the google oauth login does not contain the required scopes")
-			http.Error(w, "Login with google has incorrect scope", http.StatusBadRequest)
+			msg := "Login with google has incorrect scope"
+			http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
 			return
 		}
 	}
@@ -170,7 +176,8 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	token, err := googleOAuthConfig.Exchange(r.Context(), code)
 	if err != nil {
 		log.Error("ERROR - Could not exchange oauth login code with google for an auth token", err)
-		http.Error(w, "Login failed", http.StatusInternalServerError)
+		msg := "Login failed because we could not exchange code for oauth token"
+		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
 		return
 	}
 
@@ -182,7 +189,8 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := client.Get(googleAPIEndpoint)
 	if err != nil {
 		log.Error("ERROR - Could not fetch user info using the access token provided after exchange", err)
-		http.Error(w, "Login failed", http.StatusInternalServerError)
+		msg := "Failed to fetch user details on login"
+		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
 		return
 	}
 	defer resp.Body.Close()
@@ -200,7 +208,8 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(resp.Body).Decode(&gr)
 	if err != nil {
 		log.Error("ERROR - Could not unmarshal user info fetched from google", err)
-		http.Error(w, "Login failed", http.StatusInternalServerError)
+		msg := "Login failed because we couldnt unmarshal user details from google"
+		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
 		return
 	}
 
@@ -210,8 +219,9 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 		// Create a new user account
 		id, err := uuid.NewV4()
 		if err != nil {
-			log.Error(err)
-			http.Error(w, "Failed to create new user from authenticated google user id", http.StatusInternalServerError)
+			log.Error("Failed to create new user from authenticated google user id", err)
+			msg := "Failed to create new user from google id"
+			http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
 			return
 		}
 		userID = id.String()
@@ -219,7 +229,8 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("googleUserToDBUserMap : ", googleUserToDBUserMap)
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	msg := fmt.Sprintf("Successfully logged in user with id %s", userID)
+	http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
 }
 
 ////////////////////////////////////// HELPER FUNCS ////////////////////////////////////////
