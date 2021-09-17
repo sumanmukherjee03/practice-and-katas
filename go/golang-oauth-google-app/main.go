@@ -1,12 +1,15 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
@@ -21,14 +24,13 @@ const (
 	googleOAuthAppClientSecretEnvVar = "GOOGLE_OAUTH2_APP_CLIENT_SECRET"
 	googleEmailScope                 = "https://www.googleapis.com/auth/userinfo.email"
 	googleAPIEndpoint                = "https://www.googleapis.com/oauth2/v2/userinfo"
+	googleOAuthStateCookieName       = "googleOAuthState"
 )
 
 var (
-	googleOAuthConfig *oauth2.Config
-	googleOAuthScopes []string
-
-	// Key is google user ID and value is our own user ID
-	googleUserToDBUserMap = make(map[string]string)
+	googleOAuthConfig     *oauth2.Config
+	googleOAuthScopes     []string
+	googleUserToDBUserMap = make(map[string]string) // Key is google user ID and value is our own user ID
 )
 
 type googleResponse struct {
@@ -73,6 +75,8 @@ func main() {
 	http.ListenAndServe(":8002", nil)
 }
 
+///////////////////////////////////// HTTP HANDLER FUNCS /////////////////////////////////////
+
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	html := `
 <!DOCTYPE html>
@@ -96,9 +100,13 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 func googleOAuthLoginHandler(w http.ResponseWriter, r *http.Request) {
 	// The state variable being passed to AuthCodeURL is generally a uuid representing a login attempt.
-	// It usually is an id maintained in a DB. The id represents a login attempt and has an expiration time associated with it,
-	// Usually the login attempt is not valid after that expiration time.
-	googleLoginRedirectURL := googleOAuthConfig.AuthCodeURL("0000")
+	// It usually is an id maintained in a DB or a cookie on the client side.
+	// This unique id is usually associated with an expiry time.
+	// The login attempt is not valid after that expiration time.
+	// When the google login redirects you back to the server, the server should match this id and the expiry time.
+	// This is necessary to protect the client from CSRF attacks.
+	state := genStateInCookie(w)
+	googleLoginRedirectURL := googleOAuthConfig.AuthCodeURL(state)
 	http.Redirect(w, r, googleLoginRedirectURL, http.StatusSeeOther)
 }
 
@@ -122,11 +130,17 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	state := r.FormValue("state")
 	scope := r.FormValue("scope")
+	cookieState, err := r.Cookie(googleOAuthStateCookieName)
+	if err != nil {
+		log.Error("ERROR - The state cookie could not be found in the request which indicates that the cookie must have expired")
+		http.Error(w, "Cookie to protect against CSRF attack not found or must have expired", http.StatusBadRequest)
+		return
+	}
 
-	// If the login session has expired or the session id is not a valid one, return a http error
-	if state != "0000" {
-		log.Error("ERROR - The state returned back from the google oauth login is incorrect or has expired")
-		http.Error(w, "Login with google either expired or is in an invalid state", http.StatusBadRequest)
+	// Check if the session is a valid one or not. This is required to protect against CSRF attacks
+	if state != cookieState.Value {
+		log.Error("ERROR - The state returned back from the google oauth login doesnt match what is in the cookie")
+		http.Error(w, "Login with google either has an invalid state", http.StatusBadRequest)
 		return
 	}
 
@@ -195,4 +209,35 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("googleUserToDBUserMap : ", googleUserToDBUserMap)
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+////////////////////////////////////// HELPER FUNCS ////////////////////////////////////////
+
+// The expires attribute is only sent with the Set-Cookie response header, not with the Cookie request header.
+// ie, the expiry is only set on the response cookie and this attribute is not present on the request cookie.
+// Our server sends a response cookie to google oauth when redirecting to google's login page.
+// Google sends the cookie back to us as a request cookie when redirecting us to the receive endpoint.
+// The Cookie request header when recieved back on the /oauth2/receive endpoint contains only the names and values of the cookies.
+// It does not contain any other metadata like expiry.
+// So, to check for expiry on the receive endpoint simply check for presence of the cookie.
+// Had the cookie expired google wouldnt have sent it back to us on the request header.
+func genStateInCookie(w http.ResponseWriter) string {
+	expiry := time.Now().UTC().Add(10 * time.Minute)
+	bytesBuffer := make([]byte, 16)
+	rand.Read(bytesBuffer)
+	state := base64.URLEncoding.EncodeToString(bytesBuffer)
+	// If you want to set a session cookie, dont add the Expires. Session cookies are deleted when the session ends.
+	// That is determined by the browser. Where as cookies with Expires are permanent cookies and are deleted at the specified date+time.
+	// A cookie with the HttpOnly attribute is inaccessible to the JavaScript Document.cookie API
+	// IRL we would also set the cookie to be `Secure: true` so that it is only used in HTTPS, but not for this example since we are using http and localhost as callback.
+	// For setting domains and paths on cookies, this discussion on StackOverflow is very relevant
+	//   - https://stackoverflow.com/questions/1062963/how-do-browser-cookie-domains-work
+	cookie := &http.Cookie{
+		Name:     googleOAuthStateCookieName,
+		Value:    state,
+		Expires:  expiry,
+		HttpOnly: true,
+	}
+	http.SetCookie(w, cookie)
+	return state
 }
