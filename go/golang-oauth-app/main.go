@@ -104,6 +104,14 @@ func githubOAuthLoginHandler(w http.ResponseWriter, r *http.Request) {
 	// The state variable being passed to AuthCodeURL is generally a uuid representing a login attempt.
 	// It usually is an id maintained in a DB. The id represents a login attempt and has an expiration time associated with it,
 	// Usually the login attempt is not valid after that expiration time.
+
+	// Validate that this is a POST request
+	if r.Method != http.MethodPost {
+		log.Error("ERROR - This path only handles a POST request")
+		http.Error(w, "This needs to be a POST request to accept the form submission for login with github button", http.StatusBadRequest)
+		return
+	}
+
 	githubLoginRedirectURL := githubOAuthConfig.AuthCodeURL("0000")
 	http.Redirect(w, r, githubLoginRedirectURL, http.StatusSeeOther)
 }

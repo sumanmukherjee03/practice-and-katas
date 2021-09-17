@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -105,7 +103,20 @@ func googleOAuthLoginHandler(w http.ResponseWriter, r *http.Request) {
 	// The login attempt is not valid after that expiration time.
 	// When the google login redirects you back to the server, the server should match this id and the expiry time.
 	// This is necessary to protect the client from CSRF attacks.
-	state := genStateInCookie(w)
+
+	// Validate that this is a POST request
+	if r.Method != http.MethodPost {
+		log.Error("ERROR - This path only handles a POST request")
+		http.Error(w, "This needs to be a POST request to accept the form submission for login with google", http.StatusBadRequest)
+		return
+	}
+
+	state, err := genStateInCookie(w)
+	if err != nil {
+		log.Error("ERROR - Could not handle login attempt and redirect to google", err)
+		http.Error(w, "Failed to handle login attempt and redirect to google", http.StatusInternalServerError)
+		return
+	}
 	googleLoginRedirectURL := googleOAuthConfig.AuthCodeURL(state)
 	http.Redirect(w, r, googleLoginRedirectURL, http.StatusSeeOther)
 }
@@ -221,11 +232,18 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 // It does not contain any other metadata like expiry.
 // So, to check for expiry on the receive endpoint simply check for presence of the cookie.
 // Had the cookie expired google wouldnt have sent it back to us on the request header.
-func genStateInCookie(w http.ResponseWriter) string {
+func genStateInCookie(w http.ResponseWriter) (string, error) {
+	// Here's an example of reading some random bytes and base64 encoding it to send across the wire for the state variable :
+	// bytesBuffer := make([]byte, 16)
+	// rand.Read(bytesBuffer)
+	// state := base64.URLEncoding.EncodeToString(bytesBuffer)
 	expiry := time.Now().UTC().Add(10 * time.Minute)
-	bytesBuffer := make([]byte, 16)
-	rand.Read(bytesBuffer)
-	state := base64.URLEncoding.EncodeToString(bytesBuffer)
+	id, err := uuid.NewV4()
+	if err != nil {
+		return "", fmt.Errorf("ERROR - Could not generate a uuid to be used for representing the login page session for preventing CSRF attacks - %v", err)
+	}
+	state := id.String()
+
 	// If you want to set a session cookie, dont add the Expires. Session cookies are deleted when the session ends.
 	// That is determined by the browser. Where as cookies with Expires are permanent cookies and are deleted at the specified date+time.
 	// A cookie with the HttpOnly attribute is inaccessible to the JavaScript Document.cookie API
@@ -238,6 +256,7 @@ func genStateInCookie(w http.ResponseWriter) string {
 		Expires:  expiry,
 		HttpOnly: true,
 	}
+	// This essentially does the same thing as - w.Header().Add("Set-Cookie", cookie.String())
 	http.SetCookie(w, cookie)
-	return state
+	return state, nil
 }
