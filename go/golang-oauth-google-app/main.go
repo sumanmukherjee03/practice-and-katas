@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -21,16 +22,37 @@ import (
 const (
 	googleOAuthAppClientIDEnvVar     = "GOOGLE_OAUTH2_APP_CLIENT_ID"
 	googleOAuthAppClientSecretEnvVar = "GOOGLE_OAUTH2_APP_CLIENT_SECRET"
+	jwtSigningSecretKeyEnvVar        = "JWT_SECRET"
 	googleEmailScope                 = "https://www.googleapis.com/auth/userinfo.email"
 	googleAPIEndpoint                = "https://www.googleapis.com/oauth2/v2/userinfo"
 	googleOAuthStateCookieName       = "googleOAuthState"
+	sessionCookieName                = "session"
+	sessionExpiry                    = 5 * time.Minute
 )
 
 var (
 	googleOAuthConfig     *oauth2.Config
 	googleOAuthScopes     []string
 	googleUserToDBUserMap = make(map[string]string) // Key is google user ID and value is our own user ID
+	sessions              = make(map[string]string) // Key is a session ID and value is a user ID
+	jwtSigningSecretKey   []byte
 )
+
+type UserClaims struct {
+	jwt.StandardClaims
+	SessionID string `json:"session_id"`
+}
+
+// It is recommended taht you use a custom Valid method for the UserClaims struct
+func (uc *UserClaims) Valid() error {
+	if !uc.VerifyExpiresAt(time.Now().UTC().Unix(), true) {
+		return fmt.Errorf("ERROR - JWT token has expired")
+	}
+	if len(uc.SessionID) == 0 {
+		return fmt.Errorf("ERROR - JWT token has invalid session id")
+	}
+	return nil
+}
 
 type googleResponse struct {
 	ID            string `json:"id"`
@@ -50,6 +72,16 @@ func init() {
 		fmt.Fprintf(os.Stderr, "Google oauth2 app client secret not provided in env var %s", googleOAuthAppClientSecretEnvVar)
 		os.Exit(2)
 	}
+	jwtSigningSecretKeyStr, ok := os.LookupEnv(jwtSigningSecretKeyEnvVar)
+	if !ok {
+		fmt.Fprintf(os.Stderr, "Jwt signing secret not provided in env var %s", jwtSigningSecretKeyEnvVar)
+		os.Exit(2)
+	}
+	if len(jwtSigningSecretKeyStr) != 32 {
+		fmt.Fprintf(os.Stderr, "Jwt signing secret should be a alphanumeric string of 32 characters")
+		os.Exit(2)
+	}
+	jwtSigningSecretKey = []byte(jwtSigningSecretKeyStr)
 	// The config for google oauth2 client setup requires a redirect url to be present.
 	// This is the same callback url that you put into the google oauth2 app setup.
 	// The scopes mentioned here are also used during the setting up of the authorization console for the oauth2 app.
@@ -106,6 +138,8 @@ func googleOAuthLoginHandler(w http.ResponseWriter, r *http.Request) {
 	// The login attempt is not valid after that expiration time.
 	// When the google login redirects you back to the server, the server should match this id and the expiry time.
 	// This is necessary to protect the client from CSRF attacks.
+	// ie, this expiry essentially represents how to set a hard boundary on how long it takes for the oauth provider
+	// to redirect users back to our website during a login attempt
 
 	// Validate that this is a POST request
 	if r.Method != http.MethodPost {
@@ -175,6 +209,8 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	// And the url that is called is the TokenURL from the oauth endpoints config.
 	// For the exchange http call use the same context that was provided with the request, so that if the request times out
 	// or is cancelled the token exchange call is also cancelled
+	// The token that you get back here is a Bearer token that comes with it's own expiry.
+	// This token is not necessarily always jwt, although in some cases it can be. For google's oauth it is not a jwt token.
 	token, err := googleOAuthConfig.Exchange(r.Context(), code)
 	if err != nil {
 		log.Error("ERROR - Could not exchange oauth login code with google for an auth token", err)
@@ -184,6 +220,8 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TokenSource is an interface, basically anything that can respond to a Token() method to return a token
+	// The difference between Token concrete type and this interface is that if your token is expiring,
+	// calling the Token() method in the the TokenSource interface will essentially give you back a new token based on a refresh token if necessary.
 	tokenSource := googleOAuthConfig.TokenSource(r.Context(), token)
 	// Use this token source to get an authenticated google http client
 	// You can use this http client to make calls to the google api
@@ -236,7 +274,14 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 		userID = id.String()
 		googleUserToDBUserMap[googleID] = userID
 	}
-	fmt.Println("googleUserToDBUserMap : ", googleUserToDBUserMap)
+
+	createSessionErr := createSession(userID, w)
+	if createSessionErr != nil {
+		log.Error("Failed to create session for authenticated user", createSessionErr)
+		msg := "Failed to create session for authenticated user"
+		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		return
+	}
 
 	msg := fmt.Sprintf("Successfully logged in user with id %s", userID)
 	http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
@@ -274,9 +319,51 @@ func genStateInCookie(w http.ResponseWriter) (string, error) {
 		Name:     googleOAuthStateCookieName,
 		Value:    state,
 		Expires:  expiry,
+		Path:     "/",
 		HttpOnly: true,
 	}
 	// This essentially does the same thing as - w.Header().Add("Set-Cookie", cookie.String())
 	http.SetCookie(w, cookie)
 	return state, nil
+}
+
+// The purpose of this function is to generate a session id and store the session id to user id mapping in the database
+// Simultaneously, also generating a signed jwt token with the claim as the session id.
+// And subsequently setting a response cookie in the client browser with the signed jwt toen containing the session id as the value.
+// That way for subsequent requests the cookie is sent back to the server in the http request and the server can validate the jwt token,
+// extract the session id from the cookie and find the user id from the session id from the DB.
+func createSession(userID string, w http.ResponseWriter) error {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return fmt.Errorf("ERROR - Could not generate a uuid to be used for representing the logged in session of the user - %v", err)
+	}
+	sessionID := id.String()
+	// The sessions map being used here is a representation of how you would ideally be storing session info in a DB.
+	sessions[sessionID] = userID
+	token, err := createToken(sessionID)
+	if err != nil {
+		return fmt.Errorf("ERROR - Could not generate a token to be used for representing the logged in session of the user - %v", err)
+	}
+	cookie := &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+	}
+	// This essentially does the same thing as - w.Header().Add("Set-Cookie", cookie.String())
+	http.SetCookie(w, cookie)
+	return nil
+}
+
+// Get a signed jwt token based on the session id
+func createToken(sessionID string) (string, error) {
+	claim := UserClaims{
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().UTC().Add(sessionExpiry).Unix(),
+		},
+		SessionID: sessionID,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
+	// The key to sign this token needs to be of 32 chars based on the algo chosen here
+	return token.SignedString(jwtSigningSecretKey)
 }
