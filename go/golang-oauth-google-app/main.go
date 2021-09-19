@@ -171,6 +171,8 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// At this point use the code from the query params to exchange it for a auth token with google.
+	// This also uses the client id and secret because it is in the oauth config.
+	// And the url that is called is the TokenURL from the oauth endpoints config.
 	// For the exchange http call use the same context that was provided with the request, so that if the request times out
 	// or is cancelled the token exchange call is also cancelled
 	token, err := googleOAuthConfig.Exchange(r.Context(), code)
@@ -194,6 +196,13 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		log.Error("ERROR - Google returned an unsuccessful response when fetching user details")
+		msg := "Failed to fetch user details on login"
+		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		return
+	}
 
 	// Use this code chunk if you want to print out the json response body so that you can create the struct to unmarshal it
 	// bytes, err := ioutil.ReadAll(resp.Body)
