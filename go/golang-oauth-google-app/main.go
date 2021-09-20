@@ -100,8 +100,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
     <meta charset="utf-8">
     <title>index</title>
   </head>
-  <body>
-    <p>Notice : ` + msg + `</p>`
+  <body>`
 	form := `
     <form action="/oauth2/google" method="post" accept-charset="utf-8">
       <input type="submit" value="Login with Google" name="submit" id="submit"/>
@@ -109,6 +108,10 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	footer := `
   </body>
 </html>`
+
+	if len(msg) > 0 {
+		html += `<p>Notice : ` + msg + `</p>`
+	}
 
 	cookie, err := r.Cookie(sessionCookieName)
 	if err != nil {
