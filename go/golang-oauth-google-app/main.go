@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -22,10 +21,10 @@ import (
 const (
 	googleOAuthAppClientIDEnvVar     = "GOOGLE_OAUTH2_APP_CLIENT_ID"
 	googleOAuthAppClientSecretEnvVar = "GOOGLE_OAUTH2_APP_CLIENT_SECRET"
-	jwtSigningSecretKeyEnvVar        = "JWT_SECRET"
 	googleEmailScope                 = "https://www.googleapis.com/auth/userinfo.email"
 	googleAPIEndpoint                = "https://www.googleapis.com/oauth2/v2/userinfo"
 	googleOAuthStateCookieName       = "googleOAuthState"
+	jwtSigningSecretKeyEnvVar        = "JWT_SECRET"
 	sessionCookieName                = "session"
 	sessionExpiry                    = 5 * time.Minute
 )
@@ -37,22 +36,6 @@ var (
 	sessions              = make(map[string]string) // Key is a session ID and value is a user ID
 	jwtSigningSecretKey   []byte
 )
-
-type UserClaims struct {
-	jwt.StandardClaims
-	SessionID string `json:"session_id"`
-}
-
-// It is recommended taht you use a custom Valid method for the UserClaims struct
-func (uc *UserClaims) Valid() error {
-	if !uc.VerifyExpiresAt(time.Now().UTC().Unix(), true) {
-		return fmt.Errorf("ERROR - JWT token has expired")
-	}
-	if len(uc.SessionID) == 0 {
-		return fmt.Errorf("ERROR - JWT token has invalid session id")
-	}
-	return nil
-}
 
 type googleResponse struct {
 	ID            string `json:"id"`
@@ -118,13 +101,37 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
     <title>index</title>
   </head>
   <body>
-    <p>` + msg + `</p>
+    <p>Notice : ` + msg + `</p>`
+	form := `
     <form action="/oauth2/google" method="post" accept-charset="utf-8">
       <input type="submit" value="Login with Google" name="submit" id="submit"/>
-    </form>
+    </form>`
+	footer := `
   </body>
-</html>
-	`
+</html>`
+
+	cookie, err := r.Cookie(sessionCookieName)
+	if err != nil {
+		cookie = &http.Cookie{
+			Name:  sessionCookieName,
+			Value: "",
+		}
+	}
+
+	sessionID, err := parseToken(cookie.Value)
+	if err != nil {
+		log.Info(fmt.Sprintf("Could not get a valid session id from the session cookie - %v", err))
+		html += form
+	} else {
+		userID, ok := sessions[sessionID]
+		if !ok {
+			html += form
+		} else {
+			html += `<p>Logged in user id : ` + userID + `</p>`
+		}
+	}
+	html += footer
+
 	if _, err := io.WriteString(w, html); err != nil {
 		log.Error("ERROR - Could not write html to the response writer")
 		return
@@ -353,17 +360,4 @@ func createSession(userID string, w http.ResponseWriter) error {
 	// This essentially does the same thing as - w.Header().Add("Set-Cookie", cookie.String())
 	http.SetCookie(w, cookie)
 	return nil
-}
-
-// Get a signed jwt token based on the session id
-func createToken(sessionID string) (string, error) {
-	claim := UserClaims{
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().UTC().Add(sessionExpiry).Unix(),
-		},
-		SessionID: sessionID,
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-	// The key to sign this token needs to be of 32 chars based on the algo chosen here
-	return token.SignedString(jwtSigningSecretKey)
 }
