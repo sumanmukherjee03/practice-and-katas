@@ -86,6 +86,7 @@ func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/oauth2/google", googleOAuthLoginHandler)
 	http.HandleFunc("/oauth2/receive", googleOAuthReceiveHandler)
+	http.HandleFunc("/logout", logoutHandler)
 	http.ListenAndServe(":8002", nil)
 }
 
@@ -103,9 +104,12 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
   <body>`
 	form := `
     <form action="/oauth2/google" method="post" accept-charset="utf-8">
-      <input type="submit" value="Login with Google" name="submit" id="submit"/>
+      <input type="submit" value="Login with Google" name="login_with_google" id="login_with_google"/>
     </form>`
 	footer := `
+    <form action="/logout" method="post" accept-charset="utf-8">
+      <input type="submit" value="Logout" name="logout" id="logout"/>
+    </form>
   </body>
 </html>`
 
@@ -297,6 +301,36 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
 }
 
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	// Validate that this is a POST request
+	if r.Method != http.MethodPost {
+		log.Error("ERROR - This path only handles a POST request")
+		http.Error(w, "This needs to be a POST request to accept the form submission for logout", http.StatusBadRequest)
+		return
+	}
+
+	sessionCookie, err := r.Cookie(sessionCookieName)
+	if err != nil {
+		sessionCookie = &http.Cookie{
+			Name:     sessionCookieName,
+			Value:    "",
+			Path:     "/",
+			HttpOnly: true,
+		}
+	}
+
+	sessionID, err := parseToken(sessionCookie.Value)
+	if err != nil {
+		log.Info(fmt.Sprintf("Could not get a valid session id from the session cookie - %v", err))
+	}
+	delete(sessions, sessionID)
+	// Setting the max age to -1 on a cookie tells the browser to expire the cookie
+	sessionCookie.MaxAge = -1
+	http.SetCookie(w, sessionCookie)
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 ////////////////////////////////////// HELPER FUNCS ////////////////////////////////////////
 
 // The expires attribute is only sent with the Set-Cookie response header, not with the Cookie request header.
@@ -325,6 +359,10 @@ func genStateInCookie(w http.ResponseWriter) (string, error) {
 	// IRL we would also set the cookie to be `Secure: true` so that it is only used in HTTPS, but not for this example since we are using http and localhost as callback.
 	// For setting domains and paths on cookies, this discussion on StackOverflow is very relevant
 	//   - https://stackoverflow.com/questions/1062963/how-do-browser-cookie-domains-work
+	// When setting a cookie remember that the Path optional parameter defaults to whatever path the request is being made to when setting the cookie.
+	// ie the default path in this case is going to be "/oauth2/google". However, we'd want the cookie to be available
+	// on all the paths. Otherwise, we would not get the cookie in other requests made from the browser.
+	// Hence, the Path optional paramater is set to "/".
 	cookie := &http.Cookie{
 		Name:     googleOAuthStateCookieName,
 		Value:    state,
@@ -354,6 +392,10 @@ func createSession(userID string, w http.ResponseWriter) error {
 	if err != nil {
 		return fmt.Errorf("ERROR - Could not generate a token to be used for representing the logged in session of the user - %v", err)
 	}
+	// When setting a cookie remember that the Path optional parameter defaults to whatever path the request is being made to when setting the cookie.
+	// ie the default path in this case is going to be "/oauth2/receive". However, we'd want the cookie to be available
+	// on all the paths. Otherwise, we would not get the cookie in other requests made from the browser.
+	// Hence, the Path optional paramater is set to "/".
 	cookie := &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    token,
