@@ -377,10 +377,10 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	if len(email) > 0 {
 		form += `
-      <input type="email" name="email" id="email" value="` + email + `" />`
+      <input type="text" name="email" id="email" value="` + email + `" />`
 	} else {
 		form += `
-      <input type="email" name="email" id="email" />`
+      <input type="text" name="email" id="email" />`
 		form += `
       <label for="password">Password:</label>
       <input type="password" id="password" name="password" minlength="16" required>`
