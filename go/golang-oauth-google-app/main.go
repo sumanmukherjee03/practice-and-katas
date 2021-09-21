@@ -30,12 +30,20 @@ const (
 )
 
 var (
-	googleOAuthConfig     *oauth2.Config
-	googleOAuthScopes     []string
-	googleUserToDBUserMap = make(map[string]string) // Key is google user ID and value is our own user ID
-	sessions              = make(map[string]string) // Key is a session ID and value is a user ID
-	jwtSigningSecretKey   []byte
+	googleOAuthConfig   *oauth2.Config
+	googleOAuthScopes   []string
+	emailToDBUserMap    = make(map[string]User)   // Key is email id and value is a User type
+	sessions            = make(map[string]string) // Key is a session ID and value is a user ID
+	jwtSigningSecretKey []byte
 )
+
+type User struct {
+	ID        string `json:"id"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	GoogleID  string `json:"google_id"`
+}
 
 type googleResponse struct {
 	ID            string `json:"id"`
@@ -86,6 +94,8 @@ func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/oauth2/google", googleOAuthLoginHandler)
 	http.HandleFunc("/oauth2/receive", googleOAuthReceiveHandler)
+	http.HandleFunc("/register", registerHandler)
+	http.HandleFunc("/register/submit", registerSubmitHandler)
 	http.HandleFunc("/logout", logoutHandler)
 	http.ListenAndServe(":8002", nil)
 }
@@ -274,21 +284,30 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	googleID := gr.ID
-	userID, ok := googleUserToDBUserMap[googleID]
+	// If user already exists in our DB
+	//   - find the user from the DB
+	//     create a session id
+	//     create a token with the session id in it's claims
+	//     persist the session id in DB to extract user id from session id for subsequent requests
+	//     stick the signed token containing the session id in it's claims in a cookie to set it in the client side
+	// If user does not exist in our DB
+	//   - find the user from the DB
+	//     create a token with the email instead of a session id
+	//     get the name, email and other details that you could fetch from the google response
+	//     and redirect the user to a partial register page so that some of these details can be prefilled
+	email := gr.Email
+	user, ok := emailToDBUserMap[email]
 	if !ok {
-		// Create a new user account
-		id, err := uuid.NewV4()
-		if err != nil {
-			log.Error("Failed to create new user from authenticated google user id", err)
-			msg := "Failed to create new user from google id"
-			http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
-			return
-		}
-		userID = id.String()
-		googleUserToDBUserMap[googleID] = userID
+		// Redirect the user to a registration page
+		email := gr.Email
+		vals := url.Values{}
+		vals.Add("email", email)
+		vals.Add("google_id", gr.ID)
+		http.Redirect(w, r, "/register?"+vals.Encode(), http.StatusSeeOther)
+		return
 	}
 
+	userID := user.ID
 	createSessionErr := createSession(userID, w)
 	if createSessionErr != nil {
 		log.Error("Failed to create session for authenticated user", createSessionErr)
@@ -297,7 +316,7 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg := fmt.Sprintf("Successfully logged in user with id %s", userID)
+	msg := fmt.Sprintf("Successfully logged in user %s %s - %s", user.FirstName, user.LastName, user.Email)
 	http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
 }
 
@@ -329,6 +348,116 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, sessionCookie)
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func registerHandler(w http.ResponseWriter, r *http.Request) {
+	email := r.FormValue("email")
+	googleID := r.FormValue("google_id")
+	msg := r.FormValue("msg")
+	html := `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>index</title>
+  </head>
+  <body>`
+	form := `
+    <form action="/register/submit" method="post" accept-charset="utf-8">
+      <label for="email">Email:</label>`
+	footer := `
+      <input type="submit" value="Register" name="register" id="register"/>
+    </form>
+  </body>
+</html>`
+
+	if len(msg) > 0 {
+		html += `<p>Notice : ` + msg + `</p>`
+	}
+
+	if len(email) > 0 {
+		form += `
+      <input type="email" name="email" id="email" value="` + email + `" />`
+	} else {
+		form += `
+      <input type="email" name="email" id="email" />`
+		form += `
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" minlength="16" required>`
+	}
+
+	form += `
+      <label for="first_name">First Name:</label>
+      <input type="text" name="first_name" id="first_name" />
+      <label for="last_name">Last Name:</label>
+      <input type="text" name="last_name" id="last_name" />`
+
+	if len(googleID) > 0 {
+		form += `
+      <input type="hidden" id="google_id" name="google_id" value="` + googleID + `">`
+	}
+
+	html += form
+	html += footer
+
+	if _, err := io.WriteString(w, html); err != nil {
+		log.Error("ERROR - Could not write html to the response writer")
+		return
+	}
+}
+
+func registerSubmitHandler(w http.ResponseWriter, r *http.Request) {
+	// Validate that this is a POST request
+	if r.Method != http.MethodPost {
+		log.Error("ERROR - This path only handles a POST request")
+		http.Error(w, "This needs to be a POST request to accept the form submission for registration", http.StatusBadRequest)
+		return
+	}
+
+	email := r.FormValue("email")
+	firstName := r.FormValue("first_name")
+	lastName := r.FormValue("last_name")
+	password := r.FormValue("password")
+	googleID := r.FormValue("google_id")
+	if len(password) > 0 {
+		log.Error("Currently we havent implemented a registration page without google oauth")
+		http.Error(w, "Normal registration remains unimplemented at this point", http.StatusNotImplemented)
+		return
+	}
+
+	var userID string
+	if len(email) > 0 {
+		id, err := uuid.NewV4()
+		if err != nil {
+			log.Error("ERROR - Failed to generate user id", err)
+			http.Error(w, "Failed to register user", http.StatusInternalServerError)
+			return
+		}
+		userID = id.String()
+		emailToDBUserMap[email] = User{
+			ID:        userID,
+			Email:     email,
+			FirstName: firstName,
+			LastName:  lastName,
+			GoogleID:  googleID,
+		}
+	} else {
+		log.Error("ERROR - An email id is required to be registered")
+		http.Error(w, "Missing email id", http.StatusBadRequest)
+		return
+	}
+
+	createSessionErr := createSession(userID, w)
+	if createSessionErr != nil {
+		log.Error("Failed to create session for registered user", createSessionErr)
+		msg := "Failed to create session for registered user"
+		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		return
+	}
+
+	msg := fmt.Sprintf("Successfully registered and logged in user with email %s", email)
+	http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+
 }
 
 ////////////////////////////////////// HELPER FUNCS ////////////////////////////////////////
