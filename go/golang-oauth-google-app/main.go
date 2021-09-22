@@ -299,10 +299,17 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := emailToDBUserMap[email]
 	if !ok {
 		// Redirect the user to a registration page
+		signedGoogleID, err := createToken(gr.ID)
+		if err != nil {
+			log.Error("Failed to create signed token from google id for authenticated user", err)
+			msg := "Failed to create signed token for authenticated user from google oauth id"
+			http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+			return
+		}
 		email := gr.Email
 		vals := url.Values{}
 		vals.Add("email", email)
-		vals.Add("google_id", gr.ID)
+		vals.Add("signed_google_id", signedGoogleID)
 		http.Redirect(w, r, "/register?"+vals.Encode(), http.StatusSeeOther)
 		return
 	}
@@ -352,7 +359,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
-	googleID := r.FormValue("google_id")
+	signedGoogleID := r.FormValue("signed_google_id")
 	msg := r.FormValue("msg")
 	html := `
 <!DOCTYPE html>
@@ -402,9 +409,9 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
         <input type="text" name="last_name" id="last_name" size="30" required />
       </p>`
 
-	if len(googleID) > 0 {
+	if len(signedGoogleID) > 0 {
 		form += `
-      <input type="hidden" id="google_id" name="google_id" value="` + googleID + `">`
+      <input type="hidden" id="google_id" name="google_id" value="` + signedGoogleID + `">`
 	}
 
 	html += form
@@ -428,7 +435,7 @@ func registerSubmitHandler(w http.ResponseWriter, r *http.Request) {
 	firstName := r.FormValue("first_name")
 	lastName := r.FormValue("last_name")
 	password := r.FormValue("password")
-	googleID := r.FormValue("google_id")
+	signedGoogleID := r.FormValue("signed_google_id")
 	if len(password) > 0 {
 		log.Error("Currently we havent implemented a registration page without google oauth")
 		http.Error(w, "Normal registration remains unimplemented at this point", http.StatusNotImplemented)
@@ -440,6 +447,12 @@ func registerSubmitHandler(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.NewV4()
 		if err != nil {
 			log.Error("ERROR - Failed to generate user id", err)
+			http.Error(w, "Failed to register user", http.StatusInternalServerError)
+			return
+		}
+		googleID, err := parseToken(signedGoogleID)
+		if err != nil {
+			log.Error("ERROR - Failed to retrieve google ID from signed token", err)
 			http.Error(w, "Failed to register user", http.StatusInternalServerError)
 			return
 		}
@@ -467,7 +480,6 @@ func registerSubmitHandler(w http.ResponseWriter, r *http.Request) {
 
 	msg := fmt.Sprintf("Successfully registered and logged in user with email %s", email)
 	http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
-
 }
 
 ////////////////////////////////////// HELPER FUNCS ////////////////////////////////////////
