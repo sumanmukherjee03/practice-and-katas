@@ -314,6 +314,13 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if gr.ID != user.GoogleID {
+		log.Error("Google oAuth id from google and the google oauth id from our DB registered for this email id do not match")
+		msg := "Failed to sign in because google id registered for this user does not match what we have in our DB"
+		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		return
+	}
+
 	userID := user.ID
 	createSessionErr := createSession(userID, w)
 	if createSessionErr != nil {
