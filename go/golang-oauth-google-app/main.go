@@ -364,9 +364,12 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
   <body>`
 	form := `
     <form action="/register/submit" method="post" accept-charset="utf-8">
-      <label for="email">Email:</label>`
+      <p>
+        <label for="email">Email:</label>`
 	footer := `
-      <input type="submit" value="Register" name="register" id="register"/>
+      <p>
+        <input type="submit" value="Register" name="register" id="register"/>
+      </p>
     </form>
   </body>
 </html>`
@@ -377,20 +380,27 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	if len(email) > 0 {
 		form += `
-      <input type="text" name="email" id="email" value="` + email + `" />`
+        <input type="email" name="email" id="email" size="50" value="` + email + `" required />
+      </p>`
 	} else {
 		form += `
-      <input type="text" name="email" id="email" />`
-		form += `
-      <label for="password">Password:</label>
-      <input type="password" id="password" name="password" minlength="16" required>`
+        <input type="text" name="email" id="email" size="50" required />
+      </p>
+      <p>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" minlength="16" maxlength="32" required>
+      </p>`
 	}
 
 	form += `
-      <label for="first_name">First Name:</label>
-      <input type="text" name="first_name" id="first_name" />
-      <label for="last_name">Last Name:</label>
-      <input type="text" name="last_name" id="last_name" />`
+      <p>
+        <label for="first_name">First Name:</label>
+        <input type="text" name="first_name" id="first_name" size="30" required />
+      </p>
+      <p>
+        <label for="last_name">Last Name:</label>
+        <input type="text" name="last_name" id="last_name" size="30" required />
+      </p>`
 
 	if len(googleID) > 0 {
 		form += `
