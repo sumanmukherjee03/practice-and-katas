@@ -38,11 +38,12 @@ var (
 )
 
 type User struct {
-	ID        string `json:"id"`
-	Email     string `json:"email"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	GoogleID  string `json:"google_id"`
+	ID             string `json:"id"`
+	Email          string `json:"email"`
+	FirstName      string `json:"first_name"`
+	LastName       string `json:"last_name"`
+	HashedPassword string `json:"hashed_password"`
+	GoogleID       string `json:"google_id"`
 }
 
 type googleResponse struct {
@@ -96,6 +97,7 @@ func main() {
 	http.HandleFunc("/oauth2/receive", googleOAuthReceiveHandler)
 	http.HandleFunc("/register", registerHandler)
 	http.HandleFunc("/register/submit", registerSubmitHandler)
+	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/logout", logoutHandler)
 	http.ListenAndServe(":8002", nil)
 }
@@ -104,28 +106,59 @@ func main() {
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	msg := r.FormValue("msg")
-	html := `
+
+	loginFormHtml := `
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <title>index</title>
   </head>
-  <body>`
-	form := `
+  <body>
+    <p>%s</p>
+    <form action="/login" method="post" accept-charset="utf-8">
+      <p>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" size="30" required>
+      </p>
+      <p>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" size="30" required>
+      </p>
+      <p>
+        <input type="submit" value="Login" name="login" id="login"/>
+      </p>
+    </form>
     <form action="/oauth2/google" method="post" accept-charset="utf-8">
-      <input type="submit" value="Login with Google" name="login_with_google" id="login_with_google"/>
-    </form>`
-	footer := `
+      <p>
+        <input type="submit" value="Login with Google" name="login_with_google" id="login_with_google"/>
+      </p>
+    </form>
     <form action="/logout" method="post" accept-charset="utf-8">
-      <input type="submit" value="Logout" name="logout" id="logout"/>
+      <p>
+        <input type="submit" value="Logout" name="logout" id="logout"/>
+      </p>
     </form>
   </body>
 </html>`
 
-	if len(msg) > 0 {
-		html += `<p>Notice : ` + msg + `</p>`
-	}
+	loggedInHtml := `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>index</title>
+  </head>
+  <body>
+    <p>%s</p>
+    <p>User is logged in - %s</p>
+    <form action="/logout" method="post" accept-charset="utf-8">
+      <p>
+        <input type="submit" value="Logout" name="logout" id="logout"/>
+      </p>
+    </form>
+  </body>
+</html>`
 
 	cookie, err := r.Cookie(sessionCookieName)
 	if err != nil {
@@ -135,24 +168,58 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var html string
 	sessionID, err := parseToken(cookie.Value)
 	if err != nil {
 		log.Info(fmt.Sprintf("Could not get a valid session id from the session cookie - %v", err))
-		html += form
+		html = fmt.Sprintf(loginFormHtml, msg)
 	} else {
 		userID, ok := sessions[sessionID]
 		if !ok {
-			html += form
+			html = fmt.Sprintf(loginFormHtml, msg)
 		} else {
-			html += `<p>Logged in user id : ` + userID + `</p>`
+			html = fmt.Sprintf(loggedInHtml, msg, userID)
 		}
 	}
-	html += footer
 
 	if _, err := io.WriteString(w, html); err != nil {
 		log.Error("ERROR - Could not write html to the response writer")
 		return
 	}
+}
+
+// Basic auth login functionality
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	// Validate that this is a POST request
+	if r.Method != http.MethodPost {
+		log.Error("ERROR - This path only handles a POST request")
+		http.Error(w, "This needs to be a POST request to accept the form submission for login", http.StatusBadRequest)
+		return
+	}
+
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+	user, ok := emailToDBUserMap[email]
+	if !ok {
+		log.Error("ERROR - Could not find user with email provided during login")
+		http.Redirect(w, r, "/?msg="+url.QueryEscape("Could not find user with email provided"), http.StatusSeeOther)
+		return
+	}
+	if err := comparePassword(user.HashedPassword, password); err != nil {
+		log.Error("ERROR - Password did not match what is stored in the DB")
+		http.Redirect(w, r, "/?msg="+url.QueryEscape("incorrect password during login"), http.StatusSeeOther)
+		return
+	}
+
+	if err := createSession(user.ID, w); err != nil {
+		log.Error("Failed to create session for authenticated user", err)
+		msg := "Failed to create session for authenticated user"
+		http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
+		return
+	}
+
+	msg := fmt.Sprintf("Successfully logged in user - %s %s", user.FirstName, user.LastName)
+	http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 }
 
 func googleOAuthLoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -206,7 +273,7 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("ERROR - The state cookie could not be found in the request which indicates that the cookie must have expired")
 		msg := url.QueryEscape("Cookie to protect against CSRF attack not found or must have expired")
-		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 		return
 	}
 
@@ -214,7 +281,7 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	if state != cookieState.Value {
 		log.Error("ERROR - The state returned back from the google oauth login doesnt match what is in the cookie")
 		msg := "Login with google either has an invalid state"
-		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 		return
 	}
 
@@ -223,7 +290,7 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(scope, s) {
 			log.Error("ERROR - The scope returned back from the google oauth login does not contain the required scopes")
 			msg := "Login with google has incorrect scope"
-			http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+			http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 			return
 		}
 	}
@@ -239,7 +306,7 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("ERROR - Could not exchange oauth login code with google for an auth token", err)
 		msg := "Login failed because we could not exchange code for oauth token"
-		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 		return
 	}
 
@@ -254,7 +321,7 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("ERROR - Could not fetch user info using the access token provided after exchange", err)
 		msg := "Failed to fetch user details on login"
-		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 		return
 	}
 	defer resp.Body.Close()
@@ -262,7 +329,7 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		log.Error("ERROR - Google returned an unsuccessful response when fetching user details")
 		msg := "Failed to fetch user details on login"
-		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 		return
 	}
 
@@ -280,7 +347,7 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("ERROR - Could not unmarshal user info fetched from google", err)
 		msg := "Login failed because we couldnt unmarshal user details from google"
-		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 		return
 	}
 
@@ -303,7 +370,7 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Error("Failed to create signed token from google id for authenticated user", err)
 			msg := "Failed to create signed token for authenticated user from google oauth id"
-			http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+			http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 			return
 		}
 		email := gr.Email
@@ -314,10 +381,16 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// In some cases the user might have registered with basic auth and then using google for login
+	// In that case associate the google id with the user
+	if len(user.GoogleID) == 0 {
+		user.GoogleID = gr.ID
+	}
+
 	if gr.ID != user.GoogleID {
 		log.Error("Google oAuth id from google and the google oauth id from our DB registered for this email id do not match")
 		msg := "Failed to sign in because google id registered for this user does not match what we have in our DB"
-		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 		return
 	}
 
@@ -326,12 +399,12 @@ func googleOAuthReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	if createSessionErr != nil {
 		log.Error("Failed to create session for authenticated user", createSessionErr)
 		msg := "Failed to create session for authenticated user"
-		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 		return
 	}
 
-	msg := fmt.Sprintf("Successfully logged in user %s %s - %s", user.FirstName, user.LastName, user.Email)
-	http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+	msg := fmt.Sprintf("Successfully logged in user - %s %s", user.FirstName, user.LastName)
+	http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -368,45 +441,20 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	signedGoogleID := r.FormValue("signed_google_id")
 	msg := r.FormValue("msg")
-	html := `
+	htmlOAuthReg := `
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <title>index</title>
   </head>
-  <body>`
-	form := `
+  <body>
+    <p>%s</p>
     <form action="/register/submit" method="post" accept-charset="utf-8">
       <p>
-        <label for="email">Email:</label>`
-	footer := `
-      <p>
-        <input type="submit" value="Register" name="register" id="register"/>
+        <label for="email">Email:</label>
+        <input type="email" name="email" id="email" size="30" value="%s" required />
       </p>
-    </form>
-  </body>
-</html>`
-
-	if len(msg) > 0 {
-		html += `<p>Notice : ` + msg + `</p>`
-	}
-
-	if len(email) > 0 {
-		form += `
-        <input type="email" name="email" id="email" size="50" value="` + email + `" required />
-      </p>`
-	} else {
-		form += `
-        <input type="text" name="email" id="email" size="50" required />
-      </p>
-      <p>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" minlength="16" maxlength="32" required>
-      </p>`
-	}
-
-	form += `
       <p>
         <label for="first_name">First Name:</label>
         <input type="text" name="first_name" id="first_name" size="30" required />
@@ -414,15 +462,54 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
       <p>
         <label for="last_name">Last Name:</label>
         <input type="text" name="last_name" id="last_name" size="30" required />
-      </p>`
+      </p>
+      <input type="hidden" id="google_id" name="google_id" value="%s" />
+      <p>
+        <input type="submit" value="Register" name="register" id="register"/>
+      </p>
+    </form>
+  </body>
+</html>`
 
+	htmlNormalReg := `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>index</title>
+  </head>
+  <body>
+    <p>%s</p>
+    <form action="/register/submit" method="post" accept-charset="utf-8">
+      <p>
+        <label for="email">Email:</label>
+        <input type="email" name="email" id="email" size="30" required />
+      </p>
+      <p>
+        <label for="first_name">First Name:</label>
+        <input type="text" name="first_name" id="first_name" size="30" required />
+      </p>
+      <p>
+        <label for="last_name">Last Name:</label>
+        <input type="text" name="last_name" id="last_name" size="30" required />
+      </p>
+      <p>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" minlength="16" maxlength="24" required>
+      </p>
+      <p>
+        <input type="submit" value="Register" name="register" id="register"/>
+      </p>
+    </form>
+  </body>
+</html>`
+
+	var html string
 	if len(signedGoogleID) > 0 {
-		form += `
-      <input type="hidden" id="google_id" name="google_id" value="` + signedGoogleID + `">`
+		html = fmt.Sprintf(htmlOAuthReg, msg, email, signedGoogleID)
+	} else {
+		html = fmt.Sprintf(htmlNormalReg, msg)
 	}
-
-	html += form
-	html += footer
 
 	if _, err := io.WriteString(w, html); err != nil {
 		log.Error("ERROR - Could not write html to the response writer")
@@ -443,124 +530,67 @@ func registerSubmitHandler(w http.ResponseWriter, r *http.Request) {
 	lastName := r.FormValue("last_name")
 	password := r.FormValue("password")
 	signedGoogleID := r.FormValue("signed_google_id")
-	if len(password) > 0 {
-		log.Error("Currently we havent implemented a registration page without google oauth")
-		http.Error(w, "Normal registration remains unimplemented at this point", http.StatusNotImplemented)
+
+	if len(email) == 0 {
+		log.Error("ERROR - An email id is required to be registered")
+		http.Error(w, "Missing email id", http.StatusBadRequest)
 		return
 	}
 
-	var userID string
-	if len(email) > 0 {
-		id, err := uuid.NewV4()
-		if err != nil {
-			log.Error("ERROR - Failed to generate user id", err)
-			http.Error(w, "Failed to register user", http.StatusInternalServerError)
-			return
-		}
-		googleID, err := parseToken(signedGoogleID)
+	if len(signedGoogleID) == 0 && len(password) == 0 {
+		log.Error("User must either have a signed google oauth id or a password but neither was provided during registration")
+		http.Error(w, "Neither google oauth id nor password was provided during registration", http.StatusNotImplemented)
+		return
+	}
+
+	var googleID string
+	if len(signedGoogleID) > 0 {
+		gID, err := parseToken(signedGoogleID)
 		if err != nil {
 			log.Error("ERROR - Failed to retrieve google ID from signed token", err)
 			http.Error(w, "Failed to register user", http.StatusInternalServerError)
 			return
 		}
-		userID = id.String()
-		emailToDBUserMap[email] = User{
-			ID:        userID,
-			Email:     email,
-			FirstName: firstName,
-			LastName:  lastName,
-			GoogleID:  googleID,
+		googleID = gID
+	}
+
+	var hashedPassword string
+	if len(password) > 0 {
+		passwd, err := hashPassword(password)
+		if err != nil {
+			log.Error("ERROR - Failed to generate hashed password from plain text password", err)
+			http.Error(w, "Failed to register user", http.StatusInternalServerError)
+			return
 		}
-	} else {
-		log.Error("ERROR - An email id is required to be registered")
-		http.Error(w, "Missing email id", http.StatusBadRequest)
+		hashedPassword = passwd
+	}
+
+	var userID string
+	id, err := uuid.NewV4()
+	if err != nil {
+		log.Error("ERROR - Failed to generate user id", err)
+		http.Error(w, "Failed to register user", http.StatusInternalServerError)
 		return
+	}
+
+	userID = id.String()
+	emailToDBUserMap[email] = User{
+		ID:             userID,
+		Email:          email,
+		FirstName:      firstName,
+		LastName:       lastName,
+		HashedPassword: hashedPassword,
+		GoogleID:       googleID,
 	}
 
 	createSessionErr := createSession(userID, w)
 	if createSessionErr != nil {
 		log.Error("Failed to create session for registered user", createSessionErr)
 		msg := "Failed to create session for registered user"
-		http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 		return
 	}
 
 	msg := fmt.Sprintf("Successfully registered and logged in user with email %s", email)
-	http.Redirect(w, r, "/?msg="+msg, http.StatusSeeOther)
-}
-
-////////////////////////////////////// HELPER FUNCS ////////////////////////////////////////
-
-// The expires attribute is only sent with the Set-Cookie response header, not with the Cookie request header.
-// ie, the expiry is only set on the response cookie and this attribute is not present on the request cookie.
-// Our server sends a response cookie to google oauth when redirecting to google's login page.
-// Google sends the cookie back to us as a request cookie when redirecting us to the receive endpoint.
-// The Cookie request header when recieved back on the /oauth2/receive endpoint contains only the names and values of the cookies.
-// It does not contain any other metadata like expiry.
-// So, to check for expiry on the receive endpoint simply check for presence of the cookie.
-// Had the cookie expired google wouldnt have sent it back to us on the request header.
-func genStateInCookie(w http.ResponseWriter) (string, error) {
-	// Here's an example of reading some random bytes and base64 encoding it to send across the wire for the state variable :
-	// bytesBuffer := make([]byte, 16)
-	// rand.Read(bytesBuffer)
-	// state := base64.URLEncoding.EncodeToString(bytesBuffer)
-	expiry := time.Now().UTC().Add(10 * time.Minute)
-	id, err := uuid.NewV4()
-	if err != nil {
-		return "", fmt.Errorf("ERROR - Could not generate a uuid to be used for representing the login page session for preventing CSRF attacks - %v", err)
-	}
-	state := id.String()
-
-	// If you want to set a session cookie, dont add the Expires. Session cookies are deleted when the session ends.
-	// That is determined by the browser. Where as cookies with Expires are permanent cookies and are deleted at the specified date+time.
-	// A cookie with the HttpOnly attribute is inaccessible to the JavaScript Document.cookie API
-	// IRL we would also set the cookie to be `Secure: true` so that it is only used in HTTPS, but not for this example since we are using http and localhost as callback.
-	// For setting domains and paths on cookies, this discussion on StackOverflow is very relevant
-	//   - https://stackoverflow.com/questions/1062963/how-do-browser-cookie-domains-work
-	// When setting a cookie remember that the Path optional parameter defaults to whatever path the request is being made to when setting the cookie.
-	// ie the default path in this case is going to be "/oauth2/google". However, we'd want the cookie to be available
-	// on all the paths. Otherwise, we would not get the cookie in other requests made from the browser.
-	// Hence, the Path optional paramater is set to "/".
-	cookie := &http.Cookie{
-		Name:     googleOAuthStateCookieName,
-		Value:    state,
-		Expires:  expiry,
-		Path:     "/",
-		HttpOnly: true,
-	}
-	// This essentially does the same thing as - w.Header().Add("Set-Cookie", cookie.String())
-	http.SetCookie(w, cookie)
-	return state, nil
-}
-
-// The purpose of this function is to generate a session id and store the session id to user id mapping in the database
-// Simultaneously, also generating a signed jwt token with the claim as the session id.
-// And subsequently setting a response cookie in the client browser with the signed jwt toen containing the session id as the value.
-// That way for subsequent requests the cookie is sent back to the server in the http request and the server can validate the jwt token,
-// extract the session id from the cookie and find the user id from the session id from the DB.
-func createSession(userID string, w http.ResponseWriter) error {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return fmt.Errorf("ERROR - Could not generate a uuid to be used for representing the logged in session of the user - %v", err)
-	}
-	sessionID := id.String()
-	// The sessions map being used here is a representation of how you would ideally be storing session info in a DB.
-	sessions[sessionID] = userID
-	token, err := createToken(sessionID)
-	if err != nil {
-		return fmt.Errorf("ERROR - Could not generate a token to be used for representing the logged in session of the user - %v", err)
-	}
-	// When setting a cookie remember that the Path optional parameter defaults to whatever path the request is being made to when setting the cookie.
-	// ie the default path in this case is going to be "/oauth2/receive". However, we'd want the cookie to be available
-	// on all the paths. Otherwise, we would not get the cookie in other requests made from the browser.
-	// Hence, the Path optional paramater is set to "/".
-	cookie := &http.Cookie{
-		Name:     sessionCookieName,
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-	}
-	// This essentially does the same thing as - w.Header().Add("Set-Cookie", cookie.String())
-	http.SetCookie(w, cookie)
-	return nil
+	http.Redirect(w, r, "/?msg="+url.QueryEscape(msg), http.StatusSeeOther)
 }
