@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/CloudyKit/jet"
+	"github.com/gofrs/uuid"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 )
@@ -18,7 +20,24 @@ var (
 		WriteBufferSize: 1024,
 		CheckOrigin:     func(r *http.Request) bool { return true },
 	}
+
+	wsChan  = make(chan WsJsonPayload)
+	clients = make(map[WebSocketConn]string)
 )
+
+type WebSocketConn struct {
+	*websocket.Conn
+}
+
+type WsJsonPayload struct {
+	Username string `json:"username"`
+	Action   string `json:"action"`
+	Message  string `json:"message"`
+
+	// This is to leave it out of the json, ie not show up in json
+	// Rather this is an internal field that will be populated on the server side
+	Conn WebSocketConn `json:"-"`
+}
 
 type WsJsonResponse struct {
 	Action      string `json:"action"`
@@ -48,6 +67,20 @@ func WsEndpoint(w http.ResponseWriter, r *http.Request) {
 	log.Info("Client connected to endpoint")
 	var resp WsJsonResponse
 	resp.Message = `<em><small>Connected to server</small></em>`
+
+	conn := WebSocketConn{
+		Conn: ws,
+	}
+
+	connID, err := uuid.NewV4()
+	if err != nil {
+		log.Error("ERROR - could not generate a uuid to represent the websocket connection", err)
+		http.Error(w, "Could not generate a uuid to represent the websocket connection", http.StatusInternalServerError)
+		return
+	}
+	clients[conn] = connID.String()
+	go listenForWs(&conn)
+
 	err = ws.WriteJSON(resp)
 	if err != nil {
 		log.Error("ERROR - could not send back json response to client", err)
@@ -71,4 +104,54 @@ func renderPage(w http.ResponseWriter, tmpl string, data jet.VarMap) error {
 		return err
 	}
 	return nil
+}
+
+// This function runs as a goroutine for each websocket connection we establish with a client.
+// The purpose of this goroutine is to run forever.
+// If there is a panic while running this goroutine, we should recover and continue.
+func listenForWs(conn *WebSocketConn) {
+	defer func() {
+		// Recover is a built-in function that regains control of a panicking goroutine.
+		// Recover is only useful inside deferred functions.
+		// During normal execution, a call to recover will return nil and have no other effect.
+		// For more on defer and recover behavior : https://go.dev/blog/defer-panic-and-recover
+		if r := recover(); r != nil {
+			log.Error("ERROR - Encountered an error in listening to websocket connections. Recovered from panic in goroutine.", r)
+		}
+	}()
+
+	var payload WsJsonPayload
+	for {
+		err := conn.ReadJSON(&payload)
+		if err != nil {
+			// do nothing
+		} else {
+			payload.Conn = *conn
+			wsChan <- payload
+		}
+	}
+}
+
+func ListenToWsChan() {
+	var resp WsJsonResponse
+	for {
+		ev := <-wsChan
+		resp.Action = "Show"
+		resp.Message = fmt.Sprintf("Received - message: %s; action: %s", ev.Message, ev.Action)
+		broadcastToAll(resp)
+	}
+}
+
+func broadcastToAll(resp WsJsonResponse) {
+	for clientConn, connID := range clients {
+		err := clientConn.WriteJSON(resp)
+		if err != nil {
+			log.Error(fmt.Sprintf("ERROR - Encountered an error in broadcasting to client connection with id %s", connID), err)
+			closeErr := clientConn.Close()
+			if closeErr != nil {
+				log.Error(fmt.Sprintf("ERROR - Could not close client connection with id %s, possibly because we lost the client. Ignoring it, and moving on to removing it from our list of conns.", connID), err)
+			}
+			delete(clients, clientConn)
+		}
+	}
 }
