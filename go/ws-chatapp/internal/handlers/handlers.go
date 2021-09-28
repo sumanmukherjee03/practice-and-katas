@@ -3,9 +3,9 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/CloudyKit/jet"
-	"github.com/gofrs/uuid"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 )
@@ -40,9 +40,10 @@ type WsJsonPayload struct {
 }
 
 type WsJsonResponse struct {
-	Action      string `json:"action"`
-	Message     string `json:"message"`
-	MessageType string `json:"message_type"`
+	Action         string   `json:"action"`
+	Message        string   `json:"message"`
+	MessageType    string   `json:"message_type"`
+	ConnectedUsers []string `json:"connected_users"`
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -72,13 +73,6 @@ func WsEndpoint(w http.ResponseWriter, r *http.Request) {
 		Conn: ws,
 	}
 
-	connID, err := uuid.NewV4()
-	if err != nil {
-		log.Error("ERROR - could not generate a uuid to represent the websocket connection", err)
-		http.Error(w, "Could not generate a uuid to represent the websocket connection", http.StatusInternalServerError)
-		return
-	}
-	clients[conn] = connID.String()
 	go listenForWs(&conn)
 
 	err = ws.WriteJSON(resp)
@@ -136,20 +130,43 @@ func ListenToWsChan() {
 	var resp WsJsonResponse
 	for {
 		ev := <-wsChan
-		resp.Action = "Show"
-		resp.Message = fmt.Sprintf("Received - message: %s; action: %s", ev.Message, ev.Action)
-		broadcastToAll(resp)
+		switch ev.Action {
+		case "addUser":
+			// get a list of users and broadcast it
+			clients[ev.Conn] = ev.Username
+			users := getUserList()
+			resp.Action = "listUsers"
+			resp.ConnectedUsers = users
+			resp.Message = "List of users"
+			broadcastToAll(resp)
+		case "userLeft":
+			delete(clients, ev.Conn)
+			users := getUserList()
+			resp.Action = "listUsers"
+			resp.ConnectedUsers = users
+			resp.Message = "List of users"
+			broadcastToAll(resp)
+		}
 	}
 }
 
+func getUserList() []string {
+	var users []string
+	for _, u := range clients {
+		users = append(users, u)
+	}
+	sort.Strings(users)
+	return users
+}
+
 func broadcastToAll(resp WsJsonResponse) {
-	for clientConn, connID := range clients {
+	for clientConn, username := range clients {
 		err := clientConn.WriteJSON(resp)
 		if err != nil {
-			log.Error(fmt.Sprintf("ERROR - Encountered an error in broadcasting to client connection with id %s", connID), err)
+			log.Error(fmt.Sprintf("ERROR - Encountered an error in broadcasting to client connection for user %s", username), err)
 			closeErr := clientConn.Close()
 			if closeErr != nil {
-				log.Error(fmt.Sprintf("ERROR - Could not close client connection with id %s, possibly because we lost the client. Ignoring it, and moving on to removing it from our list of conns.", connID), err)
+				log.Error(fmt.Sprintf("ERROR - Could not close client connection for user %s, possibly because we lost the client. Ignoring it, and moving on to removing it from our list of conns.", username), err)
 			}
 			delete(clients, clientConn)
 		}
