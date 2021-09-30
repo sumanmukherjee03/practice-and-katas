@@ -117,9 +117,8 @@ func listenForWs(conn *WebSocketConn) {
 	var payload WsJsonPayload
 	for {
 		err := conn.ReadJSON(&payload)
-		if err != nil {
-			// do nothing
-		} else {
+		// If there is an error reading the data as json from the client, dont do anything
+		if err == nil {
 			payload.Conn = *conn
 			wsChan <- payload
 		}
@@ -133,30 +132,34 @@ func ListenToWsChan() {
 		switch ev.Action {
 		case "addUser":
 			// get a list of users and broadcast it
-			clients[ev.Conn] = ev.Username
-			users := getUserList()
-			resp.Action = "listUsers"
-			resp.ConnectedUsers = users
-			resp.Message = "List of users"
-			broadcastToAll(resp)
+			if len(ev.Username) > 0 {
+				clients[ev.Conn] = ev.Username
+			}
+			broadcastUserListToAll(resp)
 		case "userLeft":
 			delete(clients, ev.Conn)
-			users := getUserList()
-			resp.Action = "listUsers"
-			resp.ConnectedUsers = users
-			resp.Message = "List of users"
-			broadcastToAll(resp)
+			broadcastUserListToAll(resp)
 		}
 	}
 }
 
 func getUserList() []string {
 	var users []string
-	for _, u := range clients {
-		users = append(users, u)
+	for _, user := range clients {
+		if len(user) > 0 {
+			users = append(users, user)
+		}
 	}
 	sort.Strings(users)
 	return users
+}
+
+func broadcastUserListToAll(resp WsJsonResponse) {
+	users := getUserList()
+	resp.Action = "listUsers"
+	resp.ConnectedUsers = users
+	resp.Message = "List of users"
+	broadcastToAll(resp)
 }
 
 func broadcastToAll(resp WsJsonResponse) {
