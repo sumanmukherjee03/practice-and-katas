@@ -74,6 +74,9 @@
 
         socket.onopen = () => {
           console.log("Successfully connected");
+          if(userInput.value !== "") {
+            addUser();
+          }
         }
 
         socket.onclose = () => {
@@ -97,13 +100,35 @@
         }
 
         userInput.addEventListener("change", function() {
-          let jsonData = {};
-          jsonData["action"] = "addUser";
-          jsonData["username"] = this.value;
-          jsonData["message"] = "user added";
-          socket.send(JSON.stringify(jsonData));
+          addUser()
         })
       });
+
+      document.getElementById("sendBtn").addEventListener("click", function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if(socket) {
+          sendMessage();
+        }
+      });
+
+      document.getElementById("message").addEventListener("keydown", function(ev) {
+        if(ev.code === "Enter") {
+          ev.preventDefault();
+          ev.stopPropagation();
+          if(socket) {
+            sendMessage();
+          }
+        }
+      });
+
+      function addUser() {
+        let jsonData = {};
+        jsonData["action"] = "addUser";
+        jsonData["username"] = userInput.value;
+        jsonData["message"] = "user added";
+        socket.send(JSON.stringify(jsonData));
+      }
 
       function renderUsers(data) {
         let ul = document.getElementById("online_users");
@@ -138,24 +163,6 @@
         socket.send(JSON.stringify(jsonData));
         msgInput.value = "";
       }
-
-      document.getElementById("sendBtn").addEventListener("click", function(ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        if(socket) {
-          sendMessage();
-        }
-      });
-
-      document.getElementById("message").addEventListener("keydown", function(ev) {
-        if(ev.code === "Enter") {
-          ev.preventDefault();
-          ev.stopPropagation();
-          if(socket) {
-            sendMessage();
-          }
-        }
-      });
 
       function errorMessage(msg) {
         notie.alert({
