@@ -142,6 +142,11 @@ func ListenToWsChan() {
 			delete(clients, ev.Conn)
 			broadcastUserListToAll(resp)
 		case "sendMessage":
+			if len(ev.Username) > 0 {
+				if _, ok := clients[ev.Conn]; !ok {
+					clients[ev.Conn] = ev.Username
+				}
+			}
 			msg := fmt.Sprintf("<div><strong>%s</strong> : %s</div>", ev.Username, ev.Message)
 			chat = append(chat, msg)
 			resp.Action = "listMessages"
