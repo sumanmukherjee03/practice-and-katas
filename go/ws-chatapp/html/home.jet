@@ -33,6 +33,9 @@
             <label for="message">Message:</label>
             <input type="text" name="message" id="message" class="form-control" autocomplete="off"/>
           </div>
+          <div class="form-group">
+            <a href="javascript:void(0)" id="sendBtn" class="btn btn-outline-secondary mt-3">Send Message</a>
+          </div>
           <input type="hidden" name="action" id="action"/>
           <hr />
 
@@ -51,6 +54,9 @@
 
     <script charset="utf-8">
       let socket = null;
+      let userInput = document.getElementById("username");
+      let msgInput = document.getElementById("message");
+      let chatbox = document.getElementById("output");
 
       window.onbeforeunload = function() {
         console.log("leaving");
@@ -90,10 +96,15 @@
                 });
               }
               break;
+            case "listMessages":
+              chatbox.innerHTML = "";
+              data.chat.forEach(function(msg) {
+                chatbox.innerHTML += msg;
+              });
+              break;
           }
         }
 
-        let userInput = document.getElementById("username");
         userInput.addEventListener("change", function() {
           let jsonData = {};
           jsonData["action"] = "addUser";
@@ -101,7 +112,38 @@
           jsonData["message"] = "user added";
           socket.send(JSON.stringify(jsonData));
         })
-      })
+      });
+
+      function sendMessage() {
+        if(userInput.value === "" || msgInput.value === "") {
+          alert("Both username and message fields need to be filled");
+          return;
+        }
+        let jsonData = {};
+        jsonData["action"] = "sendMessage";
+        jsonData["username"] = userInput.value;
+        jsonData["message"] = msgInput.value;
+        socket.send(JSON.stringify(jsonData));
+        msgInput.value = "";
+      }
+
+      document.getElementById("sendBtn").addEventListener("click", function() {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if(socket) {
+          sendMessage();
+        }
+      });
+
+      document.getElementById("message").addEventListener("keydown", function(ev) {
+        if(ev.code === "Enter") {
+          ev.preventDefault();
+          ev.stopPropagation();
+          if(socket) {
+            sendMessage();
+          }
+        }
+      });
     </script>
   </body>
 </html>

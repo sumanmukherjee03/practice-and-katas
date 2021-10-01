@@ -23,6 +23,7 @@ var (
 
 	wsChan  = make(chan WsJsonPayload)
 	clients = make(map[WebSocketConn]string)
+	chat    = []string{}
 )
 
 type WebSocketConn struct {
@@ -44,6 +45,7 @@ type WsJsonResponse struct {
 	Message        string   `json:"message"`
 	MessageType    string   `json:"message_type"`
 	ConnectedUsers []string `json:"connected_users"`
+	Chat           []string `json:"chat"`
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -139,6 +141,13 @@ func ListenToWsChan() {
 		case "userLeft":
 			delete(clients, ev.Conn)
 			broadcastUserListToAll(resp)
+		case "sendMessage":
+			msg := fmt.Sprintf("<div><strong>%s</strong> : %s</div>", ev.Username, ev.Message)
+			chat = append(chat, msg)
+			resp.Action = "listMessages"
+			resp.Message = "All messages"
+			resp.Chat = chat
+			broadcastToAll(resp)
 		}
 	}
 }
