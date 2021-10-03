@@ -38,9 +38,9 @@
             <a href="javascript:void(0)" id="sendBtn" class="btn btn-outline-secondary mt-3">Send Message</a>
           </div>
           <input type="hidden" name="action" id="action"/>
-          <hr />
-
-          <div id="output" class="chatbox">
+          <div id="status" class="mt-2 float-end">
+          </div>
+          <div id="output" class="chatbox mt-3">
           </div>
         </div>
         <div class="col-md-4">
@@ -60,6 +60,7 @@
       let userInput = document.getElementById("username");
       let msgInput = document.getElementById("message");
       let chatbox = document.getElementById("output");
+      let statusContainer = document.getElementById("status");
 
       window.onbeforeunload = function() {
         console.log("leaving");
@@ -72,19 +73,26 @@
       document.addEventListener("DOMContentLoaded", function() {
         socket = new ReconnectingWebSocket("ws://localhost:8080/ws", null, {reconnectInterval: 3000});
 
+        const offline = `<span class="badge bg-danger">Offline</span>`;
+        const online = `<span class="badge bg-success">Online</span>`;
+
         socket.onopen = () => {
           console.log("Successfully connected");
           if(userInput.value !== "") {
             addUser();
+            // TODO : Add the functionality to also reload the messages
           }
+          statusContainer.innerHTML = online;
         }
 
         socket.onclose = () => {
           console.log("Connection closed");
+          statusContainer.innerHTML = offline;
         }
 
         socket.onerror = err => {
           console.log("Encountered an error", err);
+          statusContainer.innerHTML = offline;
         }
 
         socket.onmessage = msg => {
