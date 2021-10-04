@@ -33,9 +33,11 @@ require (
 	github.com/justinas/nosurf v1.1.1
 	github.com/mattn/go-runewidth v0.0.10 // indirect
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
+	github.com/prometheus/common v0.7.0
 	github.com/pusher/pusher-http-go v4.0.1+incompatible
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v1.2.1 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/tatsushid/go-fastping v0.0.0-20160109021039-d7bb493dee3e
