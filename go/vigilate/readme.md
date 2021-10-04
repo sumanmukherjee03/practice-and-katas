@@ -34,11 +34,17 @@ cd ipe
 ./ipe
 ```
 
+Run the migrations with soda
+```
+soda migrate
+```
+
 Run with flags:
 
 ```
 ./vigilate \
 -dbuser='root' \
+-dbpass='some_password' \
 -pusherHost='localhost' \
 -pusherPort='4001' \
 -pusherKey='123abc' \
