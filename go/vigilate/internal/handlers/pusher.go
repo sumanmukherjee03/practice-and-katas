@@ -52,3 +52,15 @@ func (repo *DBRepo) PusherAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (repo *DBRepo) TestPusher(w http.ResponseWriter, r *http.Request) {
+	data := make(map[string]string)
+	data["message"] = "hello testing"
+	// We only have one channel at the moment called "public-channel".
+	// It is being subscribed to on the frontend as well. Look in partials/js.jet.
+	err := repo.App.WsClient.Trigger("public-channel", "testEvent", data)
+	if err != nil {
+		log.Error("ERROR - Could not push event to pusher via the websocket client", err)
+		return
+	}
+}
