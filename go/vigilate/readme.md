@@ -47,8 +47,8 @@ Run with flags:
 -dbpass='some_password' \
 -pusherHost='localhost' \
 -pusherPort='4001' \
--pusherKey='123abc' \
--pusherSecret='abc123' \
+-pusherKey='abc123' \
+-pusherSecret='123abc' \
 -pusherApp="1" \
 -pusherSecure=false
 ```
@@ -89,4 +89,15 @@ Usage of ./vigilate:
         pusher secret
    -pusherSecure
         pusher server uses SSL (true or false)
+```
+
+### Some soda commands
+
+For the migrations, you can follow the fizz format and documentation for it is available here :
+  - https://github.com/gobuffalo/fizz
+
+These are some helpful soda commands to help with models and migrations.
+```
+soda migrate
+soda generate fizz CreateHostsTable
 ```
