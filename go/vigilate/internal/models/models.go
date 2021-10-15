@@ -50,7 +50,7 @@ type Host struct {
 	IPV6          string
 	Location      string
 	OS            string
-	Active        string
+	Active        int
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -60,7 +60,7 @@ type Service struct {
 	ID          int
 	ServiceName string
 	Icon        string
-	Active      string
+	Active      int
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
@@ -74,7 +74,7 @@ type HostService struct {
 	ScheduleUnit   string
 	Status         string
 	LastCheck      time.Time
-	Active         string
+	Active         int
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }

@@ -132,6 +132,7 @@ func (repo *DBRepo) Host(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
+
 	vars := make(jet.VarMap)
 	var h models.Host
 	if id > 0 {
@@ -140,11 +141,11 @@ func (repo *DBRepo) Host(w http.ResponseWriter, r *http.Request) {
 			ClientError(w, r, http.StatusBadRequest)
 			return
 		}
-		vars.Set("host", h)
-	} else {
-		vars.Set("host", h)
 	}
-	err = helpers.RenderPage(w, r, "host", nil, nil)
+	vars.Set("host", h)
+
+	// Make sure you pass the vars to RenderPage
+	err = helpers.RenderPage(w, r, "host", vars, nil)
 	if err != nil {
 		printTemplateError(w, err)
 	}
@@ -152,7 +153,50 @@ func (repo *DBRepo) Host(w http.ResponseWriter, r *http.Request) {
 
 // PostHost handles the create/update of a host
 func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Posted form!"))
+	var h models.Host
+	var hostID int
+
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		log.Println(err)
+	}
+
+	// If there is an existing host, retrieve that from the DB
+	if id > 0 {
+		h, err = repo.DB.GetHostById(id)
+		if err != nil {
+			ClientError(w, r, http.StatusBadRequest)
+			return
+		}
+	}
+
+	// get values from form and populate the fields of a new host or existing host
+	h.HostName = r.Form.Get("host_name")
+	h.CanonicalName = r.Form.Get("canonical_name")
+	h.URL = r.Form.Get("url")
+	h.IP = r.Form.Get("ip")
+	h.IPV6 = r.Form.Get("ipv6")
+	h.Location = r.Form.Get("location")
+	h.OS = r.Form.Get("os")
+	active, err := strconv.Atoi(r.Form.Get("active"))
+	if err != nil {
+		log.Println(err)
+	}
+	h.Active = active
+
+	if id > 0 {
+		hostID = id
+	} else {
+		newHostID, err := repo.DB.InsertHost(h)
+		if err != nil {
+			helpers.ServerError(w, r, err)
+			return
+		}
+		hostID = newHostID
+	}
+
+	repo.App.Session.Put(r.Context(), "flash", "Changes saved")
+	http.Redirect(w, r, fmt.Sprintf("/admin/host/%d", hostID), http.StatusSeeOther)
 }
 
 // AllUsers lists all admin users

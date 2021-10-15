@@ -22,5 +22,6 @@ type DatabaseRepo interface {
 	CheckForToken(id int, token string) bool
 
 	// hosts
-	GetHostById(id int) (models.Host, error)
+	GetHostById(int) (models.Host, error)
+	InsertHost(models.Host) (int, error)
 }
