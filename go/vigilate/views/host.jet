@@ -88,7 +88,15 @@ Host
                 <input type="text" value="{{host.IPV6}}" name="ipv6" id="ipv6" class="form-control" />
               </div>
               <div class="form-check form-switch">
-                <input type="checkbox" name="active" id="active" class="form-check-input" value={{host.Active}} />
+                <input type="checkbox"
+                  name="active"
+                  id="active"
+                  class="form-check-input"
+                  value="1"
+                  {{if host.Active == 1}}
+                    checked
+                  {{end}}
+                  />
                 <label for="active" class="form-check-label">Active</label>
               </div>
             </div>

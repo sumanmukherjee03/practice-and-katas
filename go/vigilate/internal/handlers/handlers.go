@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"runtime/debug"
 	"strconv"
 
 	"github.com/CloudyKit/jet/v6"
 	"github.com/go-chi/chi"
+	log "github.com/sirupsen/logrus"
 	"github.com/tsawler/vigilate/internal/config"
 	"github.com/tsawler/vigilate/internal/driver"
 	"github.com/tsawler/vigilate/internal/helpers"
@@ -99,7 +99,7 @@ func (repo *DBRepo) PostSettings(w http.ResponseWriter, r *http.Request) {
 
 	err := repo.DB.InsertOrUpdateSitePreferences(prefMap)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		ClientError(w, r, http.StatusBadRequest)
 		return
 	}
@@ -130,7 +130,7 @@ func (repo *DBRepo) AllHosts(w http.ResponseWriter, r *http.Request) {
 func (repo *DBRepo) Host(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		log.Println(err)
+		log.Error(fmt.Errorf("ERROR - Could not read url param id - %v", err))
 	}
 
 	vars := make(jet.VarMap)
@@ -138,7 +138,7 @@ func (repo *DBRepo) Host(w http.ResponseWriter, r *http.Request) {
 	if id > 0 {
 		h, err = repo.DB.GetHostById(id)
 		if err != nil {
-			ClientError(w, r, http.StatusBadRequest)
+			ClientError(w, r, http.StatusNotFound)
 			return
 		}
 	}
@@ -158,14 +158,14 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		log.Println(err)
+		log.Error(fmt.Errorf("ERROR - Could not read url param id - %v", err))
 	}
 
 	// If there is an existing host, retrieve that from the DB
 	if id > 0 {
 		h, err = repo.DB.GetHostById(id)
 		if err != nil {
-			ClientError(w, r, http.StatusBadRequest)
+			ClientError(w, r, http.StatusNotFound)
 			return
 		}
 	}
@@ -178,9 +178,10 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 	h.IPV6 = r.Form.Get("ipv6")
 	h.Location = r.Form.Get("location")
 	h.OS = r.Form.Get("os")
+	fmt.Println(r.Form.Get("active"))
 	active, err := strconv.Atoi(r.Form.Get("active"))
 	if err != nil {
-		log.Println(err)
+		log.Error(fmt.Errorf("ERROR - Could not read the form value for host field active - %v", err))
 	}
 	h.Active = active
 
@@ -191,6 +192,11 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if id > 0 {
+		err = repo.DB.UpdateHost(h)
+		if err != nil {
+			helpers.ServerError(w, r, err)
+			return
+		}
 		hostID = id
 	} else {
 		newHostID, err := repo.DB.InsertHost(h)
@@ -201,7 +207,7 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 		hostID = newHostID
 	}
 
-	repo.App.Session.Put(r.Context(), "flash", "Changes saved")
+	repo.App.Session.Put(r.Context(), "flash", "Successfully created or updated host")
 	http.Redirect(w, r, fmt.Sprintf("/admin/host/%d", hostID), http.StatusSeeOther)
 }
 
@@ -227,7 +233,7 @@ func (repo *DBRepo) AllUsers(w http.ResponseWriter, r *http.Request) {
 func (repo *DBRepo) OneUser(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	vars := make(jet.VarMap)
@@ -256,7 +262,7 @@ func (repo *DBRepo) OneUser(w http.ResponseWriter, r *http.Request) {
 func (repo *DBRepo) PostOneUser(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	var u models.User
@@ -269,7 +275,7 @@ func (repo *DBRepo) PostOneUser(w http.ResponseWriter, r *http.Request) {
 		u.UserActive, _ = strconv.Atoi(r.Form.Get("user_active"))
 		err := repo.DB.UpdateUser(u)
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 			ClientError(w, r, http.StatusBadRequest)
 			return
 		}
@@ -278,7 +284,7 @@ func (repo *DBRepo) PostOneUser(w http.ResponseWriter, r *http.Request) {
 			// changing password
 			err := repo.DB.UpdatePassword(id, r.Form.Get("password"))
 			if err != nil {
-				log.Println(err)
+				log.Error(err)
 				ClientError(w, r, http.StatusBadRequest)
 				return
 			}
@@ -293,7 +299,7 @@ func (repo *DBRepo) PostOneUser(w http.ResponseWriter, r *http.Request) {
 
 		_, err := repo.DB.InsertUser(u)
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 			ClientError(w, r, http.StatusBadRequest)
 			return
 		}
@@ -326,7 +332,7 @@ func ClientError(w http.ResponseWriter, r *http.Request, status int) {
 // ServerError will display error page for internal server error
 func ServerError(w http.ResponseWriter, r *http.Request, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-	_ = log.Output(2, trace)
+	log.Trace(trace)
 	show500(w, r)
 }
 

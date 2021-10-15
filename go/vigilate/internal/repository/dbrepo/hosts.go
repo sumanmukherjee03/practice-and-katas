@@ -46,7 +46,7 @@ func (m *postgresDBRepo) GetHostById(id int) (models.Host, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	stmt := `SELECT id, host_name, canonical_name, url, ip, ipv6, location, os,
+	stmt := `SELECT id, host_name, canonical_name, url, ip, ipv6, location, os, active,
 			created_at, updated_at
 			FROM hosts where id = $1`
 	row := m.DB.QueryRowContext(ctx, stmt, id)
@@ -62,6 +62,7 @@ func (m *postgresDBRepo) GetHostById(id int) (models.Host, error) {
 		&h.IPV6,
 		&h.Location,
 		&h.OS,
+		&h.Active,
 		&h.CreatedAt,
 		&h.UpdatedAt,
 	)
@@ -109,7 +110,7 @@ func (m *postgresDBRepo) UpdateHost(h models.Host) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	stmt := `update hosts set host_name = $1, canonical_name = $2, url = $3, ip = $4, ipv6 = $5, location = $7, os = $8, active = $9, updated_at = $10 where id = $11`
+	stmt := `UPDATE hosts SET host_name = $1, canonical_name = $2, url = $3, ip = $4, ipv6 = $5, location = $6, os = $7, active = $8, updated_at = $9 WHERE id = $10`
 
 	_, err := m.DB.ExecContext(ctx, stmt,
 		h.HostName,
@@ -136,7 +137,7 @@ func (m *postgresDBRepo) DeleteHost(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	stmt := `delete from hosts where id = $1`
+	stmt := `DELETE FROM hosts WHERE id = $1`
 
 	_, err := m.DB.ExecContext(ctx, stmt, id)
 	if err != nil {
