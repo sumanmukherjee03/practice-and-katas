@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -53,6 +54,22 @@ type Host struct {
 	Active        int
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+}
+
+func (h *Host) IsValid() error {
+	if len(h.HostName) == 0 {
+		return fmt.Errorf("HostName is empty")
+	}
+	if len(h.CanonicalName) == 0 {
+		return fmt.Errorf("CanonicalName is empty")
+	}
+	if len(h.URL) == 0 {
+		return fmt.Errorf("URL is empty")
+	}
+	if h.Active > 1 {
+		return fmt.Errorf("Active can only be 0 or 1")
+	}
+	return nil
 }
 
 // Service model

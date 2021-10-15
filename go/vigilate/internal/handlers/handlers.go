@@ -184,6 +184,12 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Active = active
 
+	err = h.IsValid()
+	if err != nil {
+		ClientError(w, r, http.StatusBadRequest)
+		return
+	}
+
 	if id > 0 {
 		hostID = id
 	} else {
