@@ -120,7 +120,14 @@ func (repo *DBRepo) PostSettings(w http.ResponseWriter, r *http.Request) {
 
 // AllHosts displays list of all hosts
 func (repo *DBRepo) AllHosts(w http.ResponseWriter, r *http.Request) {
-	err := helpers.RenderPage(w, r, "hosts", nil, nil)
+	hosts, err := repo.DB.AllHosts()
+	if err != nil {
+		ServerError(w, r, err)
+		return
+	}
+	vars := make(jet.VarMap)
+	vars.Set("hosts", hosts)
+	err = helpers.RenderPage(w, r, "hosts", vars, nil)
 	if err != nil {
 		printTemplateError(w, err)
 	}
@@ -178,7 +185,6 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 	h.IPV6 = r.Form.Get("ipv6")
 	h.Location = r.Form.Get("location")
 	h.OS = r.Form.Get("os")
-	fmt.Println(r.Form.Get("active"))
 	active, err := strconv.Atoi(r.Form.Get("active"))
 	if err != nil {
 		log.Error(fmt.Errorf("ERROR - Could not read the form value for host field active - %v", err))
