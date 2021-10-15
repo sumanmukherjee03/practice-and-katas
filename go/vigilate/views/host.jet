@@ -159,7 +159,7 @@ Host
 
   function saveClose() {
     document.getElementById("action").value = 1;
-    let form = document.getElementById("settings-form");
+    let form = document.getElementById("host-form");
     if (form.checkValidity() === false) {
       errorAlert("Error: check all tabs!");
       this.event.preventDefault();
