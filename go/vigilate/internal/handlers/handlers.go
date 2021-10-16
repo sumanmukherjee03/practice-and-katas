@@ -221,16 +221,19 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request) {
 	var h models.Host
 	var s models.Service
-	fmt.Println("Getting here")
 
 	hostID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		log.Error(fmt.Errorf("ERROR - Could not read url param id to get host id - %v", err))
+		ClientError(w, r, http.StatusBadRequest)
+		return
 	}
 
 	serviceID, err := strconv.Atoi(chi.URLParam(r, "service_id"))
 	if err != nil {
 		log.Error(fmt.Errorf("ERROR - Could not read url param service_id to get service id - %v", err))
+		ClientError(w, r, http.StatusBadRequest)
+		return
 	}
 
 	// If there is an existing host, retrieve that from the DB
@@ -242,21 +245,32 @@ func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request)
 
 	h, err = repo.DB.GetHostById(hostID)
 	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Could not find service by id - %v", err))
 		ClientError(w, r, http.StatusNotFound)
 		return
 	}
 
 	s, err = repo.DB.GetServiceById(serviceID)
 	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Could not find service by id - %v", err))
 		ClientError(w, r, http.StatusNotFound)
 		return
 	}
 
 	// toggle service on or off for host
-	activate := r.Form.Get("activate")
-	log.Info("The host is", h.ID)
-	log.Info("The service is", s.ID)
-	log.Info("The activate value is", activate)
+	activate, err := strconv.Atoi(r.Form.Get("activate"))
+	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Could not get an integer value for activate from form - %v", err))
+		ClientError(w, r, http.StatusBadRequest)
+		return
+	}
+
+	_, err = repo.DB.InsertHostService(h, s, activate)
+	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Could not associate/dissociate host with/from service - %v", err))
+		ServerError(w, r, err)
+		return
+	}
 }
 
 // AllUsers lists all admin users
