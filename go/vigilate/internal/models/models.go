@@ -54,6 +54,7 @@ type Host struct {
 	Active        int
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+	HostServices  []HostService
 }
 
 func (h *Host) IsValid() error {
@@ -94,4 +95,5 @@ type HostService struct {
 	Active         int
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+	Service        Service
 }
