@@ -217,6 +217,48 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/admin/host/%d", hostID), http.StatusSeeOther)
 }
 
+// ToggleServiceForHost handles the association or dissociation of a host with a service
+func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request) {
+	var h models.Host
+	var s models.Service
+	fmt.Println("Getting here")
+
+	hostID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Could not read url param id to get host id - %v", err))
+	}
+
+	serviceID, err := strconv.Atoi(chi.URLParam(r, "service_id"))
+	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Could not read url param service_id to get service id - %v", err))
+	}
+
+	// If there is an existing host, retrieve that from the DB
+	if hostID == 0 || serviceID == 0 {
+		log.Error(fmt.Errorf("ERROR - Either host id or service id value is not valid - host id : %d, service id : %d", hostID, serviceID))
+		ClientError(w, r, http.StatusBadRequest)
+		return
+	}
+
+	h, err = repo.DB.GetHostById(hostID)
+	if err != nil {
+		ClientError(w, r, http.StatusNotFound)
+		return
+	}
+
+	s, err = repo.DB.GetServiceById(serviceID)
+	if err != nil {
+		ClientError(w, r, http.StatusNotFound)
+		return
+	}
+
+	// toggle service on or off for host
+	activate := r.Form.Get("activate")
+	log.Info("The host is", h.ID)
+	log.Info("The service is", s.ID)
+	log.Info("The activate value is", activate)
+}
+
 // AllUsers lists all admin users
 func (repo *DBRepo) AllUsers(w http.ResponseWriter, r *http.Request) {
 	vars := make(jet.VarMap)
