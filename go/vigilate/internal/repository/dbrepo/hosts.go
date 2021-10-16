@@ -102,6 +102,13 @@ func (m *postgresDBRepo) InsertHost(h models.Host) (int, error) {
 		return 0, err
 	}
 
+	hostServicesStmt := `INSERT INTO host_services (host_id, service_id, active, schedule_number, schedule_unit, status, created_at, updated_at)
+	VALUES ($1, 2, 1, 3, 'm', 'pending', $2, $3)`
+	_, err = m.DB.ExecContext(ctx, hostServicesStmt, newId, time.Now(), time.Now())
+	if err != nil {
+		return newId, err
+	}
+
 	return newId, nil
 }
 
