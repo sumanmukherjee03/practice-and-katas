@@ -129,26 +129,26 @@ Host
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>HTTP</td>
-                      <td>
-                        <div class="form-check form-switch">
-                          <input type="checkbox"
-                            name="http-svc-active"
-                            id="http-svc-active"
-                            data-type="toggle-svc"
-                            data-service-id="2"
-                            data-host-id="{{host.ID}}"
-                            class="form-check-input"
-                            value="1"
-                            {{if 2 == 1}}
-                              checked
-                            {{end}}
-                            />
-                          <label for="active" class="form-check-label">Active</label>
-                        </div>
-                      </td>
-                    </tr>
+                      <tr>
+                        <td>HTTP</td>
+                        <td>
+                          <div class="form-check form-switch">
+                            <input type="checkbox"
+                              name="http-svc-active"
+                              id="http-svc-active"
+                              data-type="toggle-svc"
+                              data-service-id="3"
+                              data-host-id="{{host.ID}}"
+                              class="form-check-input"
+                              value="1"
+                              {{if 2 == 1}}
+                                checked
+                              {{end}}
+                              />
+                            <label for="active" class="form-check-label">Active</label>
+                          </div>
+                        </td>
+                      </tr>
                   </tbody>
                 </table>
               </div>
@@ -193,6 +193,10 @@ Host
         fetch("/admin/host/"+hostId+"/service/"+svcId+"/toggle", {
           method: "POST",
           body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
         });
       });
     }

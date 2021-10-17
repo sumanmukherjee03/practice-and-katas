@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -217,6 +218,10 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/admin/host/%d", hostID), http.StatusSeeOther)
 }
 
+type toggleServiceForHostResp struct {
+	OK bool `json: "ok"`
+}
+
 // ToggleServiceForHost handles the association or dissociation of a host with a service
 func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request) {
 	var h models.Host
@@ -225,35 +230,42 @@ func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request)
 	hostID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		log.Error(fmt.Errorf("ERROR - Could not read url param id to get host id - %v", err))
-		ClientError(w, r, http.StatusBadRequest)
+		ClientErrorJSON(w, r, http.StatusBadRequest)
 		return
 	}
 
 	serviceID, err := strconv.Atoi(chi.URLParam(r, "service_id"))
 	if err != nil {
 		log.Error(fmt.Errorf("ERROR - Could not read url param service_id to get service id - %v", err))
-		ClientError(w, r, http.StatusBadRequest)
+		ClientErrorJSON(w, r, http.StatusBadRequest)
 		return
 	}
 
 	// If there is an existing host, retrieve that from the DB
 	if hostID == 0 || serviceID == 0 {
 		log.Error(fmt.Errorf("ERROR - Either host id or service id value is not valid - host id : %d, service id : %d", hostID, serviceID))
-		ClientError(w, r, http.StatusBadRequest)
+		ClientErrorJSON(w, r, http.StatusBadRequest)
 		return
 	}
 
 	h, err = repo.DB.GetHostById(hostID)
 	if err != nil {
 		log.Error(fmt.Errorf("ERROR - Could not find service by id - %v", err))
-		ClientError(w, r, http.StatusNotFound)
+		ClientErrorJSON(w, r, http.StatusNotFound)
 		return
 	}
 
 	s, err = repo.DB.GetServiceById(serviceID)
 	if err != nil {
 		log.Error(fmt.Errorf("ERROR - Could not find service by id - %v", err))
-		ClientError(w, r, http.StatusNotFound)
+		ClientErrorJSON(w, r, http.StatusNotFound)
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Could not parse form data : %v", err))
+		ClientErrorJSON(w, r, http.StatusBadRequest)
 		return
 	}
 
@@ -261,16 +273,22 @@ func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request)
 	activate, err := strconv.Atoi(r.Form.Get("activate"))
 	if err != nil {
 		log.Error(fmt.Errorf("ERROR - Could not get an integer value for activate from form - %v", err))
-		ClientError(w, r, http.StatusBadRequest)
+		ClientErrorJSON(w, r, http.StatusBadRequest)
 		return
 	}
 
 	_, err = repo.DB.InsertHostService(h, s, activate)
 	if err != nil {
 		log.Error(fmt.Errorf("ERROR - Could not associate/dissociate host with/from service - %v", err))
-		ServerError(w, r, err)
+		ServerErrorJSON(w, r, err)
 		return
 	}
+
+	var resp toggleServiceForHostResp
+	resp.OK = true
+	out, _ := json.MarshalIndent(resp, "", "  ")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
 }
 
 // AllUsers lists all admin users
@@ -410,6 +428,47 @@ func show500(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0")
 	http.ServeFile(w, r, "./ui/static/500.html")
+}
+
+// ClientError will display error page for client error i.e. bad request
+func ClientErrorJSON(w http.ResponseWriter, r *http.Request, status int) {
+	switch status {
+	case http.StatusNotFound:
+		return404JSON(w, r)
+	case http.StatusInternalServerError:
+		return500JSON(w, r)
+	default:
+		http.Error(w, http.StatusText(status), status)
+	}
+}
+
+// ServerError will display error page for internal server error
+func ServerErrorJSON(w http.ResponseWriter, r *http.Request, err error) {
+	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
+	log.Trace(trace)
+	return500JSON(w, r)
+}
+
+type errRespJSON struct {
+	OK bool `json:"ok"`
+}
+
+func return404JSON(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotFound)
+	var resp errRespJSON
+	resp.OK = false
+	out, _ := json.MarshalIndent(resp, "", "  ")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
+}
+
+func return500JSON(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusInternalServerError)
+	var resp errRespJSON
+	resp.OK = false
+	out, _ := json.MarshalIndent(resp, "", "  ")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
 }
 
 func printTemplateError(w http.ResponseWriter, err error) {
