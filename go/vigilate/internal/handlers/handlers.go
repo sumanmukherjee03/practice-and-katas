@@ -152,6 +152,26 @@ func (repo *DBRepo) Host(w http.ResponseWriter, r *http.Request) {
 	}
 	vars.Set("host", h)
 
+	var services []*models.Service
+	services, err = repo.DB.AllServices()
+	if err != nil {
+		ServerError(w, r, err)
+		return
+	}
+	vars.Set("services", services)
+
+	hostServicesActive := make(map[string]int)
+	for _, service := range services {
+		k := fmt.Sprintf("host_id:%d,service_id:%d", h.ID, service.ID)
+		hs, err := repo.DB.GetHostServiceByHostAndService(h.ID, service.ID)
+		if err != nil {
+			hostServicesActive[k] = 0
+		} else {
+			hostServicesActive[k] = hs.Active
+		}
+	}
+	vars.Set("hostServicesActive", hostServicesActive)
+
 	// Make sure you pass the vars to RenderPage
 	err = helpers.RenderPage(w, r, "host", vars, nil)
 	if err != nil {

@@ -129,19 +129,20 @@ Host
                     </tr>
                   </thead>
                   <tbody>
+                    {{range services}}
                       <tr>
-                        <td>HTTP</td>
+                        <td>{{.ServiceName}}</td>
                         <td>
                           <div class="form-check form-switch">
                             <input type="checkbox"
                               name="http-svc-active"
                               id="http-svc-active"
                               data-type="toggle-svc"
-                              data-service-id="2"
+                              data-service-id="{{.ID}}"
                               data-host-id="{{host.ID}}"
                               class="form-check-input"
                               value="1"
-                              {{if 2 == 1}}
+                              {{if hostServicesActive["host_id:"+host.ID+",service_id:"+.ID] == 1}}
                                 checked
                               {{end}}
                               />
@@ -149,6 +150,7 @@ Host
                           </div>
                         </td>
                       </tr>
+                    {{end}}
                   </tbody>
                 </table>
               </div>

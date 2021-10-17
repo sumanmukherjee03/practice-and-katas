@@ -29,6 +29,7 @@ type DatabaseRepo interface {
 	DeleteHost(id int) error
 
 	// services
+	AllServices() ([]*models.Service, error)
 	GetServiceById(int) (models.Service, error)
 
 	// host-services
