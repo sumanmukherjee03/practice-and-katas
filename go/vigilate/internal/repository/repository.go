@@ -32,5 +32,7 @@ type DatabaseRepo interface {
 	GetServiceById(int) (models.Service, error)
 
 	// host-services
-	InsertHostService(models.Host, models.Service, int) (int, error)
+	GetHostServiceByHostAndService(int, int) (models.HostService, error)
+	InsertHostService(models.HostService) (int, error)
+	UpdateHostService(models.HostService) error
 }

@@ -143,14 +143,11 @@ func (m *postgresDBRepo) UpdateHost(h models.Host) error {
 func (m *postgresDBRepo) DeleteHost(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-
 	stmt := `DELETE FROM hosts WHERE id = $1`
-
 	_, err := m.DB.ExecContext(ctx, stmt, id)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
-
 	return nil
 }

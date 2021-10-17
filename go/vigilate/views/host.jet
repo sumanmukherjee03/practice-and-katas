@@ -137,7 +137,7 @@ Host
                               name="http-svc-active"
                               id="http-svc-active"
                               data-type="toggle-svc"
-                              data-service-id="3"
+                              data-service-id="2"
                               data-host-id="{{host.ID}}"
                               class="form-check-input"
                               value="1"

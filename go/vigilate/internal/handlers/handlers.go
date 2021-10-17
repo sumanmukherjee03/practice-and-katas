@@ -219,7 +219,7 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 }
 
 type toggleServiceForHostResp struct {
-	OK bool `json: "ok"`
+	OK bool `json:"ok"`
 }
 
 // ToggleServiceForHost handles the association or dissociation of a host with a service
@@ -250,14 +250,14 @@ func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request)
 
 	h, err = repo.DB.GetHostById(hostID)
 	if err != nil {
-		log.Error(fmt.Errorf("ERROR - Could not find service by id - %v", err))
+		log.Error(fmt.Errorf("ERROR - Could not find host by id %d - %v", hostID, err))
 		ClientErrorJSON(w, r, http.StatusNotFound)
 		return
 	}
 
 	s, err = repo.DB.GetServiceById(serviceID)
 	if err != nil {
-		log.Error(fmt.Errorf("ERROR - Could not find service by id - %v", err))
+		log.Error(fmt.Errorf("ERROR - Could not find service by id %d - %v", serviceID, err))
 		ClientErrorJSON(w, r, http.StatusNotFound)
 		return
 	}
@@ -277,11 +277,26 @@ func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	_, err = repo.DB.InsertHostService(h, s, activate)
+	var hs models.HostService
+	hs, err = repo.DB.GetHostServiceByHostAndService(h.ID, s.ID)
 	if err != nil {
-		log.Error(fmt.Errorf("ERROR - Could not associate/dissociate host with/from service - %v", err))
-		ServerErrorJSON(w, r, err)
-		return
+		hs.HostID = h.ID
+		hs.ServiceID = s.ID
+		hs.Active = activate
+		_, err = repo.DB.InsertHostService(hs)
+		if err != nil {
+			log.Error(fmt.Errorf("ERROR - Could not associate/dissociate host with/from service - %v", err))
+			ServerErrorJSON(w, r, err)
+			return
+		}
+	} else {
+		hs.Active = activate
+		err = repo.DB.UpdateHostService(hs)
+		if err != nil {
+			log.Error(fmt.Errorf("ERROR - Could not associate/dissociate host with/from service - %v", err))
+			ServerErrorJSON(w, r, err)
+			return
+		}
 	}
 
 	var resp toggleServiceForHostResp
@@ -430,15 +445,20 @@ func show500(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./ui/static/500.html")
 }
 
+type errRespJSON struct {
+	OK      bool   `json:"ok"`
+	Message string `json:"message"`
+}
+
 // ClientError will display error page for client error i.e. bad request
 func ClientErrorJSON(w http.ResponseWriter, r *http.Request, status int) {
 	switch status {
 	case http.StatusNotFound:
-		return404JSON(w, r)
+		returnErrorJSON(w, r, status, "Entity could not be found")
 	case http.StatusInternalServerError:
-		return500JSON(w, r)
+		returnErrorJSON(w, r, status, "Internal server error")
 	default:
-		http.Error(w, http.StatusText(status), status)
+		returnErrorJSON(w, r, status, "Encountered an error")
 	}
 }
 
@@ -446,26 +466,14 @@ func ClientErrorJSON(w http.ResponseWriter, r *http.Request, status int) {
 func ServerErrorJSON(w http.ResponseWriter, r *http.Request, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
 	log.Trace(trace)
-	return500JSON(w, r)
+	returnErrorJSON(w, r, http.StatusInternalServerError, "Internal server error")
 }
 
-type errRespJSON struct {
-	OK bool `json:"ok"`
-}
-
-func return404JSON(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotFound)
+func returnErrorJSON(w http.ResponseWriter, r *http.Request, status int, msg string) {
+	w.WriteHeader(status)
 	var resp errRespJSON
 	resp.OK = false
-	out, _ := json.MarshalIndent(resp, "", "  ")
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(out)
-}
-
-func return500JSON(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusInternalServerError)
-	var resp errRespJSON
-	resp.OK = false
+	resp.Message = msg
 	out, _ := json.MarshalIndent(resp, "", "  ")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
