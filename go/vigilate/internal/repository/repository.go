@@ -36,4 +36,5 @@ type DatabaseRepo interface {
 	GetHostServiceByHostAndService(int, int) (models.HostService, error)
 	InsertHostService(models.HostService) (int, error)
 	UpdateHostService(models.HostService) error
+	GetAllHostServiceStatusCount() (int, int, int, int, error)
 }

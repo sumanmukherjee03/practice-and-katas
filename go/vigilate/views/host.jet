@@ -138,8 +138,8 @@ Host
                               name="http-svc-active"
                               id="http-svc-active"
                               data-type="toggle-svc"
-                              data-service-id="{{.Service.ID}}"
-                              data-host-id="{{host.ID}}"
+                              data-service-id="{{.ServiceID}}"
+                              data-host-id="{{.HostID}}"
                               class="form-check-input"
                               value="1"
                               {{if .Active == 1}}

@@ -66,3 +66,35 @@ func (m *postgresDBRepo) UpdateHostService(hs models.HostService) error {
 	}
 	return nil
 }
+
+// GetHostServiceStatusCount returns the active hosts with services that have status pending, healthy, warning and problem
+func (m *postgresDBRepo) GetAllHostServiceStatusCount() (int, int, int, int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	stmt := `SELECT
+		(SELECT COUNT(id) FROM host_services WHERE active = 1 AND status = 'pending') AS pending,
+		(SELECT COUNT(id) FROM host_services WHERE active = 1 AND status = 'healthy') AS healthy,
+		(SELECT COUNT(id) FROM host_services WHERE active = 1 AND status = 'warning') AS warning,
+		(SELECT COUNT(id) FROM host_services WHERE active = 1 AND status = 'problem') AS problem`
+	row := m.DB.QueryRowContext(ctx, stmt)
+
+	var pending int
+	var healthy int
+	var warning int
+	var problem int
+
+	err := row.Scan(
+		&pending,
+		&healthy,
+		&warning,
+		&problem,
+	)
+
+	if err != nil {
+		log.Println(err)
+		return 0, 0, 0, 0, err
+	}
+
+	return pending, healthy, warning, problem, nil
+}
