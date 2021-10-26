@@ -1,6 +1,8 @@
 --  ##############################################################################################
 --  ########################################## CONSTRAINTS #######################################
 --  ##############################################################################################
+
+--  Example of table with various constraints and an index
 create table employees(
   id int not null,
   email varchar(255) not null,
@@ -19,11 +21,27 @@ insert into employees(id, email, first_name, last_name, age) values(1, 'john.doe
 show indexes from employees;
 drop index employees_name_index on employees;
 
-
+--  Example of primary key auto increment contraint example
 create table posts(
-  id int primary key auto_increment,
+  id int auto_increment primary key,
   content text,
   category_id int
+) engine = INNODB;
+
+
+create table races (
+  id int not null auto_increment primary key,
+  race_name varchar(30) not null
+) engine = INNODB;
+
+--  The on update cascade clause updates the race_id in characters table if id of a record is changed in the races table that is referenced in the characters table
+--  The on delete restrict clause prevents deletion of a record from races table if it is referenced as a foreign key in any record of characters table
+create table characters (
+  id int not null auto_increment primary key,
+  character_name varchar(50) not null,
+  race_id int not null,
+  index idx_race (race_id),
+  constraint fk_character_race foreign key (race_id) references races(id) on update cascade on delete restrict
 ) engine = INNODB;
 
 
@@ -46,7 +64,7 @@ select avg(s.gpa), e.cid from enrolled as e, student as s where e.sid = s.sid gr
 select avg(s.gpa), e.cid, e.cname from enrolled as e, student as s where e.sid = s.sid group by e.cid, e.cname;
 
 --  Filter results based on aggregate computation
---  Here for exampple, you are aggregating the GPA but you cant use to filter results in your where clause
+--  Here for example, you are aggregating the GPA but you cant use to filter results in your where clause
 --  because it is part of the output.
 --  So, to filter based on outputs of a selection use the having clause, because you can reference the output columns
 select avg(s.gpa) as avg_gpa, e.cid
@@ -133,7 +151,7 @@ where product_code in (select product_code from orderdetails where price_each > 
 --  ##############################################################################################
 
 --  When 2 tables have the same structure for the columns you select, and you want to join the rows, ie
---  you want rows from both the tables show upm in 1 result, you use UNION.
+--  you want rows from both the tables show up in 1 result, you use UNION.
 --  The keyword UNION eliminates duplicate rows, but UNION ALL keeps duplicate rows in the result set.
 --  You got to select the same number of columns from both the tables
 select SalesOrderId, OrderDate, SubTotal from sales.StoreSales
@@ -178,6 +196,8 @@ with EmployeeHierarchy as
 --  ##############################################################################################
 --  ####################################### STORED PROCEDURES ####################################
 --  ##############################################################################################
+
+--  Example of a simple procedure
 delimiter &&
 create procedure top_players()
 begin
@@ -188,6 +208,7 @@ delimiter ;
 call top_players();
 
 
+--  Example of procedure that takes 1 input
 delimiter //
 create procedure SortBySalary(IN num_recs int)
 begin
@@ -200,6 +221,7 @@ delimiter ;
 call SortBySalary(10);
 
 
+--  Example of procedure that takes 2 inputs
 delimiter $$
 create procedure update_salary(IN temp_name varchar(20), IN new_salary float)
 begin
@@ -210,6 +232,7 @@ delimiter ;
 call update_salary('John', 80000);
 
 
+--  Example of procedure that has an output
 delimiter $$
 create procedure count_employees(OUT Total_Emps int)
 begin
@@ -228,6 +251,7 @@ select @F_emps as female_emps;
 --  ##############################################################################################
 create table students (st_roll int, age int, name varchar(30), marks float);
 
+--  Example of creating a before insert trigger
 delimiter $$
 create trigger set_default_marks
 before insert on students
@@ -249,10 +273,13 @@ drop trigger set_default_marks;
 --  ##############################################################################################
 --  ############################################# VIEWS ##########################################
 --  ##############################################################################################
+
+--  Example of creating a view
 create view customer_details
 as
 select customerName, phone, city from customers;
 
+--  Example of invoking a view
 select * from customer_details;
 
 
@@ -280,12 +307,27 @@ drop view product_description;
 --  ############################################ WINDOW FN #######################################
 --  ##############################################################################################
 
---  Example problem is to find the combined salary of each department
---  So, we plan to partition our table by department and get the total salary
-select emp_name, age, department, sum(salary) over (partition by dept) as total_salary from employees;
+--  This is an example of a report of each farmer's orange production alongside the total orange production of the year
+--  Here, the over clause constructs a static window that includes all the records returned by the query, ie, all the records for year 2020
+select farmer_name, kilos_produced, sum(kilos_produced) over() total_produced from orange_production where crop_year = 2020;
 
-select row_number() over (order by salary) as row_num,
-emp_name, salary from employees order by salary;
+--  Sliding or dynamic window frames mean the window of records can be different for each row returned by a query.
+--  Moreover, the window is created based on the current row in the query, so the rows in the window can change when the current row changes.
+--  The over(partition by orange_variety, crop_year) clause in the example below creates a dynamic sliding window by grouping all records with the same value in the orange_variety and crop_year columns
+--  So, the columns total_same_variety_year in the result will return sum of kilos produced for valencia oranges in 2020, lets say.
+--  Jake | Valencia | 2019 | 107 | 12000
+--  Jake | Valencia | 2020 | 110 | 10000
+--  John | Valencia | 2019 | 90  | 12000
+--  John | Valencia | 2020 | 100 | 10000
+--  Jill | Golden   | 2020 | 75  | 9800
+--  Jill | Golden   | 2020 | 85  | 10500
+select farmer, orange_variety, crop_year, kilos_produced, sum(kilos_produced) over(partition by orange_variety, crop_year) as total_same_variety_year from orange_production;
+
+--  Example : problem is to find the combined salary of each department
+--  So, we plan to partition our table by department and get the total salary
+select emp_name, age, department, sum(salary) over (partition by dept) as total_salary_by_dept from employees;
+
+select row_number() over (order by salary) as row_num, emp_name, salary from employees order by salary;
 
 --  row_number can also be used to track duplicates
 --  Here row_number is acting like a count.
