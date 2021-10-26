@@ -2,6 +2,7 @@ package dbrepo
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -97,4 +98,63 @@ func (m *postgresDBRepo) GetAllHostServiceStatusCount() (int, int, int, int, err
 	}
 
 	return pending, healthy, warning, problem, nil
+}
+
+// GetAllHostServicesWithStatus returns the host services that have status pending
+func (m *postgresDBRepo) GetAllHostServicesWithStatus(status string) ([]*models.HostService, error) {
+	var hss []*models.HostService
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	stmt := `SELECT hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit, hs.last_check, hs.status, hs.created_at, hs.updated_at,
+    s.id, s.service_name, s.active, s.icon, s.created_at, s.updated_at,
+    h.id, h.host_name, h.canonical_name, h.url, h.ip, h.ipv6, h.location, h.os, h.active, h.created_at, h.updated_at
+    FROM host_services hs
+    LEFT JOIN services s ON (s.id = hs.service_id)
+    LEFT JOIN hosts h ON (h.id = hs.host_id)
+    WHERE hs.status = $1`
+	rows, err := m.DB.QueryContext(ctx, stmt, status)
+	if err != nil {
+		return hss, fmt.Errorf("ERROR - Could not fetch rows for host services : %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		hs := &models.HostService{}
+		err = rows.Scan(
+			&hs.ID,
+			&hs.HostID,
+			&hs.ServiceID,
+			&hs.Active,
+			&hs.ScheduleNumber,
+			&hs.ScheduleUnit,
+			&hs.LastCheck,
+			&hs.Status,
+			&hs.CreatedAt,
+			&hs.UpdatedAt,
+			&hs.Service.ID,
+			&hs.Service.ServiceName,
+			&hs.Service.Active,
+			&hs.Service.Icon,
+			&hs.Service.CreatedAt,
+			&hs.Service.UpdatedAt,
+			&hs.Host.ID,
+			&hs.Host.HostName,
+			&hs.Host.CanonicalName,
+			&hs.Host.URL,
+			&hs.Host.IP,
+			&hs.Host.IPV6,
+			&hs.Host.Location,
+			&hs.Host.OS,
+			&hs.Host.Active,
+			&hs.Host.CreatedAt,
+			&hs.Host.UpdatedAt,
+		)
+		if err != nil {
+			return hss, err
+		}
+		hss = append(hss, hs)
+	}
+
+	return hss, nil
 }
