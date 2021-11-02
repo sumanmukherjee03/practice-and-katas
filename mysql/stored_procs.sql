@@ -9,6 +9,7 @@ show procedure status like '%pattern%'
 drop procedure if exists abc;
 
 --  Example of a simple procedure
+drop procedure if exists top_players;
 delimiter &&
 create procedure top_players()
 begin
@@ -176,3 +177,44 @@ end$$
 delimiter ;
 
 call load_calendars('2021-10-31', 30);
+
+
+
+-- This is an example of a repeat/until loop
+delimiter $$
+create procedure repeat_demo()
+begin
+  declare counter INT default 1;
+  declare result VARCHAR(100) default '';
+  repeat
+    set result = concat(result, counter, ',');
+    set counter = counter + 1;
+  until counter >= 10;
+  end repeat;
+  select result;
+end$$
+delimiter ;
+call repeat_demo();
+
+
+
+--  An important thing about LEAVE clause is that just like it can be used to exit labelled loops/while etc
+--  it can also be used to leave a stored proc if it labelled
+DELIMITER $$
+CREATE PROCEDURE sp_name()
+sp: BEGIN
+  [label:] WHILE search_condition DO
+    IF condition THEN
+      --  This leaves the loop
+      LEAVE [label];
+    END IF;
+  END WHILE [label];
+
+  --  Other statements
+
+  IF condition THEN
+    --  This leaves the stored proc
+    LEAVE sp;
+  END IF;
+END$$
+DELIMITER ;
