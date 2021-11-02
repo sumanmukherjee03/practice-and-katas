@@ -106,6 +106,7 @@ func (m *postgresDBRepo) GetAllHostServicesWithStatus(status string) ([]*models.
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	// We use a left join because the aim is to select all the rows of the host_services table
 	stmt := `SELECT hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit, hs.last_check, hs.status, hs.created_at, hs.updated_at,
     s.id, s.service_name, s.active, s.icon, s.created_at, s.updated_at,
     h.id, h.host_name, h.canonical_name, h.url, h.ip, h.ipv6, h.location, h.os, h.active, h.created_at, h.updated_at

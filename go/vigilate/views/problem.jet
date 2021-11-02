@@ -35,9 +35,14 @@
                 </tr>
                 </thead>
                 <tbody>
+                  {{range hostServices}}
                     <tr>
-                        <td colspan="5">No services</td>
+                      <td>{{.Host.HostName}}</td>
+                      <td>{{.Service.ServiceName}}</td>
+                      <td>{{.Status}}</td>
+                      <td>-</td>
                     </tr>
+                  {{end}}
                 </tbody>
             </table>
         </div>
