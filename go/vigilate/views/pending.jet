@@ -37,9 +37,9 @@
                 <tbody>
                   {{range hostServices}}
                     <tr>
-                      <td>{{.Host.HostName}}</td>
+                      <td><a href="/admin/host/{{.HostID}}#pending-content">{{.Host.HostName}}</a></td>
                       <td>{{.Service.ServiceName}}</td>
-                      <td>{{.Status}}</td>
+                      <td><span class="badge bg-secondary-dark">{{.Status}}</span></td>
                       <td>-</td>
                     </tr>
                   {{end}}
