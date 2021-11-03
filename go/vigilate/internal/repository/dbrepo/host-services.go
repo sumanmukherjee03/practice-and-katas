@@ -114,7 +114,8 @@ func (m *postgresDBRepo) GetAllHostServicesWithStatus(status string) ([]*models.
     LEFT JOIN services s ON (s.id = hs.service_id)
     LEFT JOIN hosts h ON (h.id = hs.host_id)
     WHERE hs.status = $1
-    AND hs.active = 1`
+    AND hs.active = 1
+    ORDER BY host_name, service_name`
 	rows, err := m.DB.QueryContext(ctx, stmt, status)
 	if err != nil {
 		return hss, fmt.Errorf("ERROR - Could not fetch rows for host services : %v", err)

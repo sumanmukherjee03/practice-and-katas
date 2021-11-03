@@ -35,13 +35,17 @@
             </tr>
             </thead>
             <tbody>
-              {{range hostServices}}
-                <tr>
-                  <td><a href="/admin/host/{{.HostID}}#healthcheck-content">{{.Host.HostName}}</a></td>
-                  <td>{{.Service.ServiceName}}</td>
-                  <td><span class="badge bg-secondary-dark">{{.Status}}</span></td>
-                  <td>-</td>
-                </tr>
+              {{if len(hostServices) > 0}}
+                {{range hostServices}}
+                  <tr>
+                    <td><a href="/admin/host/{{.HostID}}#healthcheck-content">{{.Host.HostName}}</a></td>
+                    <td>{{.Service.ServiceName}}</td>
+                    <td><span class="badge bg-secondary-dark">{{.Status}}</span></td>
+                    <td>-</td>
+                  </tr>
+                {{end}}
+              {{else}}
+                <tr><td colspan="4">No services</td></tr>
               {{end}}
             </tr>
             </tbody>
