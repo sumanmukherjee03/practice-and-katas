@@ -156,9 +156,11 @@ Host
               </div>
             </div>
           </div>
+
           <div class="tab-pane fade" role="tabpanel" aria-labelledby="healthcheck-tab" id="healthcheck-content">
             HealthCheck Content
           </div>
+
           <div class="tab-pane fade" role="tabpanel" aria-labelledby="warning-tab" id="warning-content">
             <div class="row">
               <div class="col">
@@ -176,8 +178,15 @@ Host
                       {{if .Status == "warning"}}
                         <tr>
                           <td>
-                            {{.Service.ServiceName}}
-                            <span class="badge bg-secondary" style="cursor:pointer;" onclick="checkNow({{.ID}})">Check Now</span>
+                            <span class="{{.Service.Icon}}">{{.Service.ServiceName}}</span>
+                            <span
+                              class="badge bg-secondary"
+                              style="cursor:pointer;"
+                              data-type="perform-check-host-svc"
+                              data-host-id="{{.HostID}}"
+                              data-service-id="{{.ServiceID}}"
+                              data-status="{{.Status}}"
+                            >Check Now</span>
                           </td>
                           <td>
                             {{if dateAfterYearOne(.LastCheck)}}
@@ -195,6 +204,7 @@ Host
               </div>
             </div>
           </div>
+
           <div class="tab-pane fade" role="tabpanel" aria-labelledby="problem-tab" id="problem-content">
             <div class="row">
               <div class="col">
@@ -212,8 +222,15 @@ Host
                       {{if .Status == "problem"}}
                         <tr>
                           <td>
-                            {{.Service.ServiceName}}
-                            <span class="badge bg-secondary" style="cursor:pointer;" onclick="checkNow({{.ID}})">Check Now</span>
+                            <span class="{{.Service.Icon}}">{{.Service.ServiceName}}</span>
+                            <span
+                              class="badge bg-secondary"
+                              style="cursor:pointer;"
+                              data-type="perform-check-host-svc"
+                              data-host-id="{{.HostID}}"
+                              data-service-id="{{.ServiceID}}"
+                              data-status="{{.Status}}"
+                            >Check Now</span>
                           </td>
                           <td>
                             {{if dateAfterYearOne(.LastCheck)}}
@@ -231,6 +248,7 @@ Host
               </div>
             </div>
           </div>
+
           <div class="tab-pane fade" role="tabpanel" aria-labelledby="pending-tab" id="pending-content">
             <div class="row">
               <div class="col">
@@ -274,6 +292,7 @@ Host
               </div>
             </div>
           </div>
+
         {{end}}
       </div>
     </form>
@@ -361,11 +380,25 @@ Host
         .then(response => response.json())
         .then(data => {
           if (data.ok) {
-            checkNow.setAttribute("data-status", data.new_status);
-            let tableRow = checkNow.parentNode.parentNode;
-            let msgTableCell = tableRow.getElementsByTagName('td')[2];
-            msgTableCell.innerHTML = data.message;
-            successAlert("Changes saved");
+            if (data.new_status != data.old_status) {
+              checkNow.setAttribute("data-status", data.new_status);
+              let tableRow = checkNow.parentNode.parentNode;
+              let msgTableCell = tableRow.getElementsByTagName('td')[2];
+              msgTableCell.innerHTML = data.message;
+              attention.toast({
+                msg: data.message,
+                icon: "info",
+                timer: 60000,
+                showCloseButton: true
+              });
+            } else {
+              attention.toast({
+                msg: "Service is still in the same status : " + data.new_status,
+                icon: "info",
+                timer: 5000,
+                showCloseButton: true
+              });
+            }
           } else {
             errorAlert("Something went wrong : " + data.message)
           }
