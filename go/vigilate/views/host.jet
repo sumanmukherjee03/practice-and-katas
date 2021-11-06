@@ -160,15 +160,9 @@ Host
             HealthCheck Content
           </div>
           <div class="tab-pane fade" role="tabpanel" aria-labelledby="warning-tab" id="warning-content">
-            Warning Content
-          </div>
-          <div class="tab-pane fade" role="tabpanel" aria-labelledby="problem-tab" id="problem-content">
-            Problem Content
-          </div>
-          <div class="tab-pane fade" role="tabpanel" aria-labelledby="pending-tab" id="pending-content">
             <div class="row">
               <div class="col">
-                <h3>Pending Services</h3>
+                <h4 class="pt-3">Services with warning</h4>
                 <table class="table table-striped">
                   <thead>
                     <tr>
@@ -179,11 +173,101 @@ Host
                   </thead>
                   <tbody>
                     {{range host.HostServices}}
-                      <tr>
-                        <td>{{.Service.ServiceName}}</td>
-                        <td>{{.LastCheck}}</td>
-                        <td>-</td>
-                      </tr>
+                      {{if .Status == "warning"}}
+                        <tr>
+                          <td>
+                            {{.Service.ServiceName}}
+                            <span class="badge bg-secondary" style="cursor:pointer;" onclick="checkNow({{.ID}})">Check Now</span>
+                          </td>
+                          <td>
+                            {{if dateAfterYearOne(.LastCheck)}}
+                              {{dateFromLayout(.LastCheck, "2006-01-02 15:04")}}
+                            {{else}}
+                              -
+                            {{end}}
+                          </td>
+                          <td>-</td>
+                        </tr>
+                      {{end}}
+                    {{end}}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="tab-pane fade" role="tabpanel" aria-labelledby="problem-tab" id="problem-content">
+            <div class="row">
+              <div class="col">
+                <h4 class="pt-3">Problematic Services</h4>
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Service Name</th>
+                      <th>Last Check</th>
+                      <th>Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {{range host.HostServices}}
+                      {{if .Status == "problem"}}
+                        <tr>
+                          <td>
+                            {{.Service.ServiceName}}
+                            <span class="badge bg-secondary" style="cursor:pointer;" onclick="checkNow({{.ID}})">Check Now</span>
+                          </td>
+                          <td>
+                            {{if dateAfterYearOne(.LastCheck)}}
+                              {{dateFromLayout(.LastCheck, "2006-01-02 15:04")}}
+                            {{else}}
+                              -
+                            {{end}}
+                          </td>
+                          <td>-</td>
+                        </tr>
+                      {{end}}
+                    {{end}}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="tab-pane fade" role="tabpanel" aria-labelledby="pending-tab" id="pending-content">
+            <div class="row">
+              <div class="col">
+                <h4 class="pt-3">Pending Services</h4>
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Service Name</th>
+                      <th>Last Check</th>
+                      <th>Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {{range host.HostServices}}
+                      {{if .Status == "pending"}}
+                        <tr>
+                          <td>
+                            <span class="{{.Service.Icon}}">{{.Service.ServiceName}}</span>
+                            <span
+                              class="badge bg-secondary"
+                              style="cursor:pointer;"
+                              data-type="perform-check-host-svc"
+                              data-host-id="{{.HostID}}"
+                              data-service-id="{{.ServiceID}}"
+                              data-status="{{.Status}}"
+                            >Check Now</span>
+                          </td>
+                          <td>
+                            {{if dateAfterYearOne(.LastCheck)}}
+                              {{dateFromLayout(.LastCheck, "2006-01-02 15:04")}}
+                            {{else}}
+                              -
+                            {{end}}
+                          </td>
+                          <td>-</td>
+                        </tr>
+                      {{end}}
                     {{end}}
                   </tbody>
                 </table>
@@ -254,11 +338,38 @@ Host
       this.event.stopPropagation();
     }
     form.classList.add('was-validated');
-
     if (form.checkValidity() === true) {
       form.submit();
     }
   }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    let checkNows = document.querySelectorAll("[data-type=perform-check-host-svc]")
+    for (let i = 0; i < checkNows.length; i++) {
+      let checkNow = checkNows[i]
+      let svcId = checkNow.getAttribute("data-service-id");
+      let hostId = checkNow.getAttribute("data-host-id");
+      let oldStatus = checkNow.getAttribute("data-status");
+      checkNow.addEventListener("click", function() {
+        let formData = new FormData();
+        formData.append("old_status", oldStatus)
+        formData.append("csrf_token", "{{.CSRFToken}}")
+        fetch("/admin/host/"+hostId+"/service/"+svcId+"/perform-check", {
+          method: "POST",
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.ok) {
+            successAlert("Changes saved");
+            checkNow.setAttribute("data-status", "attributeValue");
+          } else {
+            errorAlert("Something went wrong : " + data.message)
+          }
+        });
+      });
+    }
+  });
 </script>
 
 {{end}}
