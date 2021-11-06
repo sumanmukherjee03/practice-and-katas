@@ -361,8 +361,11 @@ Host
         .then(response => response.json())
         .then(data => {
           if (data.ok) {
+            checkNow.setAttribute("data-status", data.new_status);
+            let tableRow = checkNow.parentNode.parentNode;
+            let msgTableCell = tableRow.getElementsByTagName('td')[2];
+            msgTableCell.innerHTML = data.message;
             successAlert("Changes saved");
-            checkNow.setAttribute("data-status", "attributeValue");
           } else {
             errorAlert("Something went wrong : " + data.message)
           }
