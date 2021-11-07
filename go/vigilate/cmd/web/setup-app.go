@@ -11,6 +11,7 @@ import (
 	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/v2"
 	"github.com/pusher/pusher-http-go"
+	"github.com/robfig/cron/v3"
 	"github.com/tsawler/vigilate/internal/channeldata"
 	"github.com/tsawler/vigilate/internal/config"
 	"github.com/tsawler/vigilate/internal/driver"
@@ -139,6 +140,16 @@ func setupApp() (*string, error) {
 	log.Println("Secure", *pusherSecure)
 
 	app.WsClient = wsClient
+
+	localZone, _ := time.LoadLocation("Local")
+
+	// Dont run the cron job if one is already running. Log it and try on the next scheduled time.
+	// if the cron fails, recover, log an error and continue with the next event in the schedule.
+	scheduler := cron.New(cron.WithLocation(localZone), cron.WithChain(
+		cron.DelayIfStillRunning(cron.DefaultLogger),
+		cron.Recover(cron.DefaultLogger),
+	))
+	app.Scheduler = scheduler
 
 	helpers.NewHelpers(&app)
 

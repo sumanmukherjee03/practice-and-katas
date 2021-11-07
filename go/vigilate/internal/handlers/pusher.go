@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -21,7 +21,7 @@ func (repo *DBRepo) PusherAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	params, err := ioutil.ReadAll(r.Body)
+	params, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("ERROR - Could not read request body", err)
 		http.Error(w, "Could not read request body", http.StatusInternalServerError)
