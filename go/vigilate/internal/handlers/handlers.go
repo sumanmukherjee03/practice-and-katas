@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/CloudyKit/jet/v6"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	log "github.com/sirupsen/logrus"
 	"github.com/tsawler/vigilate/internal/config"
 	"github.com/tsawler/vigilate/internal/driver"

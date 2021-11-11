@@ -142,7 +142,6 @@ func setupApp() (*string, error) {
 	app.WsClient = wsClient
 
 	localZone, _ := time.LoadLocation("Local")
-
 	// Dont run the cron job if one is already running. Log it and try on the next scheduled time.
 	// if the cron fails, recover, log an error and continue with the next event in the schedule.
 	scheduler := cron.New(cron.WithLocation(localZone), cron.WithChain(
