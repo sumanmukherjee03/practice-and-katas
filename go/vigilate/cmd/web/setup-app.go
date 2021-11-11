@@ -149,6 +149,8 @@ func setupApp() (*string, error) {
 		cron.Recover(cron.DefaultLogger),
 	))
 	app.Scheduler = scheduler
+	app.Scheduler.Start()
+	startMonitoring()
 
 	helpers.NewHelpers(&app)
 

@@ -170,6 +170,8 @@ func (m *postgresDBRepo) DeleteHost(id int) error {
 	return nil
 }
 
+// ************************** HELPER FNS ***************************
+
 func (m *postgresDBRepo) getAllHostServicesForHost(ctx context.Context, hostID int) ([]models.HostService, error) {
 	var hostServices []models.HostService
 

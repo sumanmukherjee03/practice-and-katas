@@ -30,6 +30,10 @@ type performCheckOnServiceForHostResp struct {
 	NewStatus     string    `json:"new_status"`
 }
 
+// ScheduledCheck performs a scheduled check on a host service id
+func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
+}
+
 // ToggleServiceForHost handles the association or dissociation of a host with a service
 func (repo *DBRepo) PerformCheckOnServiceForHost(w http.ResponseWriter, r *http.Request) {
 	var h models.Host

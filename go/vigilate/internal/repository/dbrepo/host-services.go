@@ -220,3 +220,64 @@ func (m *postgresDBRepo) GetAllHostServicesWithStatus(status string) ([]*models.
 
 	return hss, nil
 }
+
+func (m *postgresDBRepo) GetAllHostServicesToMonitor() ([]*models.HostService, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var hostServices []*models.HostService
+	stmt := `SELECT hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit, hs.last_check, hs.status, hs.created_at, hs.updated_at,
+    s.id, s.service_name, s.active, s.icon, s.created_at, s.updated_at,
+    h.id, h.host_name, h.canonical_name, h.url, h.ip, h.ipv6, h.location, h.os, h.active, h.created_at, h.updated_at
+    FROM host_services hs
+    LEFT JOIN services s ON (s.id = hs.service_id)
+    LEFT JOIN hosts h ON (h.id = hs.host_id)
+    WHERE h.active = 1 AND s.active = 1 AND hs.active = 1`
+
+	rows, err := m.DB.QueryContext(ctx, stmt)
+	if err != nil {
+		log.Println(err)
+		return hostServices, fmt.Errorf("Encountered error in fetching all the host HostServices - %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var hs models.HostService
+		err := rows.Scan(
+			&hs.ID,
+			&hs.HostID,
+			&hs.ServiceID,
+			&hs.Active,
+			&hs.ScheduleNumber,
+			&hs.ScheduleUnit,
+			&hs.LastCheck,
+			&hs.Status,
+			&hs.CreatedAt,
+			&hs.UpdatedAt,
+			&hs.Service.ID,
+			&hs.Service.ServiceName,
+			&hs.Service.Active,
+			&hs.Service.Icon,
+			&hs.Service.CreatedAt,
+			&hs.Service.UpdatedAt,
+			&hs.Host.ID,
+			&hs.Host.HostName,
+			&hs.Host.CanonicalName,
+			&hs.Host.URL,
+			&hs.Host.IP,
+			&hs.Host.IPV6,
+			&hs.Host.Location,
+			&hs.Host.OS,
+			&hs.Host.Active,
+			&hs.Host.CreatedAt,
+			&hs.Host.UpdatedAt,
+		)
+		if err != nil {
+			log.Println(err)
+			return hostServices, fmt.Errorf("Encountered error in fetching HostService - %d, %v", hs.ID, err)
+		}
+		hostServices = append(hostServices, &hs)
+	}
+
+	return hostServices, nil
+}
