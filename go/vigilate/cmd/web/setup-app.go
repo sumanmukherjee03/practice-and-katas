@@ -140,6 +140,8 @@ func setupApp() (*string, error) {
 	log.Println("Secure", *pusherSecure)
 
 	app.WsClient = wsClient
+	monitorMap := make(map[int]cron.EntryID)
+	app.MonitorMap = monitorMap
 
 	localZone, _ := time.LoadLocation("Local")
 	// Dont run the cron job if one is already running. Log it and try on the next scheduled time.
