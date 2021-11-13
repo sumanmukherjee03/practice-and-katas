@@ -417,3 +417,18 @@ func (repo *DBRepo) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	repo.App.Session.Put(r.Context(), "flash", "User deleted")
 	http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
 }
+
+type setPrefResp struct {
+	OK      bool   `json:"ok"`
+	Message string `json:"message"`
+}
+
+func (repo *DBRepo) SetSystemPref(w http.ResponseWriter, r *http.Request) {
+	var resp setPrefResp
+	resp.OK = true
+	resp.Message = ""
+
+	out, _ := json.MarshalIndent(resp, "", "  ")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
+}

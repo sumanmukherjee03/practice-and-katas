@@ -84,8 +84,8 @@ func startMonitoring() {
 				payload["next_run"] = "pending..."
 			}
 
-			payload["host"] = hs.Host.HostName
-			payload["service"] = hs.Service.ServiceName
+			payload["host_name"] = hs.Host.HostName
+			payload["service_name"] = hs.Service.ServiceName
 
 			if hs.LastCheck.After(year1) {
 				payload["last_run"] = hs.LastCheck.Format("2006-01-02 3:04:05 PM")
