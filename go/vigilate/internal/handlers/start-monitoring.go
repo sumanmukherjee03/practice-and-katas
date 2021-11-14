@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"fmt"
@@ -13,11 +13,11 @@ type job struct {
 }
 
 func (j job) Run() {
-	repo.ScheduledCheck(j.HostServiceID)
+	Repo.ScheduledCheck(j.HostServiceID)
 }
 
-func startMonitoring() {
-	preferenceID, err := strconv.Atoi(preferenceMap["monitoring_live"])
+func (repo *DBRepo) StartMonitoring() {
+	preferenceID, err := strconv.Atoi(app.PreferenceMap["monitoring_live"])
 	if err != nil {
 		log.Error(err)
 		return
@@ -107,5 +107,7 @@ func startMonitoring() {
 				return
 			}
 		}
+
+		app.Scheduler.Start()
 	}
 }

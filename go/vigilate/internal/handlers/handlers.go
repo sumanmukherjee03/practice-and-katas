@@ -439,6 +439,9 @@ func (repo *DBRepo) SetSystemPref(w http.ResponseWriter, r *http.Request) {
 		ServerError(w, r, err)
 		return
 	}
+
+	repo.App.PreferenceMap[prefName] = prefValue
+
 	var resp setPrefResp
 	resp.OK = true
 	resp.Message = "Successfully updated preference"
@@ -471,6 +474,7 @@ func (repo *DBRepo) ToggleMonitoring(w http.ResponseWriter, r *http.Request) {
 
 	if enabled == 1 {
 		log.Info("Turn monitoring on")
+		repo.StartMonitoring()
 		// repo.App.Scheduler.Start()
 	} else {
 		// remove all items that are in the monitor map from schedule
