@@ -86,3 +86,16 @@ func (m *postgresDBRepo) InsertOrUpdateSitePreferences(pm map[string]string) err
 
 	return nil
 }
+
+func (m *postgresDBRepo) UpdatePreference(prefName string, prefValue string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	stmt := `UPDATE preferences SET preference = $2, updated_at = $3 WHERE name = $1`
+	_, err := m.DB.ExecContext(ctx, stmt, prefName, prefValue, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

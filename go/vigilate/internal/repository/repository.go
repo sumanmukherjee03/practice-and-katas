@@ -8,6 +8,7 @@ type DatabaseRepo interface {
 	AllPreferences() ([]models.Preference, error)
 	SetSystemPref(name, value string) error
 	InsertOrUpdateSitePreferences(pm map[string]string) error
+	UpdatePreference(string, string) error
 
 	// users and authentication
 	GetUserById(id int) (models.User, error)

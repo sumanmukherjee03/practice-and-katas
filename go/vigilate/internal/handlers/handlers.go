@@ -428,6 +428,22 @@ func (repo *DBRepo) SetSystemPref(w http.ResponseWriter, r *http.Request) {
 	resp.OK = true
 	resp.Message = ""
 
+	err := r.ParseForm()
+	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Could not parse form data for setting preferences : %v", err))
+		ClientErrorJSON(w, r, http.StatusBadRequest)
+		return
+	}
+
+	prefName := r.Form.Get("pref_name")
+	prefValue := r.Form.Get("pref_value")
+	if err = repo.DB.UpdatePreference(prefName, prefValue); err != nil {
+		log.Error(fmt.Errorf("ERROR - Could not set preference with name %s to value %s- %v", prefName, prefValue, err))
+		ServerError(w, r, err)
+		return
+	}
+	resp.Message = "Successfully updated preference"
+
 	out, _ := json.MarshalIndent(resp, "", "  ")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
