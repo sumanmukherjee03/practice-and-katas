@@ -423,11 +423,8 @@ type setPrefResp struct {
 	Message string `json:"message"`
 }
 
+// SetSystemPref sets the value of a system preference
 func (repo *DBRepo) SetSystemPref(w http.ResponseWriter, r *http.Request) {
-	var resp setPrefResp
-	resp.OK = true
-	resp.Message = ""
-
 	err := r.ParseForm()
 	if err != nil {
 		log.Error(fmt.Errorf("ERROR - Could not parse form data for setting preferences : %v", err))
@@ -442,7 +439,63 @@ func (repo *DBRepo) SetSystemPref(w http.ResponseWriter, r *http.Request) {
 		ServerError(w, r, err)
 		return
 	}
+	var resp setPrefResp
+	resp.OK = true
 	resp.Message = "Successfully updated preference"
+
+	out, _ := json.MarshalIndent(resp, "", "  ")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
+}
+
+type toggleMonitoringResp struct {
+	OK      bool   `json:"ok"`
+	Message string `json:"message"`
+}
+
+// ToggleMonitoring turns monitoring on and off
+func (repo *DBRepo) ToggleMonitoring(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Could not parse form data for toggling monitoring on and off : %v", err))
+		ClientErrorJSON(w, r, http.StatusBadRequest)
+		return
+	}
+
+	enabled, err := strconv.Atoi(r.Form.Get("enabled"))
+	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Invalid value for enabled provided in form - %v", err))
+		ServerError(w, r, err)
+		return
+	}
+
+	if enabled == 1 {
+		log.Info("Turn monitoring on")
+		// repo.App.Scheduler.Start()
+	} else {
+		// remove all items that are in the monitor map from schedule
+		for _, scheduleID := range repo.App.MonitorMap {
+			repo.App.Scheduler.Remove(scheduleID)
+		}
+
+		// empty the monitormap, i.e. delete entries from it
+		for k := range repo.App.MonitorMap {
+			delete(repo.App.MonitorMap, k)
+		}
+
+		// delete all entries from schedule, just to be sure
+		for _, schedule := range repo.App.Scheduler.Entries() {
+			repo.App.Scheduler.Remove(schedule.ID)
+		}
+
+		// stop the scheduler
+		repo.App.Scheduler.Stop()
+		log.Info("Turn monitoring off")
+	}
+
+	var resp toggleMonitoringResp
+	resp.OK = true
+	resp.Message = "Successfully activated/deactivated monitoring"
 
 	out, _ := json.MarshalIndent(resp, "", "  ")
 	w.Header().Set("Content-Type", "application/json")

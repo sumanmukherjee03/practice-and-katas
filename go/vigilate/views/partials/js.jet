@@ -96,6 +96,22 @@
     }
   }
 
-  function toggleMonitoring() {
+  function toggleMonitoring(enabled) {
+    let formData = new FormData();
+    formData.append("enabled", enabled);
+    formData.append("csrf_token", "{{.CSRFToken}}");
+    let ajax = new XMLHttpRequest();
+    ajax.responseType = "json";
+    ajax.open("POST", "/admin/preference/ajax/toggle-monitoring");
+    ajax.send(formData);
+    ajax.onreadystatechange = function() {
+      // ready state changes to 4 when the ajax request has completed and a response has been received back from the server
+      if (ajax.readyState === 4) {
+        let resp = ajax.response;
+        if (!resp.ok) {
+          errorAlert("Error : " + resp.message);
+        }
+      }
+    }
   }
 </script>
