@@ -27,7 +27,8 @@ func (repo *DBRepo) StartMonitoring() {
 		data := make(map[string]string)
 		data["message"] = "Monitoring is starting"
 		// trigger a message to broadcast to all clients letting them know that the app is starting to monitor
-		err := app.WsClient.Trigger("public-channel", "app-starting", data)
+		// make sure that the event name used here is the same as the one used in the listener
+		err := app.WsClient.Trigger("public-channel", "AppStarting", data)
 		if err != nil {
 			log.Error(err)
 			return
@@ -48,6 +49,8 @@ func (repo *DBRepo) StartMonitoring() {
 			case "h":
 				sch = fmt.Sprintf("@every %d%s", hs.ScheduleNumber, hs.ScheduleUnit)
 			case "m":
+				sch = fmt.Sprintf("@every %d%s", hs.ScheduleNumber, hs.ScheduleUnit)
+			case "s":
 				sch = fmt.Sprintf("@every %d%s", hs.ScheduleNumber, hs.ScheduleUnit)
 			default:
 				log.Error(fmt.Errorf("Invalid schedule unit - %s", hs.ScheduleUnit))
@@ -95,13 +98,13 @@ func (repo *DBRepo) StartMonitoring() {
 
 			payload["schedule"] = fmt.Sprintf("@every %d%s", hs.ScheduleNumber, hs.ScheduleUnit)
 
-			err = app.WsClient.Trigger("public-channel", "next-run-event", payload)
+			err = app.WsClient.Trigger("public-channel", "NextRunEvent", payload)
 			if err != nil {
 				log.Error(err)
 				return
 			}
 
-			err = app.WsClient.Trigger("public-channel", "schedule-changed-event", payload)
+			err = app.WsClient.Trigger("public-channel", "ScheduleChangedEvent", payload)
 			if err != nil {
 				log.Error(err)
 				return

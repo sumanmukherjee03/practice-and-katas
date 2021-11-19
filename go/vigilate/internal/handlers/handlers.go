@@ -194,7 +194,7 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 	h.OS = r.Form.Get("os")
 	active, err := strconv.Atoi(r.Form.Get("active"))
 	if err != nil {
-		log.Error(fmt.Errorf("ERROR - Could not read the form value for host field active - %v", err))
+		log.Error(fmt.Errorf("ERROR - Could not read the form value for host field active indicating that it could be empty - %v", err))
 	}
 	h.Active = active
 
@@ -474,9 +474,24 @@ func (repo *DBRepo) ToggleMonitoring(w http.ResponseWriter, r *http.Request) {
 
 	if enabled == 1 {
 		log.Info("Turn monitoring on")
+
+		// Ideally this should be set by the SetSystemPref handler. The javascript in js.jet should
+		// call that handler first to set the system pref, then wait for it to successfully return and
+		// then call this handler. But to make it easy and not use javascript promises, we are using this short cut line here
+		// and setting the system pref in this handler
+		repo.App.PreferenceMap["monitoring_live"] = "1"
+
 		repo.StartMonitoring()
-		// repo.App.Scheduler.Start()
+		repo.App.Scheduler.Start()
 	} else {
+		log.Info("Turn monitoring off")
+
+		// Ideally this should be set by the SetSystemPref handler. The javascript in js.jet should
+		// call that handler first to set the system pref, then wait for it to successfully return and
+		// then call this handler. But to make it easy and not use javascript promises, we are using this short cut line here
+		// and setting the system pref in this handler
+		repo.App.PreferenceMap["monitoring_live"] = "0"
+
 		// remove all items that are in the monitor map from schedule
 		for _, scheduleID := range repo.App.MonitorMap {
 			repo.App.Scheduler.Remove(scheduleID)
@@ -494,6 +509,18 @@ func (repo *DBRepo) ToggleMonitoring(w http.ResponseWriter, r *http.Request) {
 
 		// stop the scheduler
 		repo.App.Scheduler.Stop()
+
+		// data is the payload that is sent via websockets to all the clients
+		data := make(map[string]string)
+		data["message"] = "Monitoring is stopping"
+		// trigger a message to broadcast to all clients letting them know that the app is starting to monitor
+		// make sure that the event name used here is the same as the one used in the listener
+		err := app.WsClient.Trigger("public-channel", "AppStopping", data)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
 		log.Info("Turn monitoring off")
 	}
 

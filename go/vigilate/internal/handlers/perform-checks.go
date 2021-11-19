@@ -32,6 +32,38 @@ type performCheckOnServiceForHostResp struct {
 
 // ScheduledCheck performs a scheduled check on a host service id
 func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
+	var hs models.HostService
+	var err error
+	hs, err = repo.DB.GetHostServiceById(hostServiceID)
+	if err != nil {
+		if err != nil {
+			log.Error(fmt.Errorf("ERROR - Could not find host-service with provided id - %v", err))
+			return
+		}
+	}
+
+	var h models.Host
+	h, err = repo.DB.GetHostById(hs.HostID)
+	if err != nil {
+		if err != nil {
+			log.Error(fmt.Errorf("ERROR - Could not find host with host id from host-services - %v", err))
+			return
+		}
+	}
+	hs.Host = h
+
+	msg, newStatus := repo.testServiceForHost(hs)
+	hs.Status = newStatus
+	hs.LastCheck = time.Now()
+	err = repo.DB.UpdateHostService(hs)
+	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Could not perform check and update DB for service on host - %v", err))
+		return
+	}
+
+	// If the host service status has changed, broadcast to all clients
+	// Also, if appropriate, send an email or sms
+	log.Info(msg)
 }
 
 // ToggleServiceForHost handles the association or dissociation of a host with a service
