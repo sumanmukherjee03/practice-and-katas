@@ -17,7 +17,7 @@
     warningAlert(data.message);
   });
   publicChannel.bind("HostServiceStatusChanged", function(data) {
-    if (data.old_status == "healthy" && data.new_status != "healthy") {
+    if (data.stale_status == "healthy" && data.new_status != "healthy") {
       errorAlert(data.message);
     } else {
       successAlert(data.message);
