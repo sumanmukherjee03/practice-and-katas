@@ -52,7 +52,13 @@ func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
 	}
 	hs.Host = h
 
+	var hasHostServiceStatusChanged = false
+	oldStatus := hs.Status
 	msg, newStatus := repo.testServiceForHost(hs)
+	if newStatus != oldStatus {
+		hasHostServiceStatusChanged = true
+	}
+
 	hs.Status = newStatus
 	hs.LastCheck = time.Now()
 	err = repo.DB.UpdateHostService(hs)
@@ -61,8 +67,30 @@ func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
 		return
 	}
 
-	// If the host service status has changed, broadcast to all clients
-	// Also, if appropriate, send an email or sms
+	if hasHostServiceStatusChanged {
+		payload := make(map[string]string)
+		payload["message"] = fmt.Sprintf("HostService status changed from %s to %s", oldStatus, newStatus)
+		payload["old_status"] = oldStatus
+		payload["new_status"] = newStatus
+		broadcastMessage("public-channel", "HostServiceStatusChanged", payload)
+		if oldStatus == "healthy" && newStatus != "healthy" {
+			// Also, if appropriate, send an email or sms
+			log.Info("Send an email or sms indicating that a service is misbehaving")
+		}
+
+		pending, healthy, warning, problem, err := repo.DB.GetAllHostServiceStatusCount()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		data := make(map[string]string)
+		data["healthy_count"] = strconv.Itoa(healthy)
+		data["pending_count"] = strconv.Itoa(pending)
+		data["warning_count"] = strconv.Itoa(warning)
+		data["problem_count"] = strconv.Itoa(problem)
+		broadcastMessage("public-channel", "HostServiceCountChanged", data)
+	}
+
 	log.Info(msg)
 }
 

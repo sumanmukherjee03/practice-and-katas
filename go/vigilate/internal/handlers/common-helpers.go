@@ -79,3 +79,11 @@ func returnErrorJSON(w http.ResponseWriter, r *http.Request, status int, msg str
 func printTemplateError(w http.ResponseWriter, err error) {
 	_, _ = fmt.Fprint(w, fmt.Sprintf(`<small><span class='text-danger'>Error executing template: %s</span></small>`, err))
 }
+
+func broadcastMessage(channel, eventType string, payload map[string]string) {
+	err := app.WsClient.Trigger(channel, eventType, payload)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+}

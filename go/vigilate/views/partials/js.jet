@@ -16,6 +16,23 @@
   publicChannel.bind("AppStopping", function(data) {
     warningAlert(data.message);
   });
+  publicChannel.bind("HostServiceStatusChanged", function(data) {
+    if (data.old_status == "healthy" && data.new_status != "healthy") {
+      errorAlert(data.message);
+    } else {
+      successAlert(data.message);
+    }
+  });
+  publicChannel.bind("HostServiceCountChanged", function(data) {
+    // Use this variable to check if we are on the dashboard page
+    let healthyCountExists = !!document.getElementById("healthy_count");
+    if (healthyCountExists) {
+      document.getElementById("healthy_count").innerHTML = data.healthy_count;
+      document.getElementById("warning_count").innerHTML = data.warning_count;
+      document.getElementById("pending_count").innerHTML = data.pending_count;
+      document.getElementById("problem_count").innerHTML = data.problem_count;
+    }
+  });
 
   // events we want to look for
   //   - service goes down
