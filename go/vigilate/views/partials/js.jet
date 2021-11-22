@@ -17,10 +17,13 @@
     warningAlert(data.message);
   });
   publicChannel.bind("HostServiceStatusChanged", function(data) {
-    if (data.stale_status == "healthy" && data.new_status != "healthy") {
-      errorAlert(data.message);
-    } else {
-      successAlert(data.message);
+    if (data.stale_status != data.new_status) {
+      attention.toast({
+        msg: data.message,
+        icon: "info",
+        timer: 30000,
+        showCloseButton: true,
+      });
     }
   });
   publicChannel.bind("HostServiceCountChanged", function(data) {

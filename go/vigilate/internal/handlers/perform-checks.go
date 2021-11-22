@@ -52,6 +52,14 @@ func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
 	}
 	hs.Host = h
 
+	var s models.Service
+	s, err = repo.DB.GetServiceById(hs.ServiceID)
+	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Could not find service by id %d - %v", hs.ServiceID, err))
+		return
+	}
+	hs.Service = s
+
 	msg, newStatus := repo.testServiceForHost(hs)
 	if newStatus != hs.Status {
 		repo.updateHostServiceStatusCount(hs, newStatus, msg)
@@ -155,7 +163,7 @@ func (repo *DBRepo) updateHostServiceStatusCount(hs models.HostService, newStatu
 	hs.Status = newStatus
 	hs.LastCheck = time.Now()
 	if err := repo.DB.UpdateHostService(hs); err != nil {
-		log.Error(fmt.Errorf("ERROR - Could not perform check and update DB for service on host - %v", err))
+		log.Error(fmt.Errorf("ERROR - Could not update DB for service on host - %v", err))
 		return
 	}
 
@@ -184,13 +192,20 @@ func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string) {
 	}
 	if newStatus != staleStatus {
 		payload := make(map[string]string)
-		payload["message"] = fmt.Sprintf("HostService status changed from %s to %s", staleStatus, newStatus)
+		payload["host_id"] = strconv.Itoa(hs.HostID)
+		payload["service_id"] = strconv.Itoa(hs.ServiceID)
+		payload["host_name"] = hs.Host.HostName
+		payload["service_name"] = hs.Service.ServiceName
+		payload["status"] = newStatus
+		payload["icon"] = hs.Service.Icon
+		payload["message"] = fmt.Sprintf("%s on %s status changed from %s to %s", hs.Service.ServiceName, hs.Host.HostName, staleStatus, newStatus)
+		payload["last_check"] = time.Now().Format("2006-01-02 3:04:06 PM")
 		payload["stale_status"] = staleStatus
-		payload["new_status"] = newStatus
 		broadcastMessage("public-channel", "HostServiceStatusChanged", payload)
 		if staleStatus == "healthy" && newStatus != "healthy" {
 			log.Info("Send an email or sms indicating that a service is misbehaving")
 		}
+		// TODO : Send an email or sms notification if this needs to be notified as an alert
 	}
 	return msg, newStatus
 }
