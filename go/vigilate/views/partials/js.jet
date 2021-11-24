@@ -28,39 +28,8 @@
         showCloseButton: true,
       });
     }
-
-    let tr = document.getElementById("host-service-"+data.host_service_id);
-    if (!!tr) {
-      tr.parentNode.removeChild(tr);
-    }
-
-    let tableToUpdate = document.getElementById(data.new_status + "-table");
-    if (!!tableToUpdate) {
-      let tr = tableToUpdate.tBodies[0].insertRow(-1);
-      tr.setAttribute("id", "host-service-"+data.host_service_id);
-      let td0 = tr.insertCell(0);
-      td0.innerHTML = `
-        <span class="${data.icon}">${data.service_name}</span>
-        <span
-          class="badge bg-secondary"
-          style="cursor:pointer;"
-          data-type="perform-check-host-svc"
-          data-host-id="${data.host_id}"
-          data-service-id="${data.service_id}"
-          data-status="${data.new_status}"
-        >Check Now</span>
-      `;
-      let td1 = tr.insertCell(1);
-      td1.innerHTML = data.last_check;
-      let td2 = tr.insertCell(2);
-      td2.innerHTML = data.message;
-      let checkNow = tr.querySelectorAll("[data-type=perform-check-host-svc]")[0];
-      checkNow.addEventListener("click", function(ev) {
-        checkNowClickHandler(this);
-        ev.preventDefault();
-        ev.stopPropagation();
-      });
-    }
+    deleteHostServiceRow(data.host_service_id)
+    addHostServiceRow(data);
   });
 
   publicChannel.bind("HostServiceCountChanged", function(data) {
@@ -233,4 +202,70 @@
       });
     }
   });
+
+  function deleteHostServiceRow(hostServiceId) {
+    let tr = document.getElementById("host-service-"+hostServiceId);
+    if (!!tr) {
+      tr.parentNode.removeChild(tr);
+    }
+
+    let no_data_tr = document.getElementById("no-services-row");
+    if (!!no_data_tr) {
+      no_data_tr.parentNode.removeChild(no_data_tr);
+    }
+  }
+
+  function addHostServiceRow(data) {
+    let tableToUpdate = document.getElementById(data.new_status + "-table");
+    if (!!tableToUpdate) {
+      let tr = tableToUpdate.tBodies[0].insertRow(-1);
+      tr.setAttribute("id", "host-service-"+data.host_service_id);
+
+      if (!!document.getElementById("all-services-with-status")) {
+        let td0 = tr.insertCell(0);
+        td0.innerHTML = `
+          <td><a href="/admin/host/${data.host_id}#pending-content">${data.host_name}</a></td>
+        `;
+
+        let td1 = tr.insertCell(1);
+        td1.innerHTML = data.service_name;
+      }
+
+      if (!!document.getElementById("host-tabs")) {
+        let td0 = tr.insertCell(0);
+        td0.innerHTML = `
+          <span class="${data.icon}">${data.service_name}</span>
+          <span
+            class="badge bg-secondary"
+            style="cursor:pointer;"
+            data-type="perform-check-host-svc"
+            data-host-id="${data.host_id}"
+            data-service-id="${data.service_id}"
+            data-status="${data.new_status}"
+          >Check Now</span>
+        `;
+
+        let checkNow = tr.querySelectorAll("[data-type=perform-check-host-svc]")[0];
+        checkNow.addEventListener("click", function(ev) {
+          checkNowClickHandler(this);
+          ev.preventDefault();
+          ev.stopPropagation();
+        });
+
+        let td1 = tr.insertCell(1);
+        if (data.new_status == "pending") {
+          td1.innerHTML = "pending...";
+        } else {
+          td1.innerHTML = data.last_check;
+        }
+      }
+
+      let td2 = tr.insertCell(2);
+      if (data.new_status == "pending") {
+        td2.innerHTML = "-";
+      } else {
+        td2.innerHTML = data.message;
+      }
+    }
+  }
 </script>
