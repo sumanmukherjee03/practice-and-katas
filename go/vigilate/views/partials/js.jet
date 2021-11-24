@@ -10,12 +10,15 @@
   });
 
   let publicChannel = pusher.subscribe("public-channel");
+
   publicChannel.bind("AppStarting", function(data) {
     successAlert(data.message);
   });
+
   publicChannel.bind("AppStopping", function(data) {
     warningAlert(data.message);
   });
+
   publicChannel.bind("HostServiceStatusChanged", function(data) {
     if (data.stale_status != data.new_status) {
       attention.toast({
@@ -25,7 +28,41 @@
         showCloseButton: true,
       });
     }
+
+    let tr = document.getElementById("host-service-"+data.host_service_id);
+    if (!!tr) {
+      tr.parentNode.removeChild(tr);
+    }
+
+    let tableToUpdate = document.getElementById(data.new_status + "-table");
+    if (!!tableToUpdate) {
+      let tr = tableToUpdate.tBodies[0].insertRow(-1);
+      tr.setAttribute("id", "host-service-"+data.host_service_id);
+      let td0 = tr.insertCell(0);
+      td0.innerHTML = `
+        <span class="${data.icon}">${data.service_name}</span>
+        <span
+          class="badge bg-secondary"
+          style="cursor:pointer;"
+          data-type="perform-check-host-svc"
+          data-host-id="${data.host_id}"
+          data-service-id="${data.service_id}"
+          data-status="${data.new_status}"
+        >Check Now</span>
+      `;
+      let td1 = tr.insertCell(1);
+      td1.innerHTML = data.last_check;
+      let td2 = tr.insertCell(2);
+      td2.innerHTML = data.message;
+      let checkNow = tr.querySelectorAll("[data-type=perform-check-host-svc]")[0];
+      checkNow.addEventListener("click", function(ev) {
+        checkNowClickHandler(this);
+        ev.preventDefault();
+        ev.stopPropagation();
+      });
+    }
   });
+
   publicChannel.bind("HostServiceCountChanged", function(data) {
     // Use this variable to check if we are on the dashboard page
     let healthyCountExists = !!document.getElementById("healthy_count");
@@ -145,4 +182,55 @@
       }
     }
   }
+
+  function checkNowClickHandler(checkNow) {
+    let svcId = checkNow.getAttribute("data-service-id");
+    let hostId = checkNow.getAttribute("data-host-id");
+    let oldStatus = checkNow.getAttribute("data-status");
+    let formData = new FormData();
+    formData.append("old_status", oldStatus)
+    formData.append("csrf_token", "{{.CSRFToken}}")
+    fetch("/admin/host/"+hostId+"/service/"+svcId+"/perform-check", {
+      method: "POST",
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.ok) {
+        if (data.new_status != data.old_status) {
+          checkNow.setAttribute("data-status", data.new_status);
+          let tableRow = checkNow.parentNode.parentNode;
+          let msgTableCell = tableRow.getElementsByTagName('td')[2];
+          msgTableCell.innerHTML = data.message;
+          attention.toast({
+            msg: data.message,
+            icon: "info",
+            timer: 60000,
+            showCloseButton: true
+          });
+        } else {
+          attention.toast({
+            msg: "Service is still in the same status : " + data.new_status,
+            icon: "info",
+            timer: 5000,
+            showCloseButton: true
+          });
+        }
+      } else {
+        errorAlert("Something went wrong : " + data.message)
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    let checkNows = document.querySelectorAll("[data-type=perform-check-host-svc]")
+    for (let i = 0; i < checkNows.length; i++) {
+      let checkNow = checkNows[i]
+      checkNow.addEventListener("click", function(ev) {
+        checkNowClickHandler(this);
+        ev.preventDefault();
+        ev.stopPropagation();
+      });
+    }
+  });
 </script>

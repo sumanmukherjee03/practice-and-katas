@@ -192,11 +192,12 @@ func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string) {
 	}
 	if newStatus != staleStatus {
 		payload := make(map[string]string)
+		payload["host_service_id"] = strconv.Itoa(hs.ID)
 		payload["host_id"] = strconv.Itoa(hs.HostID)
 		payload["service_id"] = strconv.Itoa(hs.ServiceID)
 		payload["host_name"] = hs.Host.HostName
 		payload["service_name"] = hs.Service.ServiceName
-		payload["status"] = newStatus
+		payload["new_status"] = newStatus
 		payload["icon"] = hs.Service.Icon
 		payload["message"] = fmt.Sprintf("%s on %s status changed from %s to %s", hs.Service.ServiceName, hs.Host.HostName, staleStatus, newStatus)
 		payload["last_check"] = time.Now().Format("2006-01-02 3:04:06 PM")

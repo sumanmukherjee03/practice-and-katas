@@ -11,7 +11,7 @@ import (
 
 // AllHealthyServices lists all healthy services
 func (repo *DBRepo) AllHealthyServices(w http.ResponseWriter, r *http.Request) {
-	repo.allServicesOfStatus(w, r, "warning")
+	repo.allServicesOfStatus(w, r, "healthy")
 }
 
 // AllWarningServices lists all warning services

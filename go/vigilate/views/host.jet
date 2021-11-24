@@ -39,7 +39,7 @@ Host
             <a class="nav-link" href="#services-content" data-target="" data-toggle="tab" id="services-tab" role="tab">Services</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#healthcheck-content" data-target="" data-toggle="tab" id="healthcheck-tab" role="tab">HealthChecks</a>
+            <a class="nav-link" href="#healthy-content" data-target="" data-toggle="tab" id="healthy-tab" role="tab">Healthy</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#warning-content" data-target="" data-toggle="tab" id="warning-tab" role="tab">Warnings</a>
@@ -157,15 +157,55 @@ Host
             </div>
           </div>
 
-          <div class="tab-pane fade" role="tabpanel" aria-labelledby="healthcheck-tab" id="healthcheck-content">
-            HealthCheck Content
+          <div class="tab-pane fade" role="tabpanel" aria-labelledby="healthy-tab" id="healthy-content">
+            <div class="row">
+              <div class="col">
+                <h4 class="pt-3">Healthy Services</h4>
+                <table id="healthy-table" class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Service Name</th>
+                      <th>Last Check</th>
+                      <th>Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {{range host.HostServices}}
+                      {{if .Status == "healthy"}}
+                        <tr id="host-service-{{.ID}}">
+                          <td>
+                            <span class="{{.Service.Icon}}">{{.Service.ServiceName}}</span>
+                            <span
+                              class="badge bg-secondary"
+                              style="cursor:pointer;"
+                              data-type="perform-check-host-svc"
+                              data-host-id="{{.HostID}}"
+                              data-service-id="{{.ServiceID}}"
+                              data-status="{{.Status}}"
+                            >Check Now</span>
+                          </td>
+                          <td>
+                            {{if dateAfterYearOne(.LastCheck)}}
+                              {{dateFromLayout(.LastCheck, "2006-01-02 15:04")}}
+                            {{else}}
+                              -
+                            {{end}}
+                          </td>
+                          <td>-</td>
+                        </tr>
+                      {{end}}
+                    {{end}}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <div class="tab-pane fade" role="tabpanel" aria-labelledby="warning-tab" id="warning-content">
             <div class="row">
               <div class="col">
                 <h4 class="pt-3">Services with warning</h4>
-                <table class="table table-striped">
+                <table id="warning-table" class="table table-striped">
                   <thead>
                     <tr>
                       <th>Service Name</th>
@@ -176,7 +216,7 @@ Host
                   <tbody>
                     {{range host.HostServices}}
                       {{if .Status == "warning"}}
-                        <tr>
+                        <tr id="host-service-{{.ID}}">
                           <td>
                             <span class="{{.Service.Icon}}">{{.Service.ServiceName}}</span>
                             <span
@@ -209,7 +249,7 @@ Host
             <div class="row">
               <div class="col">
                 <h4 class="pt-3">Problematic Services</h4>
-                <table class="table table-striped">
+                <table id="problem-table" class="table table-striped">
                   <thead>
                     <tr>
                       <th>Service Name</th>
@@ -220,7 +260,7 @@ Host
                   <tbody>
                     {{range host.HostServices}}
                       {{if .Status == "problem"}}
-                        <tr>
+                        <tr id="host-service-{{.ID}}">
                           <td>
                             <span class="{{.Service.Icon}}">{{.Service.ServiceName}}</span>
                             <span
@@ -253,7 +293,7 @@ Host
             <div class="row">
               <div class="col">
                 <h4 class="pt-3">Pending Services</h4>
-                <table class="table table-striped">
+                <table id="pending-table" class="table table-striped">
                   <thead>
                     <tr>
                       <th>Service Name</th>
@@ -264,7 +304,7 @@ Host
                   <tbody>
                     {{range host.HostServices}}
                       {{if .Status == "pending"}}
-                        <tr>
+                        <tr id="host-service-{{.ID}}">
                           <td>
                             <span class="{{.Service.Icon}}">{{.Service.ServiceName}}</span>
                             <span
@@ -333,7 +373,7 @@ Host
     }
   });
 
-  func validateSubmitForm() {
+  function validateSubmitForm() {
     let form = document.getElementById("host-form");
     if (form.checkValidity() === false) {
       errorAlert("Error: check all tabs!");
@@ -355,51 +395,6 @@ Host
     document.getElementById("action").value = 1;
     validateSubmitForm();
   }
-
-  document.addEventListener("DOMContentLoaded", function() {
-    let checkNows = document.querySelectorAll("[data-type=perform-check-host-svc]")
-    for (let i = 0; i < checkNows.length; i++) {
-      let checkNow = checkNows[i]
-      let svcId = checkNow.getAttribute("data-service-id");
-      let hostId = checkNow.getAttribute("data-host-id");
-      let oldStatus = checkNow.getAttribute("data-status");
-      checkNow.addEventListener("click", function() {
-        let formData = new FormData();
-        formData.append("old_status", oldStatus)
-        formData.append("csrf_token", "{{.CSRFToken}}")
-        fetch("/admin/host/"+hostId+"/service/"+svcId+"/perform-check", {
-          method: "POST",
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.ok) {
-            if (data.new_status != data.old_status) {
-              checkNow.setAttribute("data-status", data.new_status);
-              let tableRow = checkNow.parentNode.parentNode;
-              let msgTableCell = tableRow.getElementsByTagName('td')[2];
-              msgTableCell.innerHTML = data.message;
-              attention.toast({
-                msg: data.message,
-                icon: "info",
-                timer: 60000,
-                showCloseButton: true
-              });
-            } else {
-              attention.toast({
-                msg: "Service is still in the same status : " + data.new_status,
-                icon: "info",
-                timer: 5000,
-                showCloseButton: true
-              });
-            }
-          } else {
-            errorAlert("Something went wrong : " + data.message)
-          }
-        });
-      });
-    }
-  });
 </script>
 
 {{end}}
