@@ -34,6 +34,7 @@ type performCheckOnServiceForHostResp struct {
 func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
 	var hs models.HostService
 	var err error
+
 	hs, err = repo.DB.GetHostServiceById(hostServiceID)
 	if err != nil {
 		if err != nil {
@@ -41,24 +42,6 @@ func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
 			return
 		}
 	}
-
-	var h models.Host
-	h, err = repo.DB.GetHostById(hs.HostID)
-	if err != nil {
-		if err != nil {
-			log.Error(fmt.Errorf("ERROR - Could not find host with host id from host-services - %v", err))
-			return
-		}
-	}
-	hs.Host = h
-
-	var s models.Service
-	s, err = repo.DB.GetServiceById(hs.ServiceID)
-	if err != nil {
-		log.Error(fmt.Errorf("ERROR - Could not find service by id %d - %v", hs.ServiceID, err))
-		return
-	}
-	hs.Service = s
 
 	msg, newStatus := repo.testServiceForHost(hs)
 	if newStatus != hs.Status {

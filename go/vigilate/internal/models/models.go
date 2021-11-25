@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/robfig/cron/v3"
 )
 
 var (
@@ -97,4 +99,16 @@ type HostService struct {
 	UpdatedAt      time.Time
 	Service        Service
 	Host           Host
+}
+
+// Schedule model
+type Schedule struct {
+	ID                     int
+	EntryID                cron.EntryID
+	Entry                  cron.Entry
+	Host                   string
+	Service                string
+	LastRunFromHostService time.Time
+	HostServiceID          int
+	ScheduleText           string
 }
