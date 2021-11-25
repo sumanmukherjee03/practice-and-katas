@@ -17,6 +17,13 @@
 
   publicChannel.bind("AppStopping", function(data) {
     warningAlert(data.message);
+    let scheduleTable = document.getElementById("schedule-table");
+    if (!!scheduleTable) {
+      let scheduleTableBody = document.getElementById("schedule-table-body");
+      while(scheduleTableBody.firstChild) {
+        scheduleTableBody.removeChild(scheduleTableBody.firstChild);
+      }
+    }
   });
 
   publicChannel.bind("HostServiceStatusChanged", function(data) {
