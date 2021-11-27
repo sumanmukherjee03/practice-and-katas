@@ -9,7 +9,7 @@ import (
 	"github.com/tsawler/vigilate/internal/models"
 )
 
-// GetHostServiceByHostAndService returns a host by id
+// GetHostServiceById returns a host by id
 func (m *postgresDBRepo) GetHostServiceById(id int) (models.HostService, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -63,7 +63,7 @@ func (m *postgresDBRepo) GetHostServiceById(id int) (models.HostService, error) 
 	return hs, nil
 }
 
-// GetHostServiceByHostAndService returns a host by id
+// GetHostServiceByHostAndService returns a host by host and service id
 func (m *postgresDBRepo) GetHostServiceByHostAndService(hostID, serviceID int) (models.HostService, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -119,7 +119,7 @@ func (m *postgresDBRepo) GetHostServiceByHostAndService(hostID, serviceID int) (
 	return hs, nil
 }
 
-// Insert method to add a new record to the hosts table.
+// InsertHostService method to add a new record to the host_services table.
 func (m *postgresDBRepo) InsertHostService(hs models.HostService) (int, error) {
 	var newId int
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -134,7 +134,7 @@ func (m *postgresDBRepo) InsertHostService(hs models.HostService) (int, error) {
 	return newId, nil
 }
 
-// Insert method to add a new record to the hosts table.
+// UpdateHostService method to update an existing record in the host_services table.
 func (m *postgresDBRepo) UpdateHostService(hs models.HostService) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -147,7 +147,7 @@ func (m *postgresDBRepo) UpdateHostService(hs models.HostService) error {
 	return nil
 }
 
-// GetHostServiceStatusCount returns the active hosts with services that have status pending, healthy, warning and problem
+// GetAllHostServiceStatusCount returns the active host_services that have status pending, healthy, warning and problem
 func (m *postgresDBRepo) GetAllHostServiceStatusCount() (int, int, int, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -179,7 +179,7 @@ func (m *postgresDBRepo) GetAllHostServiceStatusCount() (int, int, int, int, err
 	return pending, healthy, warning, problem, nil
 }
 
-// GetAllHostServicesWithStatus returns the host services that have status pending
+// GetAllHostServicesWithStatus returns the host services that have the provided status
 func (m *postgresDBRepo) GetAllHostServicesWithStatus(status string) ([]*models.HostService, error) {
 	var hss []*models.HostService
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -241,6 +241,7 @@ func (m *postgresDBRepo) GetAllHostServicesWithStatus(status string) ([]*models.
 	return hss, nil
 }
 
+// GetAllHostServicesToMonitor returns a list of active host services to monitor
 func (m *postgresDBRepo) GetAllHostServicesToMonitor() ([]*models.HostService, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

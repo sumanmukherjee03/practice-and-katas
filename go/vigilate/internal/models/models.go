@@ -127,3 +127,18 @@ type Schedule struct {
 	HostServiceID          int
 	ScheduleText           string
 }
+
+// Event model
+type Event struct {
+	ID            int
+	HostID        int
+	ServiceID     int
+	HostServiceID int
+	HostName      string
+	ServiceName   string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	Host          Host
+	Service       Service
+	HostService   HostService
+}

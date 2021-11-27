@@ -41,4 +41,8 @@ type DatabaseRepo interface {
 	GetAllHostServiceStatusCount() (int, int, int, int, error)
 	GetAllHostServicesWithStatus(string) ([]*models.HostService, error)
 	GetAllHostServicesToMonitor() ([]*models.HostService, error)
+
+	// events
+	InsertEvent(models.Event) (int, error)
+	GetAllEvents() ([]*models.Event, error)
 }
