@@ -12,6 +12,8 @@
   let publicChannel = pusher.subscribe("public-channel");
 
   publicChannel.bind("AppStarting", function(data) {
+    let toggle = document.getElementById("monitoring-live");
+    toggle.checked = true;
     successAlert(data.message);
   });
 
@@ -22,6 +24,18 @@
       let scheduleTableBody = document.getElementById("schedule-table-body");
       while(scheduleTableBody.firstChild) {
         scheduleTableBody.removeChild(scheduleTableBody.firstChild);
+      }
+    }
+    let toggle = document.getElementById("monitoring-live");
+    toggle.checked = false;
+  });
+
+  publicChannel.bind("ScheduleItemRemovedEvent", function(data) {
+    let scheduleTable = document.getElementById("schedule-table");
+    if (!!scheduleTable) {
+      let existingTr = document.getElementById("schedule-"+data.host_service_id);
+      if (!!existingTr) {
+        existingTr.parentNode.removeChild(existingTr);
       }
     }
   });
@@ -35,7 +49,7 @@
       }
 
       let tr = scheduleTable.tBodies[0].insertRow(-1);
-      tr.setAttribute("id", "schedule-"+data.schedule_id);
+      tr.setAttribute("id", "schedule-"+data.host_service_id);
       let td0 = tr.insertCell(0);
       td0.innerHTML = `<td>${data.host}</td>`;
       let td1 = tr.insertCell(1);

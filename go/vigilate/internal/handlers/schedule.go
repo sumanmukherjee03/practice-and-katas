@@ -29,7 +29,7 @@ func (repo *DBRepo) ListEntries(w http.ResponseWriter, r *http.Request) {
 		item.Entry = repo.App.Scheduler.Entry(v)
 		hs, err := repo.DB.GetHostServiceById(k)
 		if err != nil {
-			log.Error("ERROR - Could not fetch host-service by id : %v", err)
+			log.Error(fmt.Errorf("ERROR - Could not fetch host-service by id : %v", err))
 			return
 		}
 		item.ScheduleText = fmt.Sprintf("@every %d%s", hs.ScheduleNumber, hs.ScheduleUnit)

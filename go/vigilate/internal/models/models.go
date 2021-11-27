@@ -101,6 +101,21 @@ type HostService struct {
 	Host           Host
 }
 
+func (hs *HostService) ScheduleText() (string, error) {
+	switch hs.ScheduleUnit {
+	case "d":
+		return fmt.Sprintf("@every %d%s", hs.ScheduleNumber*24, "h"), nil
+	case "h":
+		return fmt.Sprintf("@every %d%s", hs.ScheduleNumber, hs.ScheduleUnit), nil
+	case "m":
+		return fmt.Sprintf("@every %d%s", hs.ScheduleNumber, hs.ScheduleUnit), nil
+	case "s":
+		return fmt.Sprintf("@every %d%s", hs.ScheduleNumber, hs.ScheduleUnit), nil
+	default:
+		return "", fmt.Errorf("Invalid schedule unit - %s", hs.ScheduleUnit)
+	}
+}
+
 // Schedule model
 type Schedule struct {
 	ID                     int
