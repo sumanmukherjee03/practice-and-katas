@@ -26,6 +26,37 @@
     }
   });
 
+  publicChannel.bind("HostServiceScheduleChanged", function(data) {
+    let scheduleTable = document.getElementById("schedule-table");
+    if (!!scheduleTable) {
+      let existingTr = document.getElementById("schedule-"+data.host_service_id);
+      if (!!existingTr) {
+        existingTr.parentNode.removeChild(existingTr);
+      }
+
+      let tr = scheduleTable.tBodies[0].insertRow(-1);
+      tr.setAttribute("id", "schedule-"+data.schedule_id);
+      let td0 = tr.insertCell(0);
+      td0.innerHTML = `<td>${data.host}</td>`;
+      let td1 = tr.insertCell(1);
+      td1.innerHTML = `<td>${data.service}</td>`;
+      let td2 = tr.insertCell(2);
+      td2.innerHTML = `<td>${data.schedule}</td>`;
+      let td3 = tr.insertCell(3);
+      if (data.last_run === undefined) {
+        td3.innerHTML = `<td>pending...</td>`;
+      } else {
+        td3.innerHTML = `<td>${data.last_run}</td>`;
+      }
+      let td4 = tr.insertCell(4);
+      if (data.next_run === undefined) {
+        td4.innerHTML = `<td>pending...</td>`;
+      } else {
+        td4.innerHTML = `<td>${data.next_run}</td>`;
+      }
+    }
+  });
+
   publicChannel.bind("HostServiceStatusChanged", function(data) {
     if (data.stale_status != data.new_status) {
       attention.toast({

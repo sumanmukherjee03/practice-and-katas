@@ -189,8 +189,30 @@ func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string) {
 		if staleStatus == "healthy" && newStatus != "healthy" {
 			log.Info("Send an email or sms indicating that a service is misbehaving")
 		}
-		// TODO : Send an email or sms notification if this needs to be notified as an alert
 	}
+
+	yearOne := time.Date(0001, 1, 1, 0, 0, 0, 1, time.UTC)
+	data := make(map[string]string)
+	data["schedule_id"] = strconv.Itoa(hs.ID)
+	data["host_service_id"] = strconv.Itoa(hs.ID)
+	data["host_id"] = strconv.Itoa(hs.HostID)
+	data["service_id"] = strconv.Itoa(hs.ServiceID)
+	data["host"] = hs.Host.HostName
+	data["service"] = hs.Service.ServiceName
+	data["last_run"] = time.Now().Format("2006-01-02 3:04:05 PM")
+	nextScheduledEv := repo.App.Scheduler.Entry(repo.App.MonitorMap[hs.ID]).Next
+	if nextScheduledEv.After(yearOne) {
+		data["next_run"] = nextScheduledEv.Format("2006-01-02 3:04:05 PM")
+	} else {
+		data["next_run"] = "pending..."
+	}
+	data["schedule"] = fmt.Sprintf("@every %d%s", hs.ScheduleNumber, hs.ScheduleUnit)
+	data["status"] = newStatus
+	data["icon"] = hs.Service.Icon
+	data["message"] = fmt.Sprintf("%s on %s schedule has updated", hs.Service.ServiceName, hs.Host.HostName)
+	broadcastMessage("public-channel", "HostServiceScheduleChanged", data)
+
+	// TODO : Send an email or sms notification if this needs to be notified as an alert
 	return msg, newStatus
 }
 
