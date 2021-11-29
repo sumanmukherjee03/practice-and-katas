@@ -30,7 +30,7 @@ func (m *postgresDBRepo) GetAllEvents() ([]*models.Event, error) {
 	defer cancel()
 
 	var events []*models.Event
-	stmt := `SELECT id, event_type, host_id, service_id, host_service_id, host_name, service_name, message, created_at, updated_at FROM events ev ORDER BY created_at`
+	stmt := `SELECT id, event_type, host_id, service_id, host_service_id, host_name, service_name, message, created_at, updated_at FROM events ev ORDER BY created_at DESC`
 	rows, err := m.DB.QueryContext(ctx, stmt)
 	if err != nil {
 		log.Println(err)

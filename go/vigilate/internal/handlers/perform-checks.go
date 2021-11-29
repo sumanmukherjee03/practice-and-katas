@@ -43,7 +43,11 @@ func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
 		}
 	}
 
-	msg, newStatus := repo.testServiceForHost(hs)
+	msg, newStatus, err := repo.testServiceForHost(hs)
+	if err != nil {
+		log.Error(fmt.Errorf("ERROR - Encountered error when testing service - %v", err))
+		return
+	}
 	if newStatus != hs.Status {
 		repo.updateHostServiceStatusCount(hs, newStatus, msg)
 	}
@@ -113,13 +117,10 @@ func (repo *DBRepo) PerformCheckOnServiceForHost(w http.ResponseWriter, r *http.
 		}
 	}
 
-	msg, newStatus := repo.testServiceForHost(hs)
-	hs.Status = newStatus
-	hs.LastCheck = time.Now()
-	err = repo.DB.UpdateHostService(hs)
+	msg, _, err := repo.testServiceForHost(hs)
 	if err != nil {
-		log.Error(fmt.Errorf("ERROR - Could not perform check and update DB for service on host - %v", err))
-		ServerErrorJSON(w, r, err)
+		log.Error(fmt.Errorf("ERROR - Encountered error when testing service - %v", err))
+		returnErrorJSON(w, r, http.StatusInternalServerError, "Encountered an error when testing service")
 		return
 	}
 
@@ -143,13 +144,6 @@ func (repo *DBRepo) PerformCheckOnServiceForHost(w http.ResponseWriter, r *http.
 /////////////////////////////////////////////////////////////////////
 
 func (repo *DBRepo) updateHostServiceStatusCount(hs models.HostService, newStatus string, msg string) {
-	hs.Status = newStatus
-	hs.LastCheck = time.Now()
-	if err := repo.DB.UpdateHostService(hs); err != nil {
-		log.Error(fmt.Errorf("ERROR - Could not update DB for service on host - %v", err))
-		return
-	}
-
 	pending, healthy, warning, problem, err := repo.DB.GetAllHostServiceStatusCount()
 	if err != nil {
 		log.Error(err)
@@ -165,7 +159,7 @@ func (repo *DBRepo) updateHostServiceStatusCount(hs models.HostService, newStatu
 	log.Info(msg)
 }
 
-func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string) {
+func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string, error) {
 	staleStatus := hs.Status
 	var msg, newStatus string
 	switch hs.ServiceID {
@@ -173,6 +167,7 @@ func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string) {
 		msg, newStatus = repo.testHTTPServiceForHost(hs.Host.URL)
 		break
 	}
+
 	if newStatus != staleStatus {
 		repo.pushStatusChangedEvent(hs, newStatus)
 		event := models.Event{
@@ -186,16 +181,25 @@ func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string) {
 		}
 		_, err := repo.DB.InsertEvent(event)
 		if err != nil {
-			log.Error(err)
-			return "", ""
+			return "", "", err
 		}
 		if staleStatus == "healthy" && newStatus != "healthy" {
 			log.Info("Send an email or sms indicating that a service is misbehaving")
 		}
 	}
+
 	repo.pushScheduleChangedEvent(hs, newStatus)
+
+	hs.Status = newStatus
+	hs.LastCheck = time.Now()
+	hs.LastMessage = msg
+	err := repo.DB.UpdateHostService(hs)
+	if err != nil {
+		return "", "", fmt.Errorf("ERROR - Could not perform check and update DB for service on host - %v", err)
+	}
+
 	// TODO : Send an email or sms notification if this needs to be notified as an alert
-	return msg, newStatus
+	return msg, newStatus, nil
 }
 
 func (repo *DBRepo) pushStatusChangedEvent(hs models.HostService, newStatus string) {

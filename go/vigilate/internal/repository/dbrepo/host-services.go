@@ -14,7 +14,7 @@ func (m *postgresDBRepo) GetHostServiceById(id int) (models.HostService, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	stmt := `SELECT hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit, hs.last_check, hs.status, hs.created_at, hs.updated_at,
+	stmt := `SELECT hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit, hs.last_check, hs.last_message, hs.status, hs.created_at, hs.updated_at,
     s.id, s.service_name, s.active, s.icon, s.created_at, s.updated_at,
     h.id, h.host_name, h.canonical_name, h.url, h.ip, h.ipv6, h.location, h.os, h.active, h.created_at, h.updated_at
     FROM host_services hs
@@ -33,6 +33,7 @@ func (m *postgresDBRepo) GetHostServiceById(id int) (models.HostService, error) 
 		&hs.ScheduleNumber,
 		&hs.ScheduleUnit,
 		&hs.LastCheck,
+		&hs.LastMessage,
 		&hs.Status,
 		&hs.CreatedAt,
 		&hs.UpdatedAt,
@@ -68,7 +69,7 @@ func (m *postgresDBRepo) GetHostServiceByHostAndService(hostID, serviceID int) (
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	stmt := `SELECT hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit, hs.last_check, hs.status, hs.created_at, hs.updated_at,
+	stmt := `SELECT hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit, hs.last_check, hs.last_message, hs.status, hs.created_at, hs.updated_at,
     s.id, s.service_name, s.active, s.icon, s.created_at, s.updated_at,
     h.id, h.host_name, h.canonical_name, h.url, h.ip, h.ipv6, h.location, h.os, h.active, h.created_at, h.updated_at
     FROM host_services hs
@@ -89,6 +90,7 @@ func (m *postgresDBRepo) GetHostServiceByHostAndService(hostID, serviceID int) (
 		&hs.ScheduleNumber,
 		&hs.ScheduleUnit,
 		&hs.LastCheck,
+		&hs.LastMessage,
 		&hs.Status,
 		&hs.CreatedAt,
 		&hs.UpdatedAt,
@@ -138,8 +140,8 @@ func (m *postgresDBRepo) InsertHostService(hs models.HostService) (int, error) {
 func (m *postgresDBRepo) UpdateHostService(hs models.HostService) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	stmt := `UPDATE host_services SET host_id = $1, service_id = $2, active = $3, last_check = $4, status = $5, updated_at = $6 WHERE id = $7`
-	_, err := m.DB.ExecContext(ctx, stmt, hs.HostID, hs.ServiceID, hs.Active, hs.LastCheck, hs.Status, time.Now(), hs.ID)
+	stmt := `UPDATE host_services SET host_id = $1, service_id = $2, active = $3, last_check = $4, last_message = $5, status = $6, updated_at = $7 WHERE id = $8`
+	_, err := m.DB.ExecContext(ctx, stmt, hs.HostID, hs.ServiceID, hs.Active, hs.LastCheck, hs.LastMessage, hs.Status, time.Now(), hs.ID)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -186,7 +188,7 @@ func (m *postgresDBRepo) GetAllHostServicesWithStatus(status string) ([]*models.
 	defer cancel()
 
 	// We use a left join because the aim is to select all the rows of the host_services table
-	stmt := `SELECT hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit, hs.last_check, hs.status, hs.created_at, hs.updated_at,
+	stmt := `SELECT hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit, hs.last_check, hs.last_message, hs.status, hs.created_at, hs.updated_at,
     s.id, s.service_name, s.active, s.icon, s.created_at, s.updated_at,
     h.id, h.host_name, h.canonical_name, h.url, h.ip, h.ipv6, h.location, h.os, h.active, h.created_at, h.updated_at
     FROM host_services hs
@@ -211,6 +213,7 @@ func (m *postgresDBRepo) GetAllHostServicesWithStatus(status string) ([]*models.
 			&hs.ScheduleNumber,
 			&hs.ScheduleUnit,
 			&hs.LastCheck,
+			&hs.LastMessage,
 			&hs.Status,
 			&hs.CreatedAt,
 			&hs.UpdatedAt,
@@ -247,7 +250,7 @@ func (m *postgresDBRepo) GetAllHostServicesToMonitor() ([]*models.HostService, e
 	defer cancel()
 
 	var hostServices []*models.HostService
-	stmt := `SELECT hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit, hs.last_check, hs.status, hs.created_at, hs.updated_at,
+	stmt := `SELECT hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit, hs.last_check, hs.last_message, hs.status, hs.created_at, hs.updated_at,
     s.id, s.service_name, s.active, s.icon, s.created_at, s.updated_at,
     h.id, h.host_name, h.canonical_name, h.url, h.ip, h.ipv6, h.location, h.os, h.active, h.created_at, h.updated_at
     FROM host_services hs
@@ -272,6 +275,7 @@ func (m *postgresDBRepo) GetAllHostServicesToMonitor() ([]*models.HostService, e
 			&hs.ScheduleNumber,
 			&hs.ScheduleUnit,
 			&hs.LastCheck,
+			&hs.LastMessage,
 			&hs.Status,
 			&hs.CreatedAt,
 			&hs.UpdatedAt,
