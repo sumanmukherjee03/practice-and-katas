@@ -49,7 +49,7 @@ func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
 	}
 }
 
-// ToggleServiceForHost handles the association or dissociation of a host with a service
+// PerformCheckOnServiceForHost handles the request for a manual check on a service in a host
 func (repo *DBRepo) PerformCheckOnServiceForHost(w http.ResponseWriter, r *http.Request) {
 	var h models.Host
 	var s models.Service
@@ -166,13 +166,13 @@ func (repo *DBRepo) updateHostServiceStatusCount(hs models.HostService, newStatu
 }
 
 func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string) {
+	staleStatus := hs.Status
 	var msg, newStatus string
 	switch hs.ServiceID {
 	case HTTP:
 		msg, newStatus = repo.testHTTPServiceForHost(hs.Host.URL)
 		break
 	}
-	staleStatus := hs.Status
 	if newStatus != staleStatus {
 		repo.pushStatusChangedEvent(hs, newStatus)
 		event := models.Event{
