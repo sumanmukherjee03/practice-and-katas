@@ -131,11 +131,13 @@ type Schedule struct {
 // Event model
 type Event struct {
 	ID            int
+	EventType     string
 	HostID        int
 	ServiceID     int
 	HostServiceID int
 	HostName      string
 	ServiceName   string
+	Message       string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	Host          Host

@@ -172,7 +172,27 @@ func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string) {
 		msg, newStatus = repo.testHTTPServiceForHost(hs.Host.URL)
 		break
 	}
-	repo.pushStatusChangedEvent(hs, newStatus)
+	staleStatus := hs.Status
+	if newStatus != staleStatus {
+		repo.pushStatusChangedEvent(hs, newStatus)
+		event := models.Event{
+			EventType:     newStatus,
+			HostID:        hs.HostID,
+			ServiceID:     hs.ServiceID,
+			HostServiceID: hs.ID,
+			HostName:      hs.Host.HostName,
+			ServiceName:   hs.Service.ServiceName,
+			Message:       msg,
+		}
+		_, err := repo.DB.InsertEvent(event)
+		if err != nil {
+			log.Error(err)
+			return "", ""
+		}
+		if staleStatus == "healthy" && newStatus != "healthy" {
+			log.Info("Send an email or sms indicating that a service is misbehaving")
+		}
+	}
 	repo.pushScheduleChangedEvent(hs, newStatus)
 	// TODO : Send an email or sms notification if this needs to be notified as an alert
 	return msg, newStatus
@@ -180,23 +200,18 @@ func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string) {
 
 func (repo *DBRepo) pushStatusChangedEvent(hs models.HostService, newStatus string) {
 	staleStatus := hs.Status
-	if newStatus != staleStatus {
-		payload := make(map[string]string)
-		payload["host_service_id"] = strconv.Itoa(hs.ID)
-		payload["host_id"] = strconv.Itoa(hs.HostID)
-		payload["service_id"] = strconv.Itoa(hs.ServiceID)
-		payload["host_name"] = hs.Host.HostName
-		payload["service_name"] = hs.Service.ServiceName
-		payload["new_status"] = newStatus
-		payload["icon"] = hs.Service.Icon
-		payload["message"] = fmt.Sprintf("%s on %s status changed from %s to %s", hs.Service.ServiceName, hs.Host.HostName, staleStatus, newStatus)
-		payload["last_check"] = time.Now().Format("2006-01-02 3:04:06 PM")
-		payload["stale_status"] = staleStatus
-		broadcastMessage("public-channel", "HostServiceStatusChanged", payload)
-		if staleStatus == "healthy" && newStatus != "healthy" {
-			log.Info("Send an email or sms indicating that a service is misbehaving")
-		}
-	}
+	payload := make(map[string]string)
+	payload["host_service_id"] = strconv.Itoa(hs.ID)
+	payload["host_id"] = strconv.Itoa(hs.HostID)
+	payload["service_id"] = strconv.Itoa(hs.ServiceID)
+	payload["host_name"] = hs.Host.HostName
+	payload["service_name"] = hs.Service.ServiceName
+	payload["new_status"] = newStatus
+	payload["icon"] = hs.Service.Icon
+	payload["message"] = fmt.Sprintf("%s on %s status changed from %s to %s", hs.Service.ServiceName, hs.Host.HostName, staleStatus, newStatus)
+	payload["last_check"] = time.Now().Format("2006-01-02 3:04:06 PM")
+	payload["stale_status"] = staleStatus
+	broadcastMessage("public-channel", "HostServiceStatusChanged", payload)
 }
 
 func (repo *DBRepo) pushScheduleChangedEvent(hs models.HostService, newStatus string) {
