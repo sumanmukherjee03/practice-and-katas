@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	log "github.com/sirupsen/logrus"
+	"github.com/tsawler/vigilate/internal/channeldata"
+	"github.com/tsawler/vigilate/internal/helpers"
 	"github.com/tsawler/vigilate/internal/models"
 )
 
@@ -183,8 +186,32 @@ func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string, e
 		if err != nil {
 			return "", "", err
 		}
-		if staleStatus == "healthy" && newStatus != "healthy" {
-			log.Info("Send an email or sms indicating that a service is misbehaving")
+		if newStatus != "pending" {
+			if repo.App.PreferenceMap["notify_via_email"] == "1" {
+				mm := channeldata.MailData{
+					ToName:    repo.App.PreferenceMap["notify_name"],
+					ToAddress: repo.App.PreferenceMap["notify_email"],
+				}
+				if newStatus == "healthy" {
+					mm.Subject = fmt.Sprintf("HEALTHY: service %s on %s", hs.Service.ServiceName, hs.Host.HostName)
+					mm.Content = template.HTML(fmt.Sprintf(`
+					<p>Service %s on %s reported healthy status</p>
+					<p>Service status reported message : %s</p>
+					`, hs.Service.ServiceName, hs.Host.HostName, msg))
+				} else if newStatus == "problem" {
+					mm.Subject = fmt.Sprintf("PROBLEM: service %s on %s", hs.Service.ServiceName, hs.Host.HostName)
+					mm.Content = template.HTML(fmt.Sprintf(`
+					<p>Service %s on %s reported problem status</p>
+					<p>Service status reported message : %s</p>
+					`, hs.Service.ServiceName, hs.Host.HostName, msg))
+				} else {
+					log.Info("Send an email indicating that a service has changed state")
+				}
+				helpers.SendEmail(mm)
+			}
+			if repo.App.PreferenceMap["notify_via_sms"] == "1" {
+				log.Info("Send a sms indicating that a service is misbehaving")
+			}
 		}
 	}
 
