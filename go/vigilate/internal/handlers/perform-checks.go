@@ -14,6 +14,7 @@ import (
 	"github.com/tsawler/vigilate/internal/channeldata"
 	"github.com/tsawler/vigilate/internal/helpers"
 	"github.com/tsawler/vigilate/internal/models"
+	"github.com/tsawler/vigilate/internal/sms"
 )
 
 const (
@@ -205,12 +206,29 @@ func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string, e
 					<p>Service status reported message : %s</p>
 					`, hs.Service.ServiceName, hs.Host.HostName, msg))
 				} else {
-					log.Info("Send an email indicating that a service has changed state")
+					mm.Subject = fmt.Sprintf("WARNING: service %s on %s", hs.Service.ServiceName, hs.Host.HostName)
+					mm.Content = template.HTML(fmt.Sprintf(`
+					<p>Service %s on %s reported a warning status</p>
+					<p>Service status reported message : %s</p>
+					`, hs.Service.ServiceName, hs.Host.HostName, msg))
 				}
 				helpers.SendEmail(mm)
 			}
 			if repo.App.PreferenceMap["notify_via_sms"] == "1" {
-				log.Info("Send a sms indicating that a service is misbehaving")
+				to := repo.App.PreferenceMap["sms_notify_number"]
+				smsMessage := ""
+				if newStatus == "healthy" {
+					smsMessage = fmt.Sprintf("Services %s on %s is healthy", hs.Service.ServiceName, hs.Host.HostName)
+				} else if newStatus == "problem" {
+					smsMessage = fmt.Sprintf("Services %s on %s reports a problem - %s", hs.Service.ServiceName, hs.Host.HostName, msg)
+				} else {
+					smsMessage = fmt.Sprintf("Services %s on %s reports a warning - %s", hs.Service.ServiceName, hs.Host.HostName, msg)
+				}
+				err := sms.SendTextWithTwilio(to, smsMessage, repo.App)
+				if err != nil {
+					log.Error(fmt.Errorf("Encountered error in sending sms via twilio - %v", err))
+					return "", "", err
+				}
 			}
 		}
 	}
