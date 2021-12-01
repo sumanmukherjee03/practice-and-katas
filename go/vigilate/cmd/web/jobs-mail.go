@@ -58,6 +58,11 @@ func (w Worker) stop() {
 }
 
 // NewDispatcher creates, and returns a new Dispatcher object.
+// Create a new Dispatcher with this func when the app starts up and give it a mail queue and max number of workers
+// Then run the Dispatcher which starts up the workers.
+// Over time, you insert jobs into the MailQueue of the Dispatcher.
+// Jobs are pulled off the main mail queue in the dispatcher and pushed into one of the worker queues.
+// If you notice carefully, the workerPool is basically a channel of channels, ie a channel of worker queues.
 func NewDispatcher(jobQueue chan channeldata.MailJob, maxWorkers int) *Dispatcher {
 	workerPool := make(chan chan channeldata.MailJob, maxWorkers)
 	return &Dispatcher{

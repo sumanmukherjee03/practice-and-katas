@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -37,7 +38,7 @@ func (repo *DBRepo) PusherAuth(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	resp, err := app.WsClient.AuthenticatePresenceChannel(params, presenceData)
+	resp, err := repo.App.WsClient.AuthenticatePresenceChannel(params, presenceData)
 	if err != nil {
 		log.Error("ERROR - Could not authenticate user with pusher server via websocket client", err)
 		http.Error(w, "Could not authenticate user with pusher server via websocket client", http.StatusInternalServerError)
@@ -51,4 +52,14 @@ func (repo *DBRepo) PusherAuth(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not write json response", http.StatusInternalServerError)
 		return
 	}
+}
+
+// SendPrivateMessage is an example of how to send data to a private channel
+func (repo *DBRepo) SendPrivateMessage(w http.ResponseWriter, r *http.Request) {
+	msg := r.URL.Query().Get("message")
+	id := r.URL.Query().Get("id")
+
+	data := make(map[string]string)
+	data["message"] = msg
+	repo.App.WsClient.Trigger(fmt.Sprintf("private-channel-%s", id), "PrivateMessage", data)
 }

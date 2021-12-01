@@ -9,7 +9,19 @@
     disableTransports: []
   });
 
+  // public channels must begin with the word public
   let publicChannel = pusher.subscribe("public-channel");
+
+  // private channels must begin with the word public
+  // the login session contains a User model. Look at the helpers DefaultData code
+  let privateChannel = pusher.subscribe("private-channel-{{.User.ID}}");
+
+  privateChannel.bind("PrivateMessage", function(data) {
+    attention.alert({
+      html: data.message,
+      icon: 'success'
+    });
+  });
 
   publicChannel.bind("AppStarting", function(data) {
     let toggle = document.getElementById("monitoring-live");
