@@ -120,7 +120,7 @@ func (m *postgresDBRepo) InsertHost(h models.Host) (int, error) {
 
 	for _, service := range services {
 		hostServicesStmt := `INSERT INTO host_services (host_id, service_id, active, schedule_number, schedule_unit, status, created_at, updated_at)
-	    VALUES ($1, $2, 1, 3, 'm', 'pending', $3, $4)`
+	    VALUES ($1, $2, 0, 3, 'm', 'pending', $3, $4)`
 		_, err = m.DB.ExecContext(ctx, hostServicesStmt, newId, service.ID, time.Now(), time.Now())
 		if err != nil {
 			return newId, fmt.Errorf("Encountered error in associating service with id %d with host - %v", service.ID, err)
@@ -179,7 +179,8 @@ func (m *postgresDBRepo) getAllHostServicesForHost(ctx context.Context, hostID i
     s.id, s.service_name, s.active, s.icon, s.created_at, s.updated_at
     FROM host_services hs
     LEFT JOIN services s ON (s.id = hs.service_id)
-    WHERE host_id = $1`
+    WHERE host_id = $1
+    ORDER BY s.service_name`
 
 	rows, err := m.DB.QueryContext(ctx, stmt, hostID)
 	if err != nil {
