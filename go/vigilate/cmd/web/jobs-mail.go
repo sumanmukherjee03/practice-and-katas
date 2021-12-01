@@ -109,19 +109,11 @@ func (w Worker) processMailQueueJob(mailMessage channeldata.MailData) {
 		From          string
 		FromName      string
 		PreferenceMap map[string]string
-		IntMap        map[string]int
-		StringMap     map[string]string
-		FloatMap      map[string]float32
-		RowSets       map[string]interface{}
 	}{
 		Content:       mailMessage.Content,
 		FromName:      mailMessage.FromName,
 		From:          mailMessage.FromAddress,
 		PreferenceMap: preferenceMap,
-		IntMap:        mailMessage.IntMap,
-		StringMap:     mailMessage.StringMap,
-		FloatMap:      mailMessage.FloatMap,
-		RowSets:       mailMessage.RowSets,
 	}
 
 	paths := []string{
@@ -133,7 +125,6 @@ func (w Worker) processMailQueueJob(mailMessage channeldata.MailData) {
 	if err := t.Execute(&tpl, data); err != nil {
 		fmt.Print(err)
 	}
-
 	result := tpl.String()
 
 	plainText, err := html2text.FromString(result, html2text.Options{PrettyTables: true})

@@ -15,10 +15,6 @@ type MailData struct {
 	CC           []string
 	UseHermes    bool
 	Attachments  []string
-	StringMap    map[string]string
-	IntMap       map[string]int
-	FloatMap     map[string]float32
-	RowSets      map[string]interface{}
 }
 
 // MailJob is the unit of work to be performed when sending an email to chan
