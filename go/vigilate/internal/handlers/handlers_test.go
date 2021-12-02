@@ -40,11 +40,11 @@ func TestLoginScreen(t *testing.T) {
 			// create a request
 			req, _ := http.NewRequest("GET", e.url, nil)
 
-			// add the session info to the context
+			// add the session info to the context and then assign that context back to the req
 			ctx := getCtx(req)
 			req = req.WithContext(ctx)
 
-			// create a recorder
+			// create a recorder which you can use as a response writer in a handler
 			rr := httptest.NewRecorder()
 
 			// cast handler we want to test to an http.HandlerFunc
@@ -62,11 +62,11 @@ func TestLoginScreen(t *testing.T) {
 			// create a request with body to post
 			req, _ := http.NewRequest("POST", "/", strings.NewReader(e.postedData.Encode()))
 
-			// get our context with the session
+			// add the session info to the context and then assign that context back to the req
 			ctx := getCtx(req)
 			req = req.WithContext(ctx)
 
-			// create a recorder
+			// create a recorder which you can use as a response writer in a handler
 			rr := httptest.NewRecorder()
 
 			// cast the handler to a HandlerFunc and call the ServeHTTP method on it.
@@ -93,11 +93,11 @@ func TestDBRepo_PusherAuth(t *testing.T) {
 	// create the request
 	req, _ := http.NewRequest("POST", "/pusher/auth", strings.NewReader(postedData.Encode()))
 
-	// get our context with the session
+	// add the session info to the context and then assign that context back to the req
 	ctx := getCtx(req)
 	req = req.WithContext(ctx)
 
-	// create a recorder
+	// create a recorder which you can use as a response writer in a handler
 	rr := httptest.NewRecorder()
 
 	// cast the handler to a handlerfunc and call serve http
