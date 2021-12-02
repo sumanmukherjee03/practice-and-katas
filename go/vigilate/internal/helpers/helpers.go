@@ -73,6 +73,14 @@ var views = jet.NewSet(
 	jet.InDevelopmentMode(),
 )
 
+// SetViews sets the view variable - setters like these are helpful to override for testing purposes
+func SetViews(path string) {
+	views = jet.NewSet(
+		jet.NewOSFileSystemLoader(path),
+		jet.InDevelopmentMode(),
+	)
+}
+
 // DefaultData adds default data which is accessible to all templates
 func DefaultData(td templates.TemplateData, r *http.Request, w http.ResponseWriter) templates.TemplateData {
 	td.CSRFToken = nosurf.Token(r)

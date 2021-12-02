@@ -22,3 +22,17 @@ func NewPostgresRepo(Conn *sql.DB, a *config.AppConfig) repository.DatabaseRepo 
 		DB:  Conn,
 	}
 }
+
+// This is a dummy db repo type for testing purposes
+type testDBRepo struct {
+	App *config.AppConfig
+	DB  *sql.DB
+}
+
+// NewTestingRepo creates a dummy repository for testing purposes
+func NewTestingRepo(a *config.AppConfig) repository.DatabaseRepo {
+	app = a
+	return &testDBRepo{
+		App: a,
+	}
+}
