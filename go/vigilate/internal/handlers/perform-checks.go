@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	log "github.com/sirupsen/logrus"
+	"github.com/tsawler/vigilate/internal/certificateutils"
 	"github.com/tsawler/vigilate/internal/channeldata"
 	"github.com/tsawler/vigilate/internal/helpers"
 	"github.com/tsawler/vigilate/internal/models"
@@ -172,6 +173,9 @@ func (repo *DBRepo) testServiceForHost(hs models.HostService) (string, string, e
 		break
 	case HTTPS:
 		msg, newStatus = repo.testHTTPSServiceForHost(hs.Host.URL)
+		break
+	case SSLCertificate:
+		msg, newStatus = repo.testSSLForHost(hs.Host.URL)
 		break
 	}
 
@@ -351,7 +355,7 @@ func (repo *DBRepo) testHTTPSServiceForHost(url string) (string, string) {
 	if strings.HasSuffix(url, "/") {
 		url = strings.TrimSuffix(url, "/")
 	}
-	url = strings.Replace(url, "http", "https", -1)
+	url = strings.Replace(url, "http://", "https://", -1)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -364,4 +368,56 @@ func (repo *DBRepo) testHTTPSServiceForHost(url string) (string, string) {
 	}
 
 	return fmt.Sprintf("%s - %s", url, resp.Status), "healthy"
+}
+
+func (repo *DBRepo) testSSLForHost(url string) (string, string) {
+	if strings.HasSuffix(url, "/") {
+		url = strings.TrimSuffix(url, "/")
+	}
+	if strings.HasPrefix(url, "https://") {
+		url = strings.Replace(url, "https://", "", -1)
+	}
+	if strings.HasPrefix(url, "http://") {
+		url = strings.Replace(url, "http://", "", -1)
+	}
+
+	var msg, newStatus string
+
+	// scanning ssl cert for expiry date
+	var certDetailsChannel chan certificateutils.CertificateDetails
+	var errorsChannel chan error
+	certDetailsChannel = make(chan certificateutils.CertificateDetails, 1)
+	errorsChannel = make(chan error, 1)
+
+	scanHost(url, certDetailsChannel, errorsChannel)
+	for i, certDetailsInQueue := 0, len(certDetailsChannel); i < certDetailsInQueue; i++ {
+		certDetails := <-certDetailsChannel
+		certificateutils.CheckExpirationStatus(&certDetails, 30)
+
+		if certDetails.ExpiringSoon {
+
+			if certDetails.DaysUntilExpiration < 7 {
+				msg = certDetails.Hostname + " expiring in " + strconv.Itoa(certDetails.DaysUntilExpiration) + " days"
+				newStatus = "problem"
+			} else {
+				msg = certDetails.Hostname + " expiring in " + strconv.Itoa(certDetails.DaysUntilExpiration) + " days"
+				newStatus = "warning"
+			}
+
+		} else {
+			msg = certDetails.Hostname + " expiring in " + strconv.Itoa(certDetails.DaysUntilExpiration) + " days"
+			newStatus = "healthy"
+		}
+
+	}
+	return msg, newStatus
+}
+
+func scanHost(hostname string, certDetailsChannel chan certificateutils.CertificateDetails, errorsChannel chan error) {
+	res, err := certificateutils.GetCertificateDetails(hostname, 10)
+	if err != nil {
+		errorsChannel <- err
+	} else {
+		certDetailsChannel <- res
+	}
 }
