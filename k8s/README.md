@@ -28,3 +28,11 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/minikube/master/de
 sudo killall -HUP mDNSResponder
 scutil --dns
 ```
+
+If you want your docker client to talk to the minikube docker daemon there is an easy way to do that.
+```
+minikube docker-env
+eval $(minikube -p minikube docker-env)
+docker image ls
+docker ps -a
+```

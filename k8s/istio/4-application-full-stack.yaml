@@ -183,12 +183,12 @@ spec:
       port: 80
       nodePort: 30080
   type: NodePort
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: fleetman-position-tracker
-
 spec:
   # This defines which pods are going to be represented by this Service
   # The service becomes a network endpoint for either other services
@@ -199,6 +199,7 @@ spec:
     - name: http
       port: 8080
   type: ClusterIP
+
 ---
 apiVersion: v1
 kind: Service
@@ -211,6 +212,7 @@ spec:
     - name: http
       port: 8080
   type: ClusterIP
+
 ---
 apiVersion: v1
 kind: Service
@@ -223,6 +225,7 @@ spec:
     - name: http
       port: 8080
   type: ClusterIP
+
 ---
 apiVersion: v1
 kind: Service
@@ -235,6 +238,7 @@ spec:
     - name: http
       port: 8080
   type: ClusterIP
+
 ---
 apiVersion: v1
 kind: Service
@@ -247,6 +251,7 @@ spec:
     - name: http
       port: 8080
   type: ClusterIP
+
 ---
 # See case #23
 apiVersion: networking.istio.io/v1alpha3
@@ -265,6 +270,7 @@ spec:
     name: https-port-for-tls-origination
     protocol: HTTPS
   resolution: DNS
+
 ---
 # See case #23 - this is a legacy service that we're integrating with
 apiVersion: networking.istio.io/v1alpha3
@@ -283,6 +289,7 @@ spec:
         host: 2oujlno5e4.execute-api.us-east-1.amazonaws.com
         port:
           number: 443
+
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
