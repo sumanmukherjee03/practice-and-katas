@@ -1,21 +1,30 @@
-Some commands to help with the project
+### Minikube
 
-```sh
-helm repo add kong https://charts.konghq.com
-helm repo update
-helm install kong/kong --generate-name --set ingressController.installCRDs=false --set admin.enabled=true
-kubectl get svc
-kubectl get pods
-curl -s localhost:32547 | jq -r '.plugins.available_on_server | ."rate-limiting"'
-curl localhost:32547/plugins
-curl localhost:32547/routes
-curl localhost:32547/upstreams
-curl localhost:32547/targets
-helm install sample-api-server sample-api-server/
-helm upgrade sample-api-server sample-api-server/
-kubectl get kongplugins.configuration.konghq.com
-kubectl describe Ingress sample-api-server
-kubectl logs kong-1615734873-kong-7b996d657f-x4jk4 -f ingress-controller
-curl -vvv http://localhost:31615/foo
-curl -vvv -H "HOST: sample-api-server.local.dev" -H "PLAN-NAME: free" http://localhost/test
+To get Istio up and running we are gonna want to use a kubernetes cluster provisioned with minikube.
+After provisioning the kubernetes cluster we need to run some quick tests to make sure that everything is ok.
+
+```
+brew install minikube
+minikube start --memory 7168 --cpus 4 --feature-gates=EphemeralContainers=true
+minikube ip
+kubectl get pods --all-namespaces
+minikube logs
+minikube ssh
+minikube status
+minikube dashboard
+kubectl create deployment hello-minikube --image=k8s.gcr.io/echoserver:1.4
+kubectl expose deployment hello-minikube --type=NodePort --port=8080
+kubectl port-forward service/hello-minikube 8080:8080
+minikube service hello-minikube
+```
+
+Once you enable the ingress and ingress-dns addons for minikube, make sure to update the resolver for DNS in OSX
+Follow the link here to get a better understanding of how to get ingress dns working
+  - https://minikube.sigs.k8s.io/docs/handbook/addons/ingress-dns/
+```
+minikube addons enable ingress
+minikube addons enable ingress-dns
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/minikube/master/deploy/addons/ingress-dns/example/example.yaml
+sudo killall -HUP mDNSResponder
+scutil --dns
 ```
