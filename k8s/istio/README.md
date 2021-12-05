@@ -39,7 +39,7 @@ kubectl get ns default -o yaml
 ```
 
 Now start the application
-`kubectl apply -f 4-application-full-stack.yaml`
+`kubectl apply -f 4-application-full-stack-with-issues.yaml`
 If you do not see 2 containers initializing in the pods, then we probably didnt label the namespace properly.
 
 To diagnose issues with the app above, we can use kiali, which is a tool provided by istio.
@@ -54,7 +54,7 @@ You can also open up the jaeger UI for tracing service calls with this command
 minikube service tracing -n istio-system
 ```
 
-From the example in the 4-application-full-stack.yaml the calls from the staff service to the external
+From the example in the 4-application-full-stack-with-issues.yaml the calls from the staff service to the external
 service `fleetman-driver-monitoring`, the calls are taking too long (20s - 30s) or are failing.
 This is a good place to have short circuit in place, or drop outgoing requests from the `staff-service` for
 the `fleetman-driver-monitoring`. Or add a timeout for those requests, so that we dont have to wait for the application code to be modified.

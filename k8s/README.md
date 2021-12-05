@@ -1,3 +1,13 @@
+### Docker
+If you are on mac and using the docker-desktop app, make sure you go into settings
+and allocate 5 GB of memory, 3 GB swap and 4 CPUs for minikube to work well.
+Also, this might be a good to cleanup and prune unused resources being hogged by docker.
+```
+docker system prune
+docker volume prune
+docker image prune
+```
+
 ### Minikube
 
 To get Istio up and running we are gonna want to use a kubernetes cluster provisioned with minikube.
@@ -5,12 +15,12 @@ After provisioning the kubernetes cluster we need to run some quick tests to mak
 
 ```
 brew install minikube
-minikube start --memory 7168 --cpus 4 --feature-gates=EphemeralContainers=true
+minikube start --memory 4096 --feature-gates=EphemeralContainers=true
 minikube ip
-kubectl get pods --all-namespaces
+minikube status
 minikube logs
 minikube ssh
-minikube status
+kubectl get pods --all-namespaces
 minikube dashboard
 kubectl create deployment hello-minikube --image=k8s.gcr.io/echoserver:1.4
 kubectl expose deployment hello-minikube --type=NodePort --port=8080
@@ -35,4 +45,16 @@ minikube docker-env
 eval $(minikube -p minikube docker-env)
 docker image ls
 docker ps -a
+```
+
+To cleanup unused resources from minikube
+```
+minikube ssh -- docker system prune
+minikube ssh -- docker volume prune
+minikube ssh -- docker image prune
+```
+
+To stop and remove minikube
+```
+minikube delete
 ```
