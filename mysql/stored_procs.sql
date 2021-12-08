@@ -218,3 +218,39 @@ sp: BEGIN
   END IF;
 END$$
 DELIMITER ;
+
+
+
+--  ##############################################################################################
+--  ############################### STORED PROCEDURE SECURITY CONTEXT ############################
+--  ##############################################################################################
+
+--  In this sample stored proc below, a user dev@localhost if allowed access execute stored procs in the current db
+--  can invoke the stored proc InsertMessage. And even if the user might not have access to the messages table
+--  he/she can insert data into it via this stored proc because the execution of the stored proc will run in the
+--  context of the root user. Ofcourse, it's creation has to be done by the root user.
+DELIMITER $$
+CREATE DEFINER = root@localhost PROCEDURE InsertMessage(msg VARCHAR(100))
+SQL SECURITY DEFINER
+BEGIN
+  INSERT INTO messages(message) VALUES(msq);
+END$$
+DELIMITER ;
+
+GRANT EXECUTE ON testdb.* TO dev@localhost;
+
+
+--  However this stored proc will run with the context of the invoker even though the root user created and defined it.
+--  This means the dev user above wont be able to execute this because he/she does not have access to the messages table.
+DELIMITER $$
+CREATE DEFINER=root@localhost PROCEDURE UpdateMessage(
+    msgId INT,
+    msg VARCHAR(100)
+)
+SQL SECURITY INVOKER
+BEGIN
+    UPDATE messages
+    SET message = msg
+    WHERE id = msgId;
+END$$
+DELIMITER ;
