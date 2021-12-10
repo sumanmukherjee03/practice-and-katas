@@ -42,3 +42,41 @@ Once you suspend traffic, go back to the cli and try the commands above again an
 
 If you are satisfied with the experiment and want to turn traffic back on, go to the Actions button in the
 details view of the service and "Delete destination rules".
+
+
+### Peek into distributed tracing
+
+On the jaeger UI you can choose "Custom time" and select a custom time range to get a subset of traces.
+You can also check the checkboxes beside the collection of spans to compare traces.
+That might for example give you a view of where the requests are going separate ways - for example it might
+point to the obvious that your requests are going separate paths from the api-gateway onwards.
+
+Remember in the span view, you are gonna see 2 entries for each k8s service. That's because the requests also go through the proxies.
+Just something to keep in mind so that you dont get confused.
+
+Jaeger adds the header `x-request-id` for tracing. So, we need to enable propagation of the headers in our services,
+ie propagate the trace context.
+In particular, istio relies on propagation of B3 trace headers and Envoy-generated request ID.
+B3 propagation is the propagation of headers that start with `b3` or `x-b3-`. Here's a bunch of headers
+that are needed to be propagated for istio tracing to work properly. The header propagation can be done with
+jaeger or zip client libraries.
+  - x-request-id
+  - x-b3-traceid
+  - x-b3-spanid
+  - x-b3-parentspanid
+  - x-b3-sampled
+  - x-b3-sampled
+  - x-b3-flags
+  - b3
+  - x-ot-span-context (if you wanna use opentracing)
+
+Here's a link - https://istio.io/latest/about/faq/distributed-tracing/#how-to-support-tracing
+to point to how to setup distributed tracing for the applications.
+Here's another link to depict how to setup tracing context propagation - https://istio.io/latest/docs/tasks/observability/distributed-tracing/overview/#trace-context-propagation
+
+
+### Monitoring
+
+2 dashboards that are specifically of interest to us in grafana are
+  - Istio Service Dashboard
+  - Istio Workload Dashboard
