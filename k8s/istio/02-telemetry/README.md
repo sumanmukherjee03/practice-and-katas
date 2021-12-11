@@ -46,6 +46,8 @@ details view of the service and "Delete destination rules".
 
 ### Peek into distributed tracing
 
+`minikube service tracing -n istio-system &`
+
 On the jaeger UI you can choose "Custom time" and select a custom time range to get a subset of traces.
 You can also check the checkboxes beside the collection of spans to compare traces.
 That might for example give you a view of where the requests are going separate ways - for example it might
@@ -77,6 +79,34 @@ Here's another link to depict how to setup tracing context propagation - https:/
 
 ### Monitoring
 
+`minikube service grafana -n istio-system &`
+
 2 dashboards that are specifically of interest to us in grafana are
   - Istio Service Dashboard
   - Istio Workload Dashboard
+
+
+--------------------------------------------------------------------------------
+
+## Traffic management
+
+Istio has a few traffic management features. Canary releases is one of them.
+
+### Canary release
+
+One way of thinking about canary in kubernetes is to have a pod with a different container deployed as part of a service,
+i.e., create a separate deployment object with a different name but use the same label on the deployment and the pods.
+And of course change the container image to be the one with the experimental tag.
+The round robin load balancing will do the rest. This will effectively drive 33% of the traffic to this experimental pod.
+But it is hard to control the percent of requests that can go through the canary.
+If you want 1 canary pod to receive only 10% of traffic you have to increase the total number of normal pods 10
+so that the load balancing only forwards 10% of traffic to the canary pod. This is an expensive way to have canaries in kubernetes.
+
+Once you have configured 2 different deployments with 2 different images for testing out a canary release,
+now if you go to the graph UI in kiali and look at the workloads graph, you will notice traffic flowing to 2 workloads.
+What is referred to as workload in Kiali, can be thought of as a deployment in k8s.
+However, if you look at the App graph, you wont notice 2 different entities representing the canary. That is because
+what istio calls an app is based on the `app` label in your k8s manifests. And because both the deployments, ie the normal and the canary
+will have the same `app` label, there is no distinction in the App graph view.
+
+
