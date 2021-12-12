@@ -107,6 +107,88 @@ now if you go to the graph UI in kiali and look at the workloads graph, you will
 What is referred to as workload in Kiali, can be thought of as a deployment in k8s.
 However, if you look at the App graph, you wont notice 2 different entities representing the canary. That is because
 what istio calls an app is based on the `app` label in your k8s manifests. And because both the deployments, ie the normal and the canary
-will have the same `app` label, there is no distinction in the App graph view.
+will have the same `app` label, there is no distinction in the App graph view. kiali puts a special meaning for the `app` label.
 
+Now if you look at the "Versioned app graph" view then you would notice that there is a box around the 2 different deployments that
+we are using to test out the canary. Adding a `version` label around the deployment will help with displaying that in the kiali UI.
 
+So, kiali puts special meaning to the `app` and the `version` labels.
+
+Here we are referring to `template > metadata > labels`.
+
+The box around the workloads in the versioned graph actually represents the corresponding app.
+And that box is clickable. You can right click on that box and go to "Show Details" to see the details of the App.
+Where you can click on the service link to go to the service definition in kiali and click into "Actions" to create weighted rules.
+Once you create the Destination Rules it will create the VirtualService and DestinationRules resources.
+You can click on the triangle service icon to see how the traffic is split into multiple versions.
+
+So, under the hood, the virtual service and destination rule that istio generates looks similar to this
+```
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: fleetman-staff-virtual-service
+  namespace: default
+spec:
+  hosts:
+    # This the name of the k8s service that istio is applying routing rules to.
+    # And we are using the fully qualified in-cluster name because the k8s service could have been in a different namespace
+    # So, for the proxy to be able to discover the pods, it's best to use the full name of the k8s service.
+    # You could have also just used `fleetman-staff-service`
+    - fleetman-staff-service.default.svc.cluster.local
+  http:
+  - route:
+    # We use the full service name again in the actual routes.
+    # The reason why we have the service repeated here is because it is possible
+    # that traffic intended for fleetman-staff-service.default.svc.cluster.local
+    # could be routed to 2 completely different services like
+    #   - fleetman-staff-service-1.default.svc.cluster.local
+    #   - fleetman-staff-service-2.default.svc.cluster.local
+    - destination:
+        host: fleetman-staff-service.default.svc.cluster.local # This is the target DNS name
+        subset: risky-destination # This is the name of the subset in destination rules
+      weight: 10
+    - destination:
+        host: fleetman-staff-service.default.svc.cluster.local # This is the target DNS name
+        subset: safe-destination # This is the name of the subset in destination rules
+      weight: 90
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: fleetman-staff-destination-rules
+  namespace: default
+spec:
+  # This the name of the k8s service that istio is applying routing rules to.
+  # And we are using the fully qualified in-cluster name because the k8s service could have been in a different namespace
+  # So, for the proxy to be able to discover the pods, it's best to use the full name of the k8s service.
+  # You could have also just used `fleetman-staff-service`.
+  host: fleetman-staff-service.default.svc.cluster.local
+  subsets:
+  # The labels in the subset are selector labels
+  - labels:
+      version: risky # This means the select the pod with the label version and value risky
+    name: risky-destination
+  - labels:
+      version: safe # This means the select the pod with the label version and value risky
+    name: safe-destination
+```
+
+Now this configuration is added in the file `6-istio-rules.yaml`. So, go to the service details in the UI
+and delete whatever Destination Rules you had created and apply the yaml config in the file.
+
+When we apply the yaml for a VirtualService and DestinationRule the pilot, ie the controlplane component istiod
+uses this configuration to change/update the proxies.The pilot will modify the proxies dynamically
+with the custom routing rules. So, under the hood, really it is Envoy which is doing all this Canary stuff.
+Remember a k8s service is in no way replaced or enhanced by a VirtualService. We still need the k8s service
+for DNS lookup and get the IP addresses of the pods that serve the service. VirtualService on the otherhand
+is really a proxy (Envoy) level component.
+
+So, an outgoing request from webapp to the staff service for example will go through the webapp proxy first,
+which will do service discovery using k8s service objects and then based on the VirtualService weighted configuration
+in the webapp proxy will direct traffic to one of the pods.
+
+If in the virtual service yaml we entered a wrong service name we would be getting 503 gateway errors because the proxy
+wont be able to find the service to send traffic to.
+And this is actually rightly reflected in kiali. kiali checks the host for the virtual service and destination rules.
