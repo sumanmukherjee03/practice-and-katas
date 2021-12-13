@@ -192,3 +192,64 @@ in the webapp proxy will direct traffic to one of the pods.
 If in the virtual service yaml we entered a wrong service name we would be getting 503 gateway errors because the proxy
 wont be able to find the service to send traffic to.
 And this is actually rightly reflected in kiali. kiali checks the host for the virtual service and destination rules.
+
+
+### Stickiness
+
+One common situation that accompanies Canary Releases is session stickiness. Subsequent requests from the same client
+should keep getting the same version of the software, otherwise it can turn into a very frustrating situation in real life.
+That's where session stickiness comes in.
+
+DestinationRules define policies to traffic intended for a service after routing has occurred.
+These can contain rules that specify configuration for LoadBalancing, connection pool size, remove unhealthy hosts from connection pool etc.
+
+Stickiness is based on consistent hashing by the loadbalancer in istio proxy. The consistent hash is produced
+based on the User cookie as the hash keythat specify configuration for LoadBalancing, connection pool size, remove unhealthy hosts from connection pool etc.
+
+Stickiness is based on consistent hashing by the loadbalancer in istio proxy. The consistent hash is produced
+based on several types of inputs coming from the client as the hash key. If the input is same, then the hash output is the same
+and traffic consistently goes to the same subset. The various things that can be used as inputs for consistent hashing are
+source ip, a http cookie, a http header value http query params etc.
+
+Unfortunately though the session stickiness and weighted destination rules dont mix together and work.
+There is an open istio issue related to this and envoy didnt seem to support it either for the longest time but seems to have fixed now.
+However, it is still not supported by istio.
+
+So, essentially, weighted subset based canary releases and http session stickiness doesnt work together in istio yet.
+
+However, if we remove the weighted subsets and just have one subset, ie 1 destination, we can have session stickiness.
+This is essentially because the weighted rule applies before the consistent hash based stickiness rule applies.
+So, the pod the traffic is supposed to go to is already chosen.
+
+So, this would not work :
+
+                                 |---hash 1---->pod 1
+           |----10% subset 1---->|
+           |                     |---hash 2---->pod 2
+           |
+client ----|
+           |
+           |                     |---hash 1---->pod 1
+           |----90% subset 2---->|
+                                 |---hash 2---->pod 2
+
+
+But, this would work :
+
+                       |---hash 1---->pod 1
+client ---1 subset---->|
+                       |---hash 2---->pod 2
+
+However, the downside is that you cant control how much of the traffic you want to divert to these canary pods.
+
+One way to test this thing is by changing the input to the hashing algo to a http header instead of the source IP.
+And we can test it with a curl request : `curl -H "x-test-canary: test1" http://localhost:<port-of-fleetman-webapp-service-exposed>/api/vehicles/driver/City%20Truck`
+Ofcourse you have to make a change in the `DestinationRules` configuration to perform consistent hashing based on that http header name.
+However, doing just that is not gonna fix our problems because we have multiple microservices calling each other
+and unless this `x-` header is getting propagated across microservices, the fleetman-staff-service pods
+arent gonna receive service with this header in the request and hence the session stickiness wouldnt work as expected.
+So, we also need to make sure that the jaeger client library configures the propagation of these `x-` headers in the microservices.
+
+Our microservices are already forwarding the `x-` header, so session affinity would work in this case.
+
+Consistent hashing and session affinity can come in handy for performance enhancement, for example with something like caching.
