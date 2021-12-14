@@ -21,3 +21,23 @@ kubectl get svc -n istio-system | grep ingressgateway
 It is worth noting that the `istio-ingressgateway` service is of type `LoadBalancer`, meaning if you deploy this
 in a cloud provider it'll provision a resource similar to a ALB in aws and would have an external IP, ie an ip outside the CIDR of the kubernetes cluster.
 
+The ingress gateway istio configuration targets pods in the `istio-system` namespace that have labels `istio=ingressgateway`.
+```
+kubectl get pods -n istio-system --show-labels | grep ingressgateway
+```
+
+Once you have the ingressgateway setup, if you tunnel through minikube, you should be able to reach the node port
+that exposes port 80 of the ingressgateway service in istio-system.
+But if there are no paths and forwarding rules configured in the virtualservice you will be getting a 404.
+This is because the ingressgateway pod is just running the proxy and traffic comes from outside to that proxy container
+but when exiting the proxy it doesnt know where to go. And all these proxies are configured with the VirtualService
+and DestinationRule via the istiod (pilot) component.
+
+Remember that the same VirtualService configuration is all proxies, ie proxy of the internal pods as well as the one in the ingressgateway.
+So, when configuring hosts for the VirtualService, you should consider hosts for internal and external traffic,
+ie, other pods will try to reach the fleetman webapp via `fleetman-webapp.default.svc.cluster.local` internally
+and browsers will try to reach it externally through it's public domain.
+If you have put asterix in the hosts for external traffic that cancels out any other host you have put into place.
+
+So, once you have configured and gotten ingressgateway to work, it is time to remove the `NodePort` on the service definition of fleetman-webapp service,
+and change it to `ClusterIP`.
