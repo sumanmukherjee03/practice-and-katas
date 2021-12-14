@@ -1,0 +1,72 @@
+---
+# This gateway object confgures istio to listen to port 80 from external sources and forward traffic into the cluster.
+# If the gateway is exposed via nodeport on the istio-ingressgateway service in istio-namespace,
+# then that node port is being forwarded to port 80 on the ingressgateway service and from the ingressgateway
+# service in the istio namespace to the pods with label istio=ingressgateway.
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: fleetman-gateway
+spec:
+  selector:
+    istio: ingressgateway # use Istio default gateway implementation. This selector essentially targets the pods with label istio=ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    # We are using a specific domain name and for this to work locally we have an entry in out /etc/hosts file.
+    - "*.fleetman.com" # This is for subdomains
+    - "fleetman.com" # This is for root domain
+
+---
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: fleetman-webapp-vs-original
+  namespace: default
+spec:
+  hosts:
+    - fleetman-webapp.default.svc.cluster.local # This is to route traffic internal to the cluster to the original version always.
+    - "app.fleetman.com" # This is for external traffic.
+  gateways:
+    - fleetman-gateway
+  http:
+    - route:
+      - destination:
+          host: fleetman-webapp.default.svc.cluster.local
+          subset: fleetman-webapp-original
+
+---
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: fleetman-webapp-vs-experimental
+  namespace: default
+spec:
+  hosts:
+    - "experimental.fleetman.com" # This is for external traffic.
+  gateways:
+    - fleetman-gateway
+  http:
+    - route:
+      - destination:
+          host: fleetman-webapp.default.svc.cluster.local
+          subset: fleetman-webapp-experimental
+
+---
+kind: DestinationRule
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: fleetman-webapp-destination-rules
+  namespace: default
+spec:
+  host: fleetman-webapp.default.svc.cluster.local
+  subsets:
+    - labels:
+        version: original
+      name: fleetman-webapp-original
+    - labels:
+        version: experimental
+      name: fleetman-webapp-experimental

@@ -44,3 +44,13 @@ If you have put asterix in the hosts for external traffic that cancels out any o
 
 So, once you have configured and gotten ingressgateway to work, it is time to remove the `NodePort` on the service definition of fleetman-webapp service,
 and change it to `ClusterIP`.
+
+
+In matching rules for virtualservice, the matches can be based on many different things like uri prefix, headers, query params, scheme (http|https), http methods etc.
+
+If you want to deploy 2 versions of a software, it is best to always avoid url based prefixes because that
+involves change of application code in multiple places. It is quite troublesome. Instead the easiest way to do this is using subdomains.
+That involves multiple subdomains, one for each version of the app to route traffic from external sources into the proper version.
+For internal traffic you might use a different virtual services altogether, but with routing based on a header.
+And that `x-` header would get added at the entrypoint application in the code based on whether it was the experimental version or original version
+and then that header would get propagated all the way down to the rest of the traffic in the cluster.
