@@ -1,0 +1,73 @@
+---
+# This gateway object confgures istio to listen to port 80 from external sources and forward traffic into the cluster.
+# If the gateway is exposed via nodeport on the istio-ingressgateway service in istio-namespace,
+# then that node port is being forwarded to port 80 on the ingressgateway service and from the ingressgateway
+# service in the istio namespace to the pods with label istio=ingressgateway.
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: fleetman-gateway
+spec:
+  selector:
+    istio: ingressgateway # use Istio default gateway implementation. This selector essentially targets the pods with label istio=ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*" # In production ofcourse you would want a specific domain name instead of an asterix.
+
+---
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: fleetman-webapp-virtual-service
+  namespace: default
+spec:
+  hosts:
+    # - fleetman-webapp.default.svc.cluster.local # This is to route traffic internal to the cluster. Since the domain for external traffic is asterix we are commenting out this line for our specific usecase.
+    - "*" # This is for external traffic. In production this will be the same domain names as specified in the gateway configuration above. However with a asterix you can avoid the domain above
+  gateways:
+    - fleetman-gateway
+  http:
+    # If the prefix of the url is "/experimental" or "/canary" then apply these routing rules below
+    # and direct traffic to the experimental pods.
+    # So, the matching rules and routing rules go hand in hand
+    - match:
+      - uri: # IF
+          prefix: "/experimental"
+      - uri: # OR
+          prefix: "/canary"
+      route: # THEN
+      - destination:
+          host: fleetman-webapp.default.svc.cluster.local
+          subset: fleetman-webapp-experimental
+        weight: 100
+
+    # If the prefix of the url is "/" then apply these routing rules below
+    # and direct traffic to the original pods.
+    - match:
+      - uri: # IF
+          prefix: "/"
+      route: # THEN
+      - destination:
+          host: fleetman-webapp.default.svc.cluster.local
+          subset: fleetman-webapp-original
+        weight: 100
+
+---
+kind: DestinationRule
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: fleetman-webapp-destination-rules
+  namespace: default
+spec:
+  host: fleetman-webapp.default.svc.cluster.local
+  subsets:
+    - labels:
+        version: original
+      name: fleetman-webapp-original
+    - labels:
+        version: experimental
+      name: fleetman-webapp-experimental

@@ -1,5 +1,8 @@
 ### Istio Gateways
 
+NOTE : In this example `6-istio-rules.yaml` and `7-istio-rules-with-prefix.yaml` are mutually exclusive.
+       You can only have one or the other.
+
 In the versioned app graph, if you wanna see the version app view along with the service view,
 then check "Service Nodes" in the "Display" dropdown menu.
 
