@@ -15,7 +15,7 @@ After provisioning the kubernetes cluster we need to run some quick tests to mak
 
 ```
 brew install minikube
-minikube start --memory 4096 --feature-gates=EphemeralContainers=true
+minikube start --memory 5120 --feature-gates=EphemeralContainers=true
 minikube ip
 minikube status
 minikube logs
