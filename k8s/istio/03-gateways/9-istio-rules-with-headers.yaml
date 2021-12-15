@@ -76,6 +76,14 @@ spec:
       - headers:
           x-app-version:
             exact: canary
+      # For the engineers who are testing the canary version of the software, we are introducing a fault
+      # by injecting a fixed delay into the network calls.
+      # The non-canary requests are not affected by this.
+      fault:
+        delay:
+          percentage:
+            value: 100.0
+          fixedDelay: 5s
       route:
       - destination:
           host: fleetman-staff-service.default.svc.cluster.local
@@ -101,3 +109,22 @@ spec:
     - labels:
         version: risky
       name: fleetman-staff-service-risky
+
+---
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: fleetman-vehicle-telemetry-vs
+  namespace: default
+spec:
+  hosts:
+    - fleetman-vehicle-telemetry.default.svc.cluster.local
+  http:
+    - fault:
+        abort:
+          httpStatus: 503
+          percentage:
+            value: 20
+      route:
+        - destination:
+            host: fleetman-vehicle-telemetry.default.svc.cluster.local

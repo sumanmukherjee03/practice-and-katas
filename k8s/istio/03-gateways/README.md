@@ -59,3 +59,13 @@ We can achieve Dark releases with matching rules in the virtualservice via heade
 the header gets propagated all the way down in all services for that to work. For the external traffic coming from outside
 the cluster, we can use curl to pass headers or install a browser extension like ModHeader to add a custom header to all our
 requests from the browser.
+
+
+### Fault Injection
+To test fault tolerance and availability of services we can use istio to inject fault into the system and check the behavior of the rest of the eco-system.
+
+Go to the kiali console > Service show details > Suspend traffic to suspend traffic to a service.
+This generates the istio config for virtualservice and destinationrule needed to inject fault into the service.
+You can copy this config, use them to codify the fault injection and delete the rules created via the kiali console.
+
+You can mix and match fault injection with canaries.
