@@ -1,7 +1,7 @@
 ### Istio Gateways
 
-NOTE : In this example `6-istio-rules.yaml` and `7-istio-rules-with-prefix.yaml` are mutually exclusive.
-       You can only have one or the other.
+NOTE : In this set of examples `*-istio-rules-*.yaml` are mutually exclusive.
+       You can only have one of them at a time. So, make sure to delete the resources from the other one if you are about to apply one.
 
 In the versioned app graph, if you wanna see the version app view along with the service view,
 then check "Service Nodes" in the "Display" dropdown menu.
@@ -54,3 +54,8 @@ That involves multiple subdomains, one for each version of the app to route traf
 For internal traffic you might use a different virtual services altogether, but with routing based on a header.
 And that `x-` header would get added at the entrypoint application in the code based on whether it was the experimental version or original version
 and then that header would get propagated all the way down to the rest of the traffic in the cluster.
+
+We can achieve Dark releases with matching rules in the virtualservice via headers. Ofcourse you have to make sure that
+the header gets propagated all the way down in all services for that to work. For the external traffic coming from outside
+the cluster, we can use curl to pass headers or install a browser extension like ModHeader to add a custom header to all our
+requests from the browser.
