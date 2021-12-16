@@ -82,3 +82,6 @@ EOF
 ```
 
 On turning the mTLS to strict mode, now all the curl reuqests will be failing because on the client side it is not going through the proxy.
+
+Ofcourse this is mutual TLS, so, a pod with proxy if makes a call to a pod without a proxy running in some other namespace
+will also fail to make a http call if the mTLS mode is strict
