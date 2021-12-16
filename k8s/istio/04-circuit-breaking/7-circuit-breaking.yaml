@@ -3,11 +3,10 @@ kind: DestinationRule
 metadata:
   name: circuit-breaker-for-the-entire-default-namespace
 spec:
-  host: "fleetman-staff-service.default.svc.cluster.local"          # This is the name of the k8s service that we're configuring
-
+  host: "fleetman-staff-service.default.svc.cluster.local" # This is the name of the k8s service that we're configuring
   trafficPolicy:
     outlierDetection: # Circuit Breakers HAVE TO BE SWITCHED ON
-      maxEjectionPercent: 100
-      consecutive5xxErrors: 2
+      maxEjectionPercent: 100 # This says - eject all pods that are misbehaving
+      consecutive5xxErrors: 3 # Circuit breaker is only triggered by HTTP 500s. Also, these are consecutive failures for an individual pod
       interval: 10s
       baseEjectionTime: 30s
