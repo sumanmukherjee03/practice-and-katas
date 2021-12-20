@@ -2,6 +2,11 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+### Development
+
+If you want to use bootstrap, instead of getting the css and js from the bootstrap website and inserting the same
+into the head and body of the index.html, get it via npm
+
 ## Available Scripts
 
 In the project directory, you can run:

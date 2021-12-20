@@ -1,7 +1,13 @@
+// Import bootstrap css and js from the npm installed bootstrap library.
+// After that install all other css and js.
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
+import AppContent from './AppContent';
 import AppFooter from './AppFooter';
 import './index.css';
+
 
 // Make sure to import class Component from react
 class App extends Component {
@@ -11,9 +17,7 @@ class App extends Component {
     // Some of these html attributes are slightly different in React. Instead of "class" for example we use "className".
     return (
       <div className="app">
-        <div>
-          <h1>Hello, world!</h1>
-        </div>
+        <AppContent />
         <AppFooter />
       </div>
     );
