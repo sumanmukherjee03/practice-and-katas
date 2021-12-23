@@ -10,6 +10,7 @@ export default class AppHeader extends Component {
       <Fragment>
         <h1>{this.props.title}</h1>
         <hr />
+        <p>There are {this.props.posts.length} entries in posts</p>
       </Fragment>
     );
   }
