@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -19,11 +17,9 @@ func (app *application) statusHandler(w http.ResponseWriter, r *http.Request) {
 		Environment: app.config.env,
 		Version:     version,
 	}
-	data, err := json.MarshalIndent(currentStatus, "", "  ")
+	err := app.writeJSON(w, http.StatusOK, currentStatus, "health")
 	if err != nil {
-		app.logger.Println(fmt.Sprintf("ERROR : Could not marshal json for reporting status - %v", err))
+		app.logger.Print(err)
+		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK) // This sends a http response header with the proper status code
-	w.Write(data)
 }

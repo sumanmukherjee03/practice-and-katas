@@ -20,6 +20,7 @@ type config struct {
 }
 
 // We are gonna use an instance of this type as a receiver in various other parts of our application
+// This is an easy approach to share bit and pieces of functionality between various parts of our application
 type application struct {
 	config config
 	logger *log.Logger
