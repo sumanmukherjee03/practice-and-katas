@@ -1,5 +1,10 @@
 import React from 'react';
-import { HashRouter as Router, Link, Route, Switch } from 'react-router-dom';
+import { BrowserRouter as Router, Link, Route, Switch, useRouteMatch } from 'react-router-dom';
+import Admin from './components/Admin';
+import Categories from './components/Categories';
+import Home from './components/Home';
+import Movies from './components/Movies';
+import OneMovie from './components/OneMovie';
 
 export default function App() {
   // Everything that you want to be routed to needs to be enclosed in the <Router></Router> tag
@@ -31,6 +36,9 @@ export default function App() {
                   <Link to="/movies">Movies</Link>
                 </li>
                 <li className="list-group-item">
+                  <Link to="/by-category">Categories</Link>
+                </li>
+                <li className="list-group-item">
                   <Link to="/admin">Manage Catalog</Link>
                 </li>
               </ul>
@@ -38,9 +46,30 @@ export default function App() {
           </div>
           <div className="col-md-10">
             <Switch>
+              {/* This is an example of the react router rendering a component with properties */}
+              <Route path="/movies/:id" component={OneMovie} />
+
               <Route path="/movies">
                 <Movies />
               </Route>
+
+              {/* Note the syntax of exact route matching here, because the order matters in react router */}
+              <Route exact path="/by-category">
+                <CategoryPage />
+              </Route>
+
+              {/* This is an example of the react router rendering a component with properties */}
+              <Route
+                exact
+                path="/by-category/drama"
+                render={(props) => <Categories {...props} title={`Drama`} />}
+              />
+              <Route
+                exact
+                path="/by-category/comedy"
+                render={(props) => <Categories {...props} title={`Comedy`} />}
+              />
+
               <Route path="/admin">
                 <Admin />
               </Route>
@@ -55,12 +84,31 @@ export default function App() {
   );
 }
 
-function Home() {
-  return <h2>Home</h2>;
-}
-function Movies() {
-  return <h2>Movies</h2>;
-}
-function Admin() {
-  return <h2>Manage Catalog</h2>;
+// This is a stub function for a component called movie
+// function Movie() {
+  // // Get the id of the movie from the params
+  // let {id} = useParams();
+  // return (
+    // <h2>Movie id {id}</h2>
+  // );
+// }
+
+function CategoryPage() {
+  // Get the path and url from the route matching
+  // path lets us build routes that are relative to the parent route
+  // and url instead lets us build relative links
+  let {path, url} = useRouteMatch();
+  return (
+    <div>
+      <h2>Categories</h2>
+      <ul>
+        <li>
+          <Link to={`${path}/drama`}>Drama</Link>
+        </li>
+        <li>
+          <Link to={`${path}/comedy`}>Comedy</Link>
+        </li>
+      </ul>
+    </div>
+  );
 }
