@@ -1,23 +1,18 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"go-movies/models"
-
-	"github.com/julienschmidt/httprouter"
 )
 
 func (app *application) getOneMovie(w http.ResponseWriter, r *http.Request) {
-	params := httprouter.ParamsFromContext(r.Context())
-	id, err := strconv.Atoi(params.ByName("id"))
-	if err != nil || id <= 0 {
-		app.logger.Print(fmt.Errorf("ERROR : Could not find a valid id in the url params - %v", err))
+	id, err := app.getIdFromUrlParams(w, r)
+	if err != nil {
+		app.clientErrorJSON(w, err)
+		return
 	}
-	app.logger.Println("Id is", id)
 	movie := models.Movie{
 		ID:          id,
 		Title:       "some movie",
@@ -30,9 +25,8 @@ func (app *application) getOneMovie(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
-	err = app.writeJSON(w, http.StatusOK, movie, "movie")
-	if err != nil {
-		app.logger.Print(err)
+	if err = app.writeJSON(w, http.StatusOK, movie, "movie"); err != nil {
+		app.serverErrorJSON(w, err)
 		return
 	}
 }

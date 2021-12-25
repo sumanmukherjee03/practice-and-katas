@@ -17,9 +17,8 @@ func (app *application) statusHandler(w http.ResponseWriter, r *http.Request) {
 		Environment: app.config.env,
 		Version:     version,
 	}
-	err := app.writeJSON(w, http.StatusOK, currentStatus, "health")
-	if err != nil {
-		app.logger.Print(err)
+	if err := app.writeJSON(w, http.StatusOK, currentStatus, "health"); err != nil {
+		app.serverErrorJSON(w, err)
 		return
 	}
 }
