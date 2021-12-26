@@ -10,7 +10,8 @@ import (
 )
 
 type jsonError struct {
-	Message string `json:"message"`
+	ErrorType string `json:"error_type"`
+	Message   string `json:"message"`
 }
 
 func (app *application) writeJSON(w http.ResponseWriter, status int, data interface{}, wrap string) error {
@@ -26,17 +27,28 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data interf
 	return nil
 }
 
-func (app *application) clientErrorJSON(w http.ResponseWriter, err error) {
+func (app *application) badRequestErrorJSON(w http.ResponseWriter, err error) {
 	e := jsonError{
-		Message: fmt.Sprintf("CLIENT ERROR : %v", err),
+		ErrorType: "BAD_REQUEST_ERROR",
+		Message:   fmt.Sprintf("ERROR : %v", err),
 	}
 	app.logger.Print(e)
 	app.writeJSON(w, http.StatusBadRequest, e, "error")
 }
 
+func (app *application) entityNotFoundErrorJSON(w http.ResponseWriter, err error) {
+	e := jsonError{
+		ErrorType: "NOT_FOUND_ERROR",
+		Message:   fmt.Sprintf("ERROR : %v", err),
+	}
+	app.logger.Print(e)
+	app.writeJSON(w, http.StatusNotFound, e, "error")
+}
+
 func (app *application) serverErrorJSON(w http.ResponseWriter, err error) {
 	e := jsonError{
-		Message: fmt.Sprintf("SERVER ERROR : %v", err),
+		ErrorType: "SERVER_ERROR",
+		Message:   fmt.Sprintf("ERROR : %v", err),
 	}
 	app.logger.Print(e)
 	app.writeJSON(w, http.StatusInternalServerError, e, "error")
