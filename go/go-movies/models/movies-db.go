@@ -47,7 +47,7 @@ func (m *DBModel) Get(id int) (*Movie, error) {
 	}
 	defer rows.Close()
 
-	var movieGenres []MovieGenre
+	movieGenres := make(map[int]string)
 	for rows.Next() {
 		var mg MovieGenre
 		mgErr := rows.Scan(
@@ -64,7 +64,7 @@ func (m *DBModel) Get(id int) (*Movie, error) {
 		if mgErr != nil {
 			return nil, err
 		}
-		movieGenres = append(movieGenres, mg)
+		movieGenres[mg.ID] = mg.Genre.GenreName
 	}
 	movie.MovieGenres = movieGenres
 
