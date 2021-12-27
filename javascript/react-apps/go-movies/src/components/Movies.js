@@ -19,21 +19,30 @@ export default class Movies extends Component {
       .then((response) => {
         let status = parseInt(response.status);
         if (status >= 400) {
-          let err = Error;
-          err.message = "Encountered an error with status code - " + status;
-          this.setState({error: err});
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.indexOf("application/json") < 0) {
+            return response.text()
+              .then(() => ({error_type: "ERROR", message: "Encountered an error with status code - " + status }))
+              .then(Promise.reject.bind(Promise));
+          } else {
+            return response.json()
+              .then((result) => result.error)
+              .then(Promise.reject.bind(Promise));
+          }
         }
         return response.json();
       })
       .then((data) => {
+        // This is the success callback based on the returned http status
         this.setState({
           movies: data.movies,
           isLoaded: true
         });
       }, (error) => {
+        // This is the error callback based on the returned http status
         this.setState({
-          error: error,
-          isLoaded: true
+          isLoaded: true,
+          error
         });
       });
   }
