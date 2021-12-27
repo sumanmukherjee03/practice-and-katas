@@ -1,9 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Link, Route, Switch, useRouteMatch } from 'react-router-dom';
+import { BrowserRouter as Router, Link, Route, Switch } from 'react-router-dom';
 import Admin from './components/Admin';
-import Categories from './components/Categories';
+import Genres from './components/Genres';
 import Home from './components/Home';
 import Movies from './components/Movies';
+import OneGenre from './components/OneGenre';
 import OneMovie from './components/OneMovie';
 
 export default function App() {
@@ -36,7 +37,7 @@ export default function App() {
                   <Link to="/movies">Movies</Link>
                 </li>
                 <li className="list-group-item">
-                  <Link to="/by-category">Categories</Link>
+                  <Link to="/genres">Genres</Link>
                 </li>
                 <li className="list-group-item">
                   <Link to="/admin">Manage Catalog</Link>
@@ -46,29 +47,29 @@ export default function App() {
           </div>
           <div className="col-md-10">
             <Switch>
-              {/* This is an example of the react router rendering a component with properties */}
+              {/* This is an example of the react router rendering a component */}
               <Route path="/movies/:id" component={OneMovie} />
 
               <Route path="/movies">
                 <Movies />
               </Route>
 
-              {/* Note the syntax of exact route matching here, because the order matters in react router */}
-              <Route exact path="/by-category">
-                <CategoryPage />
+              {/* Note the use of keyword `exact` here in route matching. It is used because the order matters in react router */}
+              <Route exact path="/genres">
+                <Genres />
               </Route>
 
-              {/* This is an example of the react router rendering a component with properties */}
-              <Route
-                exact
-                path="/by-category/drama"
-                render={(props) => <Categories {...props} title={`Drama`} />}
-              />
-              <Route
-                exact
-                path="/by-category/comedy"
-                render={(props) => <Categories {...props} title={`Comedy`} />}
-              />
+              {
+                /* This is an example of the react router rendering a component with properties
+                <Route
+                  exact
+                  path="/genre/:genre_name"
+                  render={(props) => <Genre {...props} title={`Drama`} />}
+                />
+                */
+              }
+
+              <Route exact path="/genre/:genre_name" component={OneGenre} />
 
               <Route path="/admin">
                 <Admin />
@@ -86,29 +87,14 @@ export default function App() {
 
 // This is a stub function for a component called movie
 // function Movie() {
-  // // Get the id of the movie from the params
+  // Get the path and url from the route matching
+  // path lets us build routes that are relative to the parent route
+  // and url instead lets us build relative links
+  //   let {path, url} = useRouteMatch();
+  //
+  // Get the id of the movie from the params
   // let {id} = useParams();
   // return (
     // <h2>Movie id {id}</h2>
   // );
 // }
-
-function CategoryPage() {
-  // Get the path and url from the route matching
-  // path lets us build routes that are relative to the parent route
-  // and url instead lets us build relative links
-  let {path, url} = useRouteMatch();
-  return (
-    <div>
-      <h2>Categories</h2>
-      <ul>
-        <li>
-          <Link to={`${path}/drama`}>Drama</Link>
-        </li>
-        <li>
-          <Link to={`${path}/comedy`}>Comedy</Link>
-        </li>
-      </ul>
-    </div>
-  );
-}

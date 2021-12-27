@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+// DBModel is the wrapper type for sql.DB
+type DBModel struct {
+	DB *sql.DB
+}
+
 // Models is the wrapper for database
 type Models struct {
 	DB DBModel
@@ -29,20 +34,21 @@ type Movie struct {
 	Runtime     int            `json:"runtime"`
 	Rating      int            `json:"rating"`
 	MPAARating  string         `json:"mpaa_rating"`
-	CreatedAt   time.Time      `json:"-"`
-	UpdatedAt   time.Time      `json:"-"`
-	MovieGenres map[int]string `json:"movie_genres"` // Ignore this field in json for the time being
+	CreatedAt   time.Time      `json:"-"` // Ignore this field in json for the time being
+	UpdatedAt   time.Time      `json:"-"` // Ignore this field in json for the time being
+	MovieGenres map[int]string `json:"movie_genres"`
 }
 
-// Movie is the type for genre
+// Genre is the type for genre
 type Genre struct {
-	ID        int       `json:"-"`
-	GenreName string    `json:"genre_name"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
+	ID          int           `json:"id"`
+	GenreName   string        `json:"genre_name"`
+	CreatedAt   time.Time     `json:"-"`
+	UpdatedAt   time.Time     `json:"-"`
+	MovieGenres []*MovieGenre `json:"movie_genres"`
 }
 
-// Movie is the type for movie-genre
+// MovieGenre is the type for movie-genre
 type MovieGenre struct {
 	ID        int       `json:"-"`
 	MovieID   int       `json:"-"`
@@ -50,4 +56,5 @@ type MovieGenre struct {
 	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`
 	Genre     Genre     `json:"genre"`
+	Movie     Movie     `json:"movie"`
 }

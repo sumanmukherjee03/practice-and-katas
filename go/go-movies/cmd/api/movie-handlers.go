@@ -10,7 +10,7 @@ func (app *application) getOneMovie(w http.ResponseWriter, r *http.Request) {
 		app.badRequestErrorJSON(w, err)
 		return
 	}
-	movie, err := app.models.DB.Get(id)
+	movie, err := app.models.DB.GetMovieByID(id)
 	if err != nil {
 		app.entityNotFoundErrorJSON(w, err)
 		return
@@ -22,7 +22,7 @@ func (app *application) getOneMovie(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) getAllMovies(w http.ResponseWriter, r *http.Request) {
-	movies, err := app.models.DB.All()
+	movies, err := app.models.DB.GetAllMovies()
 	if err != nil {
 		app.serverErrorJSON(w, err)
 		return

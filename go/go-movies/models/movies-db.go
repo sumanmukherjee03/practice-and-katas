@@ -2,17 +2,11 @@ package models
 
 import (
 	"context"
-	"database/sql"
 	"time"
 )
 
-// Movie is the wrapper type for sql.DB
-type DBModel struct {
-	DB *sql.DB
-}
-
-// Get is the func to get a single movie
-func (m *DBModel) Get(id int) (*Movie, error) {
+// GetMovieByID is the func to get a single movie
+func (m *DBModel) GetMovieByID(id int) (*Movie, error) {
 	var movie Movie
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -45,8 +39,8 @@ func (m *DBModel) Get(id int) (*Movie, error) {
 	return &movie, nil
 }
 
-// All is the func to get all movies
-func (m *DBModel) All() ([]*Movie, error) {
+// GetAllMovies is the func to get all movies
+func (m *DBModel) GetAllMovies() ([]*Movie, error) {
 	var movies []*Movie
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)

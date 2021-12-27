@@ -1,12 +1,13 @@
 import React, { Component, Fragment } from 'react';
+import { Link } from 'react-router-dom';
 
-export default class OneMovie extends Component {
-  state = {movie: {}, isLoaded: false, error: null};
+export default class OneGenre extends Component {
+  state = {genre: {}, isLoaded: false, error: null};
 
   componentDidMount() {
-    // Notice how we retrieve the id from the url.
+    // Notice how we retrieve the genre_name from the url.
     // The react router makes it available to us with the property called match.
-    fetch("http://localhost:4000/v1/movie/"+this.props.match.params.id)
+    fetch("http://localhost:4000/v1/genre/"+this.props.match.params.genre_name)
       .then((response) => {
         const status = parseInt(response.status);
         if (status >= 400) {
@@ -26,7 +27,7 @@ export default class OneMovie extends Component {
       .then((data) => {
         // This is the success callback based on the returned http status
         this.setState({
-          movie: data.movie,
+          genre: data.genre,
           isLoaded: true
         });
       }, (error) => {
@@ -40,49 +41,27 @@ export default class OneMovie extends Component {
 
   render() {
     // Easy way to multi assign values from map
-    const {movie, isLoaded, error} = this.state;
+    const {genre, isLoaded, error} = this.state;
 
     if (!isLoaded) {
       return (
         <Fragment>
-          <p>Loading...</p>
+          <p>Loading genre... </p>
         </Fragment>
       );
     } else {
       if (!error) {
         return (
           <Fragment>
-            <h2>Movie: {movie.title}</h2>
-            <div className="float-start">
-              <small>Rating: {movie.mpaa_rating}</small>
-            </div>
-            <div className="float-end">
-              {Object.values(movie.movie_genres).map((m, index) => (
-                <span className="badge bg-secondary me-1" key={index}>
-                  {m}
-                </span>
+            <h2>Genre: {genre.genre_name}</h2>
+            <ul>
+              {genre.movie_genres.map((mg) => (
+                <li key={mg.movie.id}>
+                  {/* Note the syntax of javascript templating here */}
+                  <Link to={`/movies/${mg.movie.id}`}>{mg.movie.title}</Link>
+                </li>
               ))}
-            </div>
-            <div className="clearfix"></div>
-            <hr></hr>
-            <table className="table table-compact table-striped">
-              <thead>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>Description:</strong></td>
-                  <td>{movie.description}</td>
-                </tr>
-                <tr>
-                  <td><strong>Runtime:</strong></td>
-                  <td>{movie.runtime}</td>
-                </tr>
-                <tr>
-                  <td><strong>Rating:</strong></td>
-                  <td>{movie.rating}</td>
-                </tr>
-              </tbody>
-            </table>
+            </ul>
           </Fragment>
         );
       } else {
