@@ -59,14 +59,27 @@ export default class Genres extends Component {
         return (
           <Fragment>
             <h2>Choose a genre</h2>
-            <ul>
+            <div className="list-group">
+              {/*
+                Note the syntax of javascript templating here.
+                Also, worth noting is the fact that the Link to property can be an object.
+                The "pathname" key/value in that object is mandatory for the link to work.
+                However, you can add other additional pproperties as necessary.
+                In the component that Link calls, these values are available under `this.props.location`.
+              */}
               {genres.map((g) => (
-                <li key={g.id}>
-                  {/* Note the syntax of javascript templating here */}
-                  <Link to={`/genre/${g.id}`}>{g.genre_name}</Link>
-                </li>
+                <Link
+                  to={
+                    {
+                      pathname: `/genre/${g.id}`,
+                      genreName: g.genre_name,
+                    }
+                  }
+                  className="list-group-item list-group-item-action"
+                  key={g.id}
+                >{g.genre_name}</Link>
               ))}
-            </ul>
+            </div>
           </Fragment>
         );
       } else {

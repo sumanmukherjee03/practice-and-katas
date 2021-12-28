@@ -2,12 +2,12 @@ import React, { Component, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 
 export default class OneGenre extends Component {
-  state = {genre: {}, isLoaded: false, error: null};
+  state = {movies: [], isLoaded: false, error: null, genreName: ""};
 
   componentDidMount() {
     // Notice how we retrieve the genre_name from the url.
     // The react router makes it available to us with the property called match.
-    fetch("http://localhost:4000/v1/genre/"+this.props.match.params.genre_name)
+    fetch("http://localhost:4000/v1/genre/"+this.props.match.params.id+"/movies")
       .then((response) => {
         const status = parseInt(response.status);
         if (status >= 400) {
@@ -26,13 +26,17 @@ export default class OneGenre extends Component {
       })
       .then((data) => {
         // This is the success callback based on the returned http status
+        // NOTE : Notice how the genreName came from the Link to property in Genres.js
         this.setState({
-          genre: data.genre,
-          isLoaded: true
+          movies: data.movies,
+          isLoaded: true,
+          genreName: this.props.location.genreName
         });
       }, (error) => {
         // This is the error callback based on the returned http status
+        // NOTE : Notice how the genreName came from the Link to property in Genres.js
         this.setState({
+          genreName: this.props.location.genreName,
           isLoaded: true,
           error
         });
@@ -41,27 +45,25 @@ export default class OneGenre extends Component {
 
   render() {
     // Easy way to multi assign values from map
-    const {genre, isLoaded, error} = this.state;
+    const {movies, isLoaded, error, genreName} = this.state;
 
     if (!isLoaded) {
       return (
         <Fragment>
-          <p>Loading genre... </p>
+          <p>Loading movies for genre... </p>
         </Fragment>
       );
     } else {
       if (!error) {
         return (
           <Fragment>
-            <h2>Genre: {genre.genre_name}</h2>
-            <ul>
-              {genre.movie_genres.map((mg) => (
-                <li key={mg.movie.id}>
-                  {/* Note the syntax of javascript templating here */}
-                  <Link to={`/movies/${mg.movie.id}`}>{mg.movie.title}</Link>
-                </li>
+            <h2>Genre: {genreName}</h2>
+            <div className="list-group">
+              { /* Note the syntax of javascript templating here. Also, each child in a list has to have a unique value for the key property. */ }
+              {movies.map((m) => (
+                <Link key={m.id} to={`/movies/${m.id}`} className="list-group-item list-group-item-action">{m.title}</Link>
               ))}
-            </ul>
+            </div>
           </Fragment>
         );
       } else {

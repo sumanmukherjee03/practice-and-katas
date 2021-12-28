@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -39,16 +40,23 @@ func (m *DBModel) GetMovieByID(id int) (*Movie, error) {
 	return &movie, nil
 }
 
-// GetAllMovies is the func to get all movies
-func (m *DBModel) GetAllMovies() ([]*Movie, error) {
+// GetAllMovies is the func to get all movies.
+// We made an improvement to the initial version of this function to make it variadic
+// This helps us in finding movies for a genre if a genre is given or no genre if no genre is given
+func (m *DBModel) GetAllMovies(genre ...int) ([]*Movie, error) {
 	var movies []*Movie
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	query := `select id, title, description, year, release_date, rating, runtime, mpaa_rating, created_at, updated_at
-    from movies
-    order by title`
+	where := ""
+	if len(genre) > 0 {
+		where = fmt.Sprintf("where id in (select movie_id from movies_genres where genre_id = %d)", genre[0])
+	}
+
+	query := fmt.Sprintf(`select id, title, description, year, release_date, rating, runtime, mpaa_rating, created_at, updated_at
+    from movies %s order by title`, where)
+
 	rows, err := m.DB.QueryContext(ctx, query)
 	if err != nil {
 		return movies, err

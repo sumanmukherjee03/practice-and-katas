@@ -61,15 +61,17 @@ export default function App() {
 
               {
                 /* This is an example of the react router rendering a component with properties
-                <Route
-                  exact
-                  path="/genre/:genre_name"
-                  render={(props) => <Genre {...props} title={`Drama`} />}
-                />
+                 * Notice how we are using the spread operator for the props that are passed on from the Route component
+                 * and then adding more properties of it's own to the Genre component, such as title.
+                        <Route
+                          exact
+                          path="/genre/:genre_name"
+                          render={(props) => <Genre {...props} title={`Drama`} />}
+                        />
                 */
               }
 
-              <Route exact path="/genre/:genre_name" component={OneGenre} />
+              <Route exact path="/genre/:id" component={OneGenre} />
 
               <Route path="/admin">
                 <Admin />
