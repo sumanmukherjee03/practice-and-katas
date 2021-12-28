@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Link, Route, Switch } from 'react-router-dom';
+import AddOrEditMovie from './components/AddOrEditMovie';
 import Admin from './components/Admin';
 import Genres from './components/Genres';
 import Home from './components/Home';
@@ -40,6 +41,9 @@ export default function App() {
                   <Link to="/genres">Genres</Link>
                 </li>
                 <li className="list-group-item">
+                  <Link to="/admin/add">Add/edit Movie</Link>
+                </li>
+                <li className="list-group-item">
                   <Link to="/admin">Manage Catalog</Link>
                 </li>
               </ul>
@@ -50,6 +54,7 @@ export default function App() {
               {/* This is an example of the react router rendering a component */}
               <Route path="/movies/:id" component={OneMovie} />
 
+              {/* This is another example of the react router rendering a component */}
               <Route path="/movies">
                 <Movies />
               </Route>
@@ -73,9 +78,12 @@ export default function App() {
 
               <Route exact path="/genre/:id" component={OneGenre} />
 
+              <Route path="/admin/add" component={AddOrEditMovie} />
+
               <Route path="/admin">
                 <Admin />
               </Route>
+
               <Route path="/">
                 <Home />
               </Route>
