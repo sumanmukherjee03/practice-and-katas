@@ -41,7 +41,7 @@ export default function App() {
                   <Link to="/genres">Genres</Link>
                 </li>
                 <li className="list-group-item">
-                  <Link to="/admin/add">Add/edit Movie</Link>
+                  <Link to="/admin/movie/0">Add/edit Movie</Link>
                 </li>
                 <li className="list-group-item">
                   <Link to="/admin">Manage Catalog</Link>
@@ -78,7 +78,8 @@ export default function App() {
 
               <Route exact path="/genre/:id" component={OneGenre} />
 
-              <Route path="/admin/add" component={AddOrEditMovie} />
+              {/* When adding a movie, the id would be 0 and when editing a movie it will have a proper id. */}
+              <Route path="/admin/movie/:id" component={AddOrEditMovie} />
 
               <Route path="/admin">
                 <Admin />
