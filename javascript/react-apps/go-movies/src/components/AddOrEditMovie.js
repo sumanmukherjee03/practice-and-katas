@@ -1,8 +1,8 @@
 import React, { Component, Fragment } from 'react';
 import './AddOrEditMovie.css';
 import Input from './form-components/Input';
+import Select from './form-components/Select';
 import TextArea from './form-components/TextArea';
-// import { Link } from 'react-router-dom';
 
 export default class AddOrEditMovie extends Component {
   constructor(props) {
@@ -16,6 +16,13 @@ export default class AddOrEditMovie extends Component {
         mpaa_rating: "",
         rating: "",
         description: "",
+      },
+      mpaa_options: {
+        G: "G",
+        PG: "PG",
+        PG13: "PG13",
+        R: "R",
+        NC17: "NC17",
       },
       isLoaded: false,
       error: null,
@@ -63,19 +70,7 @@ export default class AddOrEditMovie extends Component {
           <Input title={"Title"} type={"text"} name={"title"} value={movie.title} handleChange={this.handleChange} />
           <Input title={"Release Date"} type={"text"} name={"release_date"} value={movie.release_date} handleChange={this.handleChange} />
           <Input title={"Runtime"} type={"text"} name={"runtime"} value={movie.runtime} handleChange={this.handleChange} />
-
-          <div className="mb-3">
-            <label htmlFor="mpaa_rating" className="form-label">MPAA Rating</label>
-            <select className="form-select" id="mpaa_rating" name="mpaa_rating" value={movie.mpaa_rating} onChange={this.handleChange} >
-              <option className="form-select">Choose...</option>
-              <option className="form-select" value="G">G</option>
-              <option className="form-select" value="PG">PG</option>
-              <option className="form-select" value="PG13">PG13</option>
-              <option className="form-select" value="R">R</option>
-              <option className="form-select" value="NC17">NC17</option>
-            </select>
-          </div>
-
+          <Select title={"MPAA Rating"} name={"mpaa_rating"} value={movie.mpaa_rating} handleChange={this.handleChange} placeholder="Choose..." options={this.state.mpaa_options} />
           <Input title={"Rating"} type={"text"} name={"rating"} value={movie.rating} handleChange={this.handleChange} />
           <TextArea title={"Description"} name={"description"} value={movie.description} handleChange={this.handleChange} />
 
