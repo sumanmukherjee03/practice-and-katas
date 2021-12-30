@@ -25,22 +25,57 @@ export default class AddOrEditMovie extends Component {
         NC17: "NC17",
       },
       isLoaded: false,
-      error: null,
+      loadingError: null,
+      errors: [],
     };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.hasError = this.hasError.bind(this);
   }
 
   handleSubmit = (ev) => {
-    console.log("Form was submitted");
     ev.preventDefault();
+
+    // Client side form validation - check for errors in input elements of the form
+    // and if there are any then update the state with that info
+    let errors = [];
+    if (this.state.movie.title.length === 0) {
+      errors.push("title");
+    }
+    if (this.state.movie.release_date.length === 0) {
+      errors.push("release_date");
+    }
+    if (this.state.movie.runtime.length === 0) {
+      errors.push("runtime");
+    }
+    if (this.state.movie.description.length === 0) {
+      errors.push("description");
+    }
+    this.setState({errors: errors});
+    if (errors.length > 0) {
+      return false;
+    }
+
+    // First of all, get the form data from the form element
+    const data = new FormData(ev.target);
+    // Then convert the form data into a javascript object
+    const payload = Object.fromEntries(data.entries());
+    // For POST requests use this request options, so that it can be passed to the fetch call
+    const reqOptions = {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+    fetch("http://localhost:4000/v1/admin/movie/edit", reqOptions)
+      .then(response => (response.json()))
+      .then((respData) => {
+        console.log(respData);
+      });
   }
 
   handleChange = (ev) => {
     let val = ev.target.value;
     let name = ev.target.name;
-
     // NOTE : setState can take a value of a state directly, or it can take a callback.
     // And the callbac function takes the previous state as an argument. You can use the previous state
     // to update the value of the current state.
@@ -52,6 +87,10 @@ export default class AddOrEditMovie extends Component {
         [name]: val,
       },
     }));
+  }
+
+  hasError = (key) => {
+    return this.state.errors.indexOf(key) !== -1;
   }
 
   componentDidMount() {
@@ -70,7 +109,7 @@ export default class AddOrEditMovie extends Component {
                 .then(Promise.reject.bind(Promise));
             } else {
               return response.json()
-                .then((result) => result.error)
+                .then((result) => result.loadingError)
                 .then(Promise.reject.bind(Promise));
             }
           }
@@ -88,7 +127,7 @@ export default class AddOrEditMovie extends Component {
           // This is the error callback based on the returned http status
           this.setState({
             isLoaded: true,
-            error
+            loadingError: error,
           });
         });
     } else {
@@ -98,7 +137,7 @@ export default class AddOrEditMovie extends Component {
 
   render() {
     // Easy way to multi assign values from map
-    const {movie, isLoaded, error} = this.state;
+    const {movie, isLoaded, loadingError} = this.state;
 
     if (!isLoaded) {
       return (
@@ -107,7 +146,7 @@ export default class AddOrEditMovie extends Component {
         </Fragment>
       );
     } else {
-      if (!error) {
+      if (!loadingError) {
         return (
           <Fragment>
             <h2>Add/Edit Movie</h2>
@@ -116,12 +155,65 @@ export default class AddOrEditMovie extends Component {
             <form onSubmit={this.handleSubmit}>
               <input type="hidden" id="id" name="id" value={movie.id} onChange={this.handleChange} />
 
-              <Input title={"Title"} type={"text"} name={"title"} value={movie.title} handleChange={this.handleChange} />
-              <Input title={"Release Date"} type={"text"} name={"release_date"} value={movie.release_date} handleChange={this.handleChange} />
-              <Input title={"Runtime"} type={"text"} name={"runtime"} value={movie.runtime} handleChange={this.handleChange} />
-              <Select title={"MPAA Rating"} name={"mpaa_rating"} value={movie.mpaa_rating} handleChange={this.handleChange} placeholder="Choose..." options={this.state.mpaa_options} />
-              <Input title={"Rating"} type={"text"} name={"rating"} value={movie.rating} handleChange={this.handleChange} />
-              <TextArea title={"Description"} name={"description"} value={movie.description} handleChange={this.handleChange} />
+              <Input
+                title={"Title"}
+                type={"text"}
+                name={"title"}
+                value={movie.title}
+                handleChange={this.handleChange}
+                className={this.hasError("title") ? "is-invalid" : ""}
+                errorDiv={this.hasError("title") ? "text-danger" : "d-none"}
+                errorMsg={"Please enter a title"}
+              />
+
+              <Input
+                title={"Release Date"}
+                type={"text"}
+                name={"release_date"}
+                value={movie.release_date}
+                handleChange={this.handleChange}
+                className={this.hasError("title") ? "is-invalid" : ""}
+                errorDiv={this.hasError("title") ? "text-danger" : "d-none"}
+                errorMsg={"Please enter a valid release date"}
+              />
+
+              <Input
+                title={"Runtime"}
+                type={"text"}
+                name={"runtime"}
+                value={movie.runtime}
+                handleChange={this.handleChange}
+                className={this.hasError("title") ? "is-invalid" : ""}
+                errorDiv={this.hasError("title") ? "text-danger" : "d-none"}
+                errorMsg={"Please enter a valid runtime"}
+              />
+
+              <Select
+                title={"MPAA Rating"}
+                name={"mpaa_rating"}
+                value={movie.mpaa_rating}
+                handleChange={this.handleChange}
+                placeholder="Choose..."
+                options={this.state.mpaa_options}
+              />
+
+              <Input
+                title={"Rating"}
+                type={"text"}
+                name={"rating"}
+                value={movie.rating}
+                handleChange={this.handleChange}
+              />
+
+              <TextArea
+                title={"Description"}
+                name={"description"}
+                value={movie.description}
+                handleChange={this.handleChange}
+                className={this.hasError("title") ? "is-invalid" : ""}
+                errorDiv={this.hasError("title") ? "text-danger" : "d-none"}
+                errorMsg={"Please enter a description"}
+              />
 
               <hr />
 
@@ -139,7 +231,7 @@ export default class AddOrEditMovie extends Component {
       } else {
         return (
           <Fragment>
-            <p>{error.message}</p>
+            <p>{loadingError.message}</p>
           </Fragment>
         );
       }
