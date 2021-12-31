@@ -6,6 +6,64 @@ import (
 	"time"
 )
 
+// InsertMovie is the func to create a single movie
+func (m *DBModel) InsertMovie(movie Movie) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	stmt := `insert into movies(title, description, year, release_date, rating, runtime, mpaa_rating, created_at, updated_at)
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id`
+	row := m.DB.QueryRowContext(ctx, stmt,
+		movie.Title,
+		movie.Description,
+		movie.Year,
+		movie.ReleaseDate,
+		movie.Rating,
+		movie.Runtime,
+		movie.MPAARating,
+		time.Now(),
+		time.Now(),
+	)
+
+	var newID int
+	if err := row.Scan(&newID); err != nil {
+		return newID, err
+	}
+
+	return newID, nil
+}
+
+// InsertMovie is the func to create a single movie
+func (m *DBModel) UpdateMovie(movie Movie) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	stmt := `update movies set
+    title = $1,
+    description = $2,
+    year = $3,
+    release_date = $4,
+    rating = $5,
+    runtime = $6,
+    mpaa_rating = $7,
+    updated_at = $8 where id = $9`
+	_, err := m.DB.ExecContext(ctx, stmt,
+		movie.Title,
+		movie.Description,
+		movie.Year,
+		movie.ReleaseDate,
+		movie.Rating,
+		movie.Runtime,
+		movie.MPAARating,
+		time.Now(),
+		movie.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetMovieByID is the func to get a single movie
 func (m *DBModel) GetMovieByID(id int) (*Movie, error) {
 	var movie Movie

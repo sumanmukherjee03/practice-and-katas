@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -110,7 +109,11 @@ func (app *application) editMovie(w http.ResponseWriter, r *http.Request) {
 		}
 		movie.ID = newID
 	} else {
-		fmt.Println("Update movie here")
+		err := app.models.DB.UpdateMovie(movie)
+		if err != nil {
+			app.serverErrorJSON(w, err)
+			return
+		}
 	}
 
 	if err := app.writeJSON(w, http.StatusOK, movie, "movie"); err != nil {

@@ -26,6 +26,7 @@ export default class AddOrEditMovie extends Component {
       },
       isLoaded: false,
       loadingError: null,
+      submitError: null,
       errors: [],
     };
 
@@ -67,9 +68,34 @@ export default class AddOrEditMovie extends Component {
       body: JSON.stringify(payload),
     }
     fetch("http://localhost:4000/v1/admin/movie/edit", reqOptions)
-      .then(response => (response.json()))
-      .then((respData) => {
-        console.log(respData);
+      .then((response) => {
+        let status = parseInt(response.status);
+        if (status >= 400) {
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.indexOf("application/json") < 0) {
+            return response.text()
+              .then(() => ({error_type: "ERROR", message: "Encountered an error with status code - " + status }))
+              .then(Promise.reject.bind(Promise));
+          } else {
+            return response.json()
+              .then((result) => result.error)
+              .then(Promise.reject.bind(Promise));
+          }
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // This is the success callback based on the returned http status
+        this.setState({
+          movie: data.movie,
+          isLoaded: true
+        });
+      }, (error) => {
+        // This is the error callback based on the returned http status
+        this.setState({
+          isLoaded: true,
+          submitError: error,
+        });
       });
   }
 
@@ -221,11 +247,11 @@ export default class AddOrEditMovie extends Component {
             </form>
 
             {/*
-          One easy way to visualize the current state is via this :
-              <div className="mt-3">
-                <pre>{JSON.stringify(this.state, null, 3)}</pre>
-              </div>
-              */}
+              One easy way to visualize the current state is via this :
+                  <div className="mt-3">
+                    <pre>{JSON.stringify(this.state, null, 3)}</pre>
+                  </div>
+            */}
           </Fragment>
         );
       } else {
