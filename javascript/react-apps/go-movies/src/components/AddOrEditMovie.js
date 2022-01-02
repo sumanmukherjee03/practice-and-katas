@@ -3,6 +3,7 @@ import './AddOrEditMovie.css';
 import Input from './form-components/Input';
 import Select from './form-components/Select';
 import TextArea from './form-components/TextArea';
+import Alert from './ui-components/Alert';
 
 export default class AddOrEditMovie extends Component {
   constructor(props) {
@@ -26,7 +27,10 @@ export default class AddOrEditMovie extends Component {
       },
       isLoaded: false,
       loadingError: null,
-      submitError: null,
+      alert: {
+        type: "d-none",
+        message: "",
+      },
       errors: [],
     };
 
@@ -88,13 +92,21 @@ export default class AddOrEditMovie extends Component {
         // This is the success callback based on the returned http status
         this.setState({
           movie: data.movie,
-          isLoaded: true
+          isLoaded: true,
+          alert: {
+            type: "alert-success",
+            message: "Successfully submitted data to the backend",
+          },
         });
       }, (error) => {
         // This is the error callback based on the returned http status
+        const errorMsg = error.error_type + " : " + error.message;
         this.setState({
           isLoaded: true,
-          submitError: error,
+          alert: {
+            type: "alert-danger",
+            message: errorMsg,
+          },
         });
       });
   }
@@ -163,7 +175,7 @@ export default class AddOrEditMovie extends Component {
 
   render() {
     // Easy way to multi assign values from map
-    const {movie, isLoaded, loadingError} = this.state;
+    const {movie, isLoaded, loadingError, alert} = this.state;
 
     if (!isLoaded) {
       return (
@@ -176,6 +188,7 @@ export default class AddOrEditMovie extends Component {
         return (
           <Fragment>
             <h2>Add/Edit Movie</h2>
+            <Alert alertType={alert.type} alertMessage={alert.message} />
             <hr />
             {/* Note : We arent using a method post on the form because we want the post to be controlled by React */}
             <form onSubmit={this.handleSubmit}>
