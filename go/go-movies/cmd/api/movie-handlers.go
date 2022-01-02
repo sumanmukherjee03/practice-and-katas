@@ -21,6 +21,12 @@ type MoviePayload struct {
 	MPAARating  string `json:"mpaa_rating"`
 }
 
+type DeleteMovieResponseJson struct {
+	ID      int    `json:"id"`
+	Status  string `json:"Status"`
+	Message string `json:"message"`
+}
+
 func (app *application) getOneMovie(w http.ResponseWriter, r *http.Request) {
 	id, err := app.getIdFromUrlParams(w, r)
 	if err != nil {
@@ -66,7 +72,14 @@ func (app *application) editMovie(w http.ResponseWriter, r *http.Request) {
 			app.badRequestErrorJSON(w, err)
 			return
 		}
-		movie.ID = movieID
+		if movieID > 0 {
+			m, err := app.models.DB.GetMovieByID(movieID)
+			if err != nil {
+				app.entityNotFoundErrorJSON(w, err)
+				return
+			}
+			movie = *m
+		}
 	}
 
 	if len(payload.Runtime) > 0 {
@@ -123,6 +136,30 @@ func (app *application) editMovie(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) deleteMovie(w http.ResponseWriter, r *http.Request) {
+	id, err := app.getIdFromUrlParams(w, r)
+	if err != nil {
+		app.badRequestErrorJSON(w, err)
+		return
+	}
+	movie, err := app.models.DB.GetMovieByID(id)
+	if err != nil {
+		app.entityNotFoundErrorJSON(w, err)
+		return
+	}
+	err = app.models.DB.DeleteMovie(movie.ID)
+	if err != nil {
+		app.serverErrorJSON(w, err)
+		return
+	}
+	resp := DeleteMovieResponseJson{
+		ID:      id,
+		Status:  "OK",
+		Message: "Successfully deleted the movie from the database",
+	}
+	if err = app.writeJSON(w, http.StatusOK, resp, "delete_response"); err != nil {
+		app.serverErrorJSON(w, err)
+		return
+	}
 }
 
 func (app *application) searchMovies(w http.ResponseWriter, r *http.Request) {

@@ -1,4 +1,7 @@
 import React, { Component, Fragment } from 'react';
+import { confirmAlert } from 'react-confirm-alert';
+import 'react-confirm-alert/src/react-confirm-alert.css';
+import { Link } from 'react-router-dom';
 import './AddOrEditMovie.css';
 import Input from './form-components/Input';
 import Select from './form-components/Select';
@@ -37,6 +40,8 @@ export default class AddOrEditMovie extends Component {
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.hasError = this.hasError.bind(this);
+    this.handleDelete = this.handleDelete.bind(this);
+    this.confirmDelete = this.confirmDelete.bind(this);
   }
 
   handleSubmit = (ev) => {
@@ -92,17 +97,15 @@ export default class AddOrEditMovie extends Component {
         // This is the success callback based on the returned http status
         this.setState({
           movie: data.movie,
-          isLoaded: true,
           alert: {
             type: "alert-success",
-            message: "Successfully submitted data to the backend",
+            message: "Successfully saved movie",
           },
         });
       }, (error) => {
         // This is the error callback based on the returned http status
         const errorMsg = error.error_type + " : " + error.message;
         this.setState({
-          isLoaded: true,
           alert: {
             type: "alert-danger",
             message: errorMsg,
@@ -171,7 +174,63 @@ export default class AddOrEditMovie extends Component {
     } else {
       this.setState({isLoaded: true})
     }
+  };
+
+  handleDelete = () => {
+    const id = this.props.match.params.id;
+    fetch(`http://localhost:4000/v1/admin/movie/${id}/delete`, {method: "DELETE"})
+      .then((response) => {
+        let status = parseInt(response.status);
+        if (status >= 400) {
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.indexOf("application/json") < 0) {
+            return response.text()
+              .then(() => ({error_type: "ERROR", message: "Encountered an error with status code - " + status }))
+              .then(Promise.reject.bind(Promise));
+          } else {
+            return response.json()
+              .then((result) => result.error)
+              .then(Promise.reject.bind(Promise));
+          }
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // This is the success callback based on the returned http status
+        this.setState({
+          alert: {
+            type: "alert-success",
+            message: "Successfully deleted movie",
+          },
+        });
+      }, (error) => {
+        // This is the error callback based on the returned http status
+        const errorMsg = error.error_type + " : " + error.message;
+        this.setState({
+          alert: {
+            type: "alert-danger",
+            message: errorMsg,
+          },
+        });
+      });
   }
+
+  confirmDelete = (ev) => {
+    confirmAlert({
+      title: 'Delete movie',
+      message: 'Are you sure you want to proceed with the delete?',
+      buttons: [
+        {
+          label: 'Yes',
+          onClick: () => this.handleDelete()
+        },
+        {
+          label: 'No',
+          onClick: () => console.log("Traitor - you escaped this time")
+        }
+      ]
+    });
+  };
 
   render() {
     // Easy way to multi assign values from map
@@ -257,6 +316,12 @@ export default class AddOrEditMovie extends Component {
               <hr />
 
               <button className="btn btn-primary">Save</button>
+              <Link to="/admin" className="btn btn-warning ms-1">Cancel</Link>
+
+              {/* NOTICE the way conditional rendering is being done in React. Also, note that we arent using the Link tag. Instead using the "a" tag. */}
+              {movie.id > 0 && (
+                <a href="#!" onClick={() => this.confirmDelete()} className="btn btn-danger ms-1">Delete</a>
+              )}
             </form>
 
             {/*

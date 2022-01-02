@@ -32,7 +32,7 @@ func (m *DBModel) InsertMovie(movie Movie) (int, error) {
 	return newID, nil
 }
 
-// InsertMovie is the func to create a single movie
+// UpdateMovie is the func to create a single movie
 func (m *DBModel) UpdateMovie(movie Movie) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -61,6 +61,18 @@ func (m *DBModel) UpdateMovie(movie Movie) error {
 		return err
 	}
 
+	return nil
+}
+
+// DeleteMovie deletes a movie from the database
+func (m *DBModel) DeleteMovie(id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	stmt := `DELETE FROM movies WHERE id = $1`
+	_, err := m.DB.ExecContext(ctx, stmt, id)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
