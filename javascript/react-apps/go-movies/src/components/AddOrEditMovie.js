@@ -95,12 +95,10 @@ export default class AddOrEditMovie extends Component {
       })
       .then((data) => {
         // This is the success callback based on the returned http status
-        this.setState({
-          movie: data.movie,
-          alert: {
-            type: "alert-success",
-            message: "Successfully saved movie",
-          },
+        // NOTICE here how we are redirecting the user to a different screen - the manage catalogue screen.
+        // This is how we do redirects in a single page app.
+        this.props.history.push({
+          pathname: "/admin",
         });
       }, (error) => {
         // This is the error callback based on the returned http status
@@ -197,11 +195,10 @@ export default class AddOrEditMovie extends Component {
       })
       .then((data) => {
         // This is the success callback based on the returned http status
-        this.setState({
-          alert: {
-            type: "alert-success",
-            message: "Successfully deleted movie",
-          },
+        // NOTICE here how we are redirecting the user to a different screen - the manage catalogue screen.
+        // This is how we do redirects in a single page app.
+        this.props.history.push({
+          pathname: "/admin",
         });
       }, (error) => {
         // This is the error callback based on the returned http status
