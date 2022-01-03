@@ -36,6 +36,15 @@ func (app *application) badRequestErrorJSON(w http.ResponseWriter, err error) {
 	app.writeJSON(w, http.StatusBadRequest, e, "error")
 }
 
+func (app *application) authorizationErrorJSON(w http.ResponseWriter, err error) {
+	e := jsonError{
+		ErrorType: "AUTHORIZATION_ERROR",
+		Message:   fmt.Sprintf("ERROR : %v", err),
+	}
+	app.logger.Print(e)
+	app.writeJSON(w, http.StatusBadRequest, e, "error")
+}
+
 func (app *application) entityNotFoundErrorJSON(w http.ResponseWriter, err error) {
 	e := jsonError{
 		ErrorType: "NOT_FOUND_ERROR",

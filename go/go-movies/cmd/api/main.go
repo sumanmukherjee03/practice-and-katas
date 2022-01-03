@@ -26,6 +26,9 @@ type config struct {
 	db   struct {
 		dsn string
 	}
+	jwt struct {
+		secret string
+	}
 }
 
 // We are gonna use an instance of this type as a receiver in various other parts of our application
@@ -46,6 +49,11 @@ func main() {
 	flag.StringVar(&dbPassword, "db-password", "", "application db password")
 	flag.StringVar(&dbHost, "db-host", "localhost", "application db host")
 	flag.StringVar(&dbName, "db-name", "go_movies", "application db name")
+
+	// The secret value comes from the go-playground link : https://go.dev/play/p/s8KlqJIOWej
+	// It's basically a hashed secret generated from the word - "secret"
+	flag.StringVar(&cfg.jwt.secret, "jwt-secret", "2dce505d96a53c5768052ee90f3df2055657518dad489160df9913f66042e160", "application jwt secret")
+
 	flag.Parse()
 
 	dsn = fmt.Sprintf("postgres://%s@%s/%s?sslmode=disable", dbUser, dbHost, dbName)

@@ -58,3 +58,12 @@ type MovieGenre struct {
 	Genre     Genre     `json:"genre"`
 	Movie     Movie     `json:"movie"`
 }
+
+// User is the type for an user of the website
+type User struct {
+	ID        int    `json:"id"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Password  string `json:"password"` // The hashed password value
+}
