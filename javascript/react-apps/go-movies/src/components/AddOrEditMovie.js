@@ -71,11 +71,18 @@ export default class AddOrEditMovie extends Component {
     const data = new FormData(ev.target);
     // Then convert the form data into a javascript object
     const payload = Object.fromEntries(data.entries());
+    // Add request headers for authentication
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Authorization", "Bearer " + this.props.jwt);
+
     // For POST requests use this request options, so that it can be passed to the fetch call
     const reqOptions = {
       method: 'POST',
       body: JSON.stringify(payload),
-    }
+      headers: headers,
+    };
+
     fetch("http://localhost:4000/v1/admin/movie/edit", reqOptions)
       .then((response) => {
         let status = parseInt(response.status);

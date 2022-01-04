@@ -113,8 +113,8 @@ export default class App extends Component {
 
               <Route exact path="/genre/:id" component={OneGenre} />
 
-              {/* When adding a movie, the id would be 0 and when editing a movie it will have a proper id. */}
-              <Route path="/admin/movie/:id" component={AddOrEditMovie} />
+              {/* When adding a movie, the id would be 0 in this path and when editing a movie it will have a proper id. */}
+              <Route path="/admin/movie/:id" component={(props) => <AddOrEditMovie {...props} jwt={this.state.jwt} />} />
 
               <Route path="/admin">
                 <Admin />
