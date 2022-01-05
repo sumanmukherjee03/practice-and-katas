@@ -27,6 +27,21 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data interf
 	return nil
 }
 
+// errorJSON is a function to return a generic error based on a http status. It is a variadic function since it can take multiple status codes.
+// This makes it an easy way to refactor code, since you can choose to pass 0 or more status codes when invoking this function
+func (app *application) errorJSON(w http.ResponseWriter, err error, status ...int) {
+	statusCode := http.StatusBadRequest
+	if len(status) > 0 {
+		statusCode = status[0]
+	}
+	e := jsonError{
+		ErrorType: "ERROR",
+		Message:   fmt.Sprintf("ERROR : %v", err),
+	}
+	app.logger.Print(e)
+	app.writeJSON(w, statusCode, e, "error")
+}
+
 func (app *application) badRequestErrorJSON(w http.ResponseWriter, err error) {
 	e := jsonError{
 		ErrorType: "BAD_REQUEST_ERROR",
@@ -42,7 +57,7 @@ func (app *application) authorizationErrorJSON(w http.ResponseWriter, err error)
 		Message:   fmt.Sprintf("ERROR : %v", err),
 	}
 	app.logger.Print(e)
-	app.writeJSON(w, http.StatusBadRequest, e, "error")
+	app.writeJSON(w, http.StatusForbidden, e, "error")
 }
 
 func (app *application) entityNotFoundErrorJSON(w http.ResponseWriter, err error) {

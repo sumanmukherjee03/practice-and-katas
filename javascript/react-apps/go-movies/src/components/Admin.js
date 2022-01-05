@@ -15,6 +15,15 @@ export default class Admin extends Component {
   // Also, see this link for the details on lifecycle - https://reactjs.org/docs/react-component.html
   // There are some other lifecycle methods - componentDidMount, componentDidUpdate, componentWillUnmount
   componentDidMount() {
+    // This is to redirect if the user is not logged in
+    // DO NOT use componentWillMount lifecycle hook for doing this because that is getting deprecated.
+    if (this.props.jwt.length === 0) {
+      this.props.history.push({
+        pathname: "/login",
+      });
+      return;
+    }
+
     fetch("http://localhost:4000/v1/movies")
       .then((response) => {
         let status = parseInt(response.status);

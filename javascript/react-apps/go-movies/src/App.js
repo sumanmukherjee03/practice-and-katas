@@ -24,8 +24,20 @@ export default class App extends Component {
   };
 
   logout = () => {
+    // Remove the jwt token from the state
     this.setState({jwt: ""});
+    // Remove the jwt token from the localStorage
+    window.localStorage.removeItem("jwt");
   };
+
+  componentDidMount() {
+    // If there is a valid jwt token in localStorage and the jwt token in the current state is empty
+    // then pull it out of localStorage and set it
+    const token = JSON.parse(window.localStorage.getItem("jwt"));
+    if (token && token.length > 0 && this.state.jwt.length === 0) {
+      this.setState({jwt: token});
+    }
+  }
 
   render() {
     let loginLink;
@@ -116,9 +128,7 @@ export default class App extends Component {
               {/* When adding a movie, the id would be 0 in this path and when editing a movie it will have a proper id. */}
               <Route path="/admin/movie/:id" component={(props) => <AddOrEditMovie {...props} jwt={this.state.jwt} />} />
 
-              <Route path="/admin">
-                <Admin />
-              </Route>
+              <Route path="/admin" component={(props) => <Admin {...props} jwt={this.state.jwt} />} />
 
               {/*
                 This is an example of the react router rendering a component with properties passed to the component.

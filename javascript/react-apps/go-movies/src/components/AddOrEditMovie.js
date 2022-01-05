@@ -140,6 +140,15 @@ export default class AddOrEditMovie extends Component {
   }
 
   componentDidMount() {
+    // This is to redirect if the user is not logged in
+    // DO NOT use componentWillMount lifecycle hook for doing this because that is getting deprecated.
+    if (this.props.jwt.length === 0) {
+      this.props.history.push({
+        pathname: "/login",
+      });
+      return;
+    }
+
     const id = this.props.match.params.id;
     if (id > 0) {
       // Notice how we retrieve the id from the url.
@@ -183,7 +192,18 @@ export default class AddOrEditMovie extends Component {
 
   handleDelete = () => {
     const id = this.props.match.params.id;
-    fetch(`http://localhost:4000/v1/admin/movie/${id}/delete`, {method: "DELETE"})
+
+    // Add request headers for authentication
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Authorization", "Bearer " + this.props.jwt);
+
+    const reqOpts = {
+      method: 'DELETE',
+      headers: headers,
+    };
+
+    fetch(`http://localhost:4000/v1/admin/movie/${id}/delete`, reqOpts)
       .then((response) => {
         let status = parseInt(response.status);
         if (status >= 400) {

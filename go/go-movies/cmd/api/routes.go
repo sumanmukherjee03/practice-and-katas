@@ -13,9 +13,8 @@ import (
 func (app *application) wrapMiddleware(next http.Handler) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		// Add query parameters to the request context so that they are available upstream in the application http handlers
-		ctx := context.WithValue(r.Context(), "params", params)
-		reqWithCtx := r.WithContext(ctx)
-		next.ServeHTTP(w, reqWithCtx)
+		ctx := context.WithValue(r.Context(), httprouter.ParamsKey, params)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 }
 
@@ -40,12 +39,12 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/genre/:id/movies", app.getAllMoviesByGenre)
 	router.HandlerFunc(http.MethodGet, "/v1/genres", app.getAllGenres)
 
-	// Previously the route used to look like this
+	// Previously the routes used to look like this
 	//     router.HandlerFunc(http.MethodPost, "/v1/admin/movie/edit", app.editMovie)
+	//     router.HandlerFunc(http.MethodDelete, "/v1/admin/movie/:id/delete", app.deleteMovie)
 	// But we are changing the declaration of that same route slightly so that we can use the middleware chaining
 	router.POST("/v1/admin/movie/edit", app.wrapMiddleware(secure.ThenFunc(app.editMovie)))
-
-	router.HandlerFunc(http.MethodDelete, "/v1/admin/movie/:id/delete", app.deleteMovie)
+	router.DELETE("/v1/admin/movie/:id/delete", app.wrapMiddleware(secure.ThenFunc(app.deleteMovie)))
 
 	return app.enableCORS(router)
 }

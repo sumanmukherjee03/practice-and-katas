@@ -87,7 +87,13 @@ export default class Login extends Component {
       })
       .then((data) => {
         // This is the success callback based on the returned http status
-        this.handleJwtChange(data.response);
+        const token = data.response;
+        // Call the handleJwtChange func for this component which will in turn populate
+        // the jwt token in the state of the parent component, ie App
+        this.handleJwtChange(token);
+        // Store the login information, ie the token in localStorage
+        // We could have also used a cookie, but most modern browsers have localStorage now a days
+        window.localStorage.setItem("jwt", JSON.stringify(token));
         // NOTICE here how we are redirecting the user to a different screen - the manage catalogue screen.
         // This is how we do redirects in a single page app.
         this.props.history.push({
