@@ -31,6 +31,8 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/status", app.statusHandler)
 
+	router.HandlerFunc(http.MethodPost, "/v1/graphql/movies", app.moviesGraphQL)
+
 	router.HandlerFunc(http.MethodPost, "/v1/signin", app.signin)
 
 	router.HandlerFunc(http.MethodGet, "/v1/movie/:id", app.getOneMovie)
