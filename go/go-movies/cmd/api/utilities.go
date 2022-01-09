@@ -15,9 +15,15 @@ type jsonError struct {
 }
 
 func (app *application) writeJSON(w http.ResponseWriter, status int, data interface{}, wrap string) error {
-	wrapper := make(map[string]interface{})
-	wrapper[wrap] = data
-	jsonData, err := json.Marshal(wrapper)
+	var jsonData []byte
+	var err error
+	if len(wrap) > 0 {
+		wrapper := make(map[string]interface{})
+		wrapper[wrap] = data
+		jsonData, err = json.Marshal(wrapper)
+	} else {
+		jsonData, err = json.Marshal(data)
+	}
 	if err != nil {
 		return fmt.Errorf("ERROR : Could not marshal json responding to http request - %v", err)
 	}

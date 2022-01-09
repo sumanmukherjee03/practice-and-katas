@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Link, Route, Switch } from 'react-router-dom';
 import AddOrEditMovie from './components/AddOrEditMovie';
 import Admin from './components/Admin';
 import Genres from './components/Genres';
+import Graphql from './components/Graphql';
 import Home from './components/Home';
 import Login from './components/Login';
 import Movies from './components/Movies';
@@ -93,6 +94,10 @@ export default class App extends Component {
                     </Fragment>
                   )}
 
+                  <li className="list-group-item">
+                    <Link to="/graphql">Graphql</Link>
+                  </li>
+
                 </ul>
               </nav>
             </div>
@@ -109,6 +114,10 @@ export default class App extends Component {
               {/* Note the use of keyword `exact` here in route matching. It is used because the order matters in react router */}
               <Route exact path="/genres">
                 <Genres />
+              </Route>
+
+              <Route exact path="/graphql">
+                <Graphql />
               </Route>
 
               {
