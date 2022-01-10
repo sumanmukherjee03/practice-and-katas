@@ -2,7 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -114,6 +118,10 @@ func (app *application) editMovie(w http.ResponseWriter, r *http.Request) {
 	movie.Description = payload.Description
 	movie.MPAARating = payload.MPAARating
 
+	if len(movie.Poster) == 0 {
+		app.getPoster(&movie)
+	}
+
 	if movie.ID == 0 {
 		newID, err := app.models.DB.InsertMovie(movie)
 		if err != nil {
@@ -162,5 +170,69 @@ func (app *application) deleteMovie(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) searchMovies(w http.ResponseWriter, r *http.Request) {
+////////////////////////////// HELPER FUNCS ////////////////////////////////////
+
+func (app *application) getPoster(movie *models.Movie) {
+	// type to receive the response of themoviedb api call
+	// NOTE : You can get this if you copy the result of an API call from themoviedb.org into https://mholt.github.io/json-to-go/
+	// And the api call can be done from the browser using : https://api.themoviedb.org/3/search/movie?api_key=<key>&query=The%20Shawshank%20Redemption
+	type TheMovieDBResp struct {
+		Page    int `json:"page"`
+		Results []struct {
+			Adult            bool    `json:"adult"`
+			BackdropPath     string  `json:"backdrop_path"`
+			GenreIds         []int   `json:"genre_ids"`
+			ID               int     `json:"id"`
+			OriginalLanguage string  `json:"original_language"`
+			OriginalTitle    string  `json:"original_title"`
+			Overview         string  `json:"overview"`
+			Popularity       float64 `json:"popularity"`
+			PosterPath       string  `json:"poster_path"`
+			ReleaseDate      string  `json:"release_date"`
+			Title            string  `json:"title"`
+			Video            bool    `json:"video"`
+			VoteAverage      float64 `json:"vote_average"`
+			VoteCount        int     `json:"vote_count"`
+		} `json:"results"`
+		TotalPages   int `json:"total_pages"`
+		TotalResults int `json:"total_results"`
+	}
+
+	client := &http.Client{}
+	apiURL := "https://api.themoviedb.org/3/search/movie?api_key="
+	movieTitle := url.QueryEscape(movie.Title)
+	req, err := http.NewRequest("GET", apiURL+app.config.themoviedb.apikey+"&query="+movieTitle, nil)
+	if err != nil {
+		// If you encounter an error then dont fail - simply return and carry on
+		log.Println(fmt.Sprintf("ERROR : Encountered an error making a new request to themoviedb.org to get movie poster - %v", err))
+		return
+	}
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		// If you receive an error response then dont fail - simply return and carry on
+		log.Println(fmt.Sprintf("ERROR : Encountered an error response from themoviedb.org while getting a movie poster - %v", err))
+		return
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		// If you receive an error response then dont fail - simply return and carry on
+		log.Println(fmt.Sprintf("ERROR : Encountered an error reading the body of response received from themoviedb.org while getting a movie poster - %v", err))
+		return
+	}
+	var respObj TheMovieDBResp
+	err = json.Unmarshal(bodyBytes, &respObj)
+	if err != nil {
+		// If you receive an error response then dont fail - simply return and carry on
+		log.Println(fmt.Sprintf("ERROR : Encountered an error unmarshaling the body of response received from themoviedb.org while getting a movie poster - %v", err))
+		return
+	}
+
+	if len(respObj.Results) > 0 {
+		movie.Poster = respObj.Results[0].PosterPath
+	}
 }

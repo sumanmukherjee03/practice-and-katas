@@ -34,8 +34,9 @@ type Movie struct {
 	Runtime     int            `json:"runtime"`
 	Rating      int            `json:"rating"`
 	MPAARating  string         `json:"mpaa_rating"`
-	CreatedAt   time.Time      `json:"-"` // Ignore this field in json for the time being
-	UpdatedAt   time.Time      `json:"-"` // Ignore this field in json for the time being
+	CreatedAt   time.Time      `json:"created_at"` // Use `json:"-"` to ignore this field in json
+	UpdatedAt   time.Time      `json:"updated_at"` // Use `json:"-"` to ignore this field in json
+	Poster      string         `json:"string"`
 	MovieGenres map[int]string `json:"movie_genres"`
 }
 

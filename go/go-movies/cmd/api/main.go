@@ -29,6 +29,9 @@ type config struct {
 	jwt struct {
 		secret string
 	}
+	themoviedb struct {
+		apikey string
+	}
 }
 
 // We are gonna use an instance of this type as a receiver in various other parts of our application
@@ -41,7 +44,7 @@ type application struct {
 
 func main() {
 	var cfg config
-	var dbUser, dbPassword, dbHost, dbName, dsn, movieDbApiKey string
+	var dbUser, dbPassword, dbHost, dbName, dsn string
 
 	flag.IntVar(&cfg.port, "port", 4000, "server port to listen on")
 	flag.StringVar(&cfg.env, "env", "development", "application development environment")
@@ -49,7 +52,7 @@ func main() {
 	flag.StringVar(&dbPassword, "db-password", "", "application db password")
 	flag.StringVar(&dbHost, "db-host", "localhost", "application db host")
 	flag.StringVar(&dbName, "db-name", "go_movies", "application db name")
-	flag.StringVar(&movieDbApiKey, "movie-db-api-key", "", "api key for themoviedb.org")
+	flag.StringVar(&cfg.themoviedb.apikey, "the-movie-db-api-key", "", "api key for themoviedb.org")
 
 	// The secret value comes from the go-playground link : https://go.dev/play/p/s8KlqJIOWej
 	// It's basically a hashed secret generated from the word - "secret"

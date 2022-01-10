@@ -10,8 +10,8 @@ import (
 func (m *DBModel) InsertMovie(movie Movie) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	stmt := `insert into movies(title, description, year, release_date, rating, runtime, mpaa_rating, created_at, updated_at)
-    values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id`
+	stmt := `insert into movies(title, description, year, release_date, rating, runtime, mpaa_rating, created_at, updated_at, poster)
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning id`
 	row := m.DB.QueryRowContext(ctx, stmt,
 		movie.Title,
 		movie.Description,
@@ -22,6 +22,7 @@ func (m *DBModel) InsertMovie(movie Movie) (int, error) {
 		movie.MPAARating,
 		time.Now(),
 		time.Now(),
+		movie.Poster,
 	)
 
 	var newID int
@@ -44,7 +45,8 @@ func (m *DBModel) UpdateMovie(movie Movie) error {
     rating = $5,
     runtime = $6,
     mpaa_rating = $7,
-    updated_at = $8 where id = $9`
+    updated_at = $8,
+    poster = $9 where id = $10`
 	_, err := m.DB.ExecContext(ctx, stmt,
 		movie.Title,
 		movie.Description,
@@ -54,6 +56,7 @@ func (m *DBModel) UpdateMovie(movie Movie) error {
 		movie.Runtime,
 		movie.MPAARating,
 		time.Now(),
+		movie.Poster,
 		movie.ID,
 	)
 
@@ -81,7 +84,8 @@ func (m *DBModel) GetMovieByID(id int) (*Movie, error) {
 	var movie Movie
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	query := `select id, title, description, year, release_date, rating, runtime, mpaa_rating, created_at, updated_at
+	// Look at the use of coalesce function here to avoid having to dealing with null results in the rows for movie.Poster field
+	query := `select id, title, description, year, release_date, rating, runtime, mpaa_rating, created_at, updated_at, coalesce(poster, '')
     from movies
     where id = $1`
 	row := m.DB.QueryRowContext(ctx, query, id)
@@ -96,6 +100,7 @@ func (m *DBModel) GetMovieByID(id int) (*Movie, error) {
 		&movie.MPAARating,
 		&movie.CreatedAt,
 		&movie.UpdatedAt,
+		&movie.Poster,
 	)
 	if err != nil {
 		return nil, err
@@ -124,7 +129,7 @@ func (m *DBModel) GetAllMovies(genre ...int) ([]*Movie, error) {
 		where = fmt.Sprintf("where id in (select movie_id from movies_genres where genre_id = %d)", genre[0])
 	}
 
-	query := fmt.Sprintf(`select id, title, description, year, release_date, rating, runtime, mpaa_rating, created_at, updated_at
+	query := fmt.Sprintf(`select id, title, description, year, release_date, rating, runtime, mpaa_rating, created_at, updated_at, coalesce(poster, '')
     from movies %s order by title`, where)
 
 	rows, err := m.DB.QueryContext(ctx, query)
@@ -146,6 +151,7 @@ func (m *DBModel) GetAllMovies(genre ...int) ([]*Movie, error) {
 			&movie.MPAARating,
 			&movie.CreatedAt,
 			&movie.UpdatedAt,
+			&movie.Poster,
 		)
 		if err != nil {
 			return movies, err
