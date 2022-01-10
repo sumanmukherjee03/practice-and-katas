@@ -93,7 +93,7 @@ var (
 					Type: graphql.Int,
 				},
 				"mpaa_rating": &graphql.Field{
-					Type: graphql.Int,
+					Type: graphql.String,
 				},
 				"created_at": &graphql.Field{
 					Type: graphql.DateTime,

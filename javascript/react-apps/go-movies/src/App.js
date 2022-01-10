@@ -9,6 +9,7 @@ import Login from './components/Login';
 import Movies from './components/Movies';
 import OneGenre from './components/OneGenre';
 import OneMovie from './components/OneMovie';
+import OneMovieGraphql from './components/OneMovieGraphql';
 
 export default class App extends Component {
   constructor(props) {
@@ -105,6 +106,7 @@ export default class App extends Component {
             <Switch>
               {/* This is an example of the react router rendering a component */}
               <Route path="/movies/:id" component={OneMovie} />
+              <Route path="/graphql/movies/:id" component={OneMovieGraphql} />
 
               {/* This is another example of the react router rendering a component */}
               <Route path="/movies">

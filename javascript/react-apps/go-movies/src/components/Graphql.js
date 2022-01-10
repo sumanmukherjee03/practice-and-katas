@@ -186,7 +186,7 @@ export default class Graphql extends Component {
             <div className="list-group">
               {/* Note the syntax of javascript templating here */}
               {movies.map((m) => (
-                <Link key={m.id} to={`/movies/${m.id}`} className="list-group-item list-group-item-action">{m.title}</Link>
+                <Link key={m.id} to={`/graphql/movies/${m.id}`} className="list-group-item list-group-item-action">{m.title}</Link>
               ))}
             </div>
           </Fragment>

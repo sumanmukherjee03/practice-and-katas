@@ -4,3 +4,8 @@ To dump the database seed file first create the DB called `go_movies`. Then from
 ```
 psql -h localhost -U root -d go_movies -f go_movies.sql
 ```
+
+To start the application
+```
+go run cmd/api/*.go --db-password <db_password>
+```
