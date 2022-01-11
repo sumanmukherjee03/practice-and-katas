@@ -16,3 +16,8 @@ go run cmd/api/*.go --db-password <db_password> --the-movie-db-api-key=c79fd5e65
 Also, start the npm server using `npm start` from the javascript react app.
 
 Log into the UI using - john.doe@example.org/password
+
+To build the code for production use the example command below
+```
+env GOOS=linux GOARCH=amd64 go build -o gomovies ./cmd/api
+```
