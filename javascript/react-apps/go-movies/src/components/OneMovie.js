@@ -6,7 +6,7 @@ export default class OneMovie extends Component {
   componentDidMount() {
     // Notice how we retrieve the id from the url.
     // The react router makes it available to us with the property called match.
-    fetch("http://localhost:4000/v1/movie/"+this.props.match.params.id)
+    fetch(`${process.env.REACT_APP_API_URL}/v1/movie/`+this.props.match.params.id)
       .then((response) => {
         const status = parseInt(response.status);
         if (status >= 400) {

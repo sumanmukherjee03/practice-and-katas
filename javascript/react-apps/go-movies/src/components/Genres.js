@@ -11,7 +11,7 @@ export default class Genres extends Component {
   // Also, see this link for the details on lifecycle - https://reactjs.org/docs/react-component.html
   // There are some other lifecycle methods - componentDidMount, componentDidUpdate, componentWillUnmount
   componentDidMount() {
-    fetch("http://localhost:4000/v1/genres")
+    fetch(`${process.env.REACT_APP_API_URL}/v1/genres`)
       .then((response) => {
         let status = parseInt(response.status);
         if (status >= 400) {

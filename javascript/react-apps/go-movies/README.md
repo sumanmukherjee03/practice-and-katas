@@ -9,6 +9,15 @@ For the react router install
 npm install react-router-dom@v5.3.0
 ```
 
+## Env Vars
+
+Env vars that start with `REACT_APP_` are visible inside the react apps. It's the convention.
+So, `REACT_APP_API_URL='http://localhost:4000' npm start`
+That way, you can use the env var inside the react code in backticks.
+
+Remember, these env vars are substituted at build time. So, when building the app make sure you pass it the
+production env var, so that a prod specific build is generated.
+
 ## Available Scripts
 
 In the project directory, you can run:

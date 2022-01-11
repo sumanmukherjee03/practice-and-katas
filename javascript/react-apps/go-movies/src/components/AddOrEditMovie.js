@@ -83,7 +83,7 @@ export default class AddOrEditMovie extends Component {
       headers: headers,
     };
 
-    fetch("http://localhost:4000/v1/admin/movie/edit", reqOptions)
+    fetch(`${process.env.REACT_APP_API_URL}/v1/admin/movie/edit`, reqOptions)
       .then((response) => {
         let status = parseInt(response.status);
         if (status >= 400) {
@@ -153,7 +153,7 @@ export default class AddOrEditMovie extends Component {
     if (id > 0) {
       // Notice how we retrieve the id from the url.
       // The react router makes it available to us with the property called match.
-      fetch("http://localhost:4000/v1/movie/"+id)
+      fetch(`${process.env.REACT_APP_API_URL}/v1/movie/`+id)
         .then((response) => {
           const status = parseInt(response.status);
           if (status >= 400) {
@@ -203,7 +203,7 @@ export default class AddOrEditMovie extends Component {
       headers: headers,
     };
 
-    fetch(`http://localhost:4000/v1/admin/movie/${id}/delete`, reqOpts)
+    fetch(`${process.env.REACT_APP_API_URL}/v1/admin/movie/${id}/delete`, reqOpts)
       .then((response) => {
         let status = parseInt(response.status);
         if (status >= 400) {

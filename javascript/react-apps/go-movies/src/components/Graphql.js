@@ -46,7 +46,7 @@ export default class Graphql extends Component {
       headers: reqHeaders,
     };
 
-    fetch("http://localhost:4000/v1/graphql", reqOpts)
+    fetch(`${process.env.REACT_APP_API_URL}/v1/graphql`, reqOpts)
       .then((response) => {
         let status = parseInt(response.status);
         if (status >= 400) {
@@ -118,7 +118,7 @@ export default class Graphql extends Component {
       headers: reqHeaders,
     };
 
-    fetch("http://localhost:4000/v1/graphql", reqOpts)
+    fetch(`${process.env.REACT_APP_API_URL}/v1/graphql`, reqOpts)
       .then((response) => {
         let status = parseInt(response.status);
         if (status >= 400) {

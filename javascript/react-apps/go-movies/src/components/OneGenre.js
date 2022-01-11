@@ -7,7 +7,7 @@ export default class OneGenre extends Component {
   componentDidMount() {
     // Notice how we retrieve the genre_name from the url.
     // The react router makes it available to us with the property called match.
-    fetch("http://localhost:4000/v1/genre/"+this.props.match.params.id+"/movies")
+    fetch(`${process.env.REACT_APP_API_URL}/v1/genre/`+this.props.match.params.id+"/movies")
       .then((response) => {
         const status = parseInt(response.status);
         if (status >= 400) {
