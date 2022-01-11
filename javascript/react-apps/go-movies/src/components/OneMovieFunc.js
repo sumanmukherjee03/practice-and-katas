@@ -14,6 +14,7 @@ function OneMovieFunc(props) {
   // where you only perform a side effect if a certain key in the state is different from the previous state.
   // That's exactly why props.match.params.id is passed to useEffect here because you compare this id with the id
   // from the previous state and if that hasnt changed, dont re-run this function again.
+  // Read more about the useEffect hook here - https://reactjs.org/docs/hooks-effect.html
   useEffect(() => {
     // Notice how we retrieve the id from the url.
     // The react router makes it available to us with the property called match.
