@@ -16,7 +16,7 @@ So, `REACT_APP_API_URL='http://localhost:4000' npm start`
 That way, you can use the env var inside the react code in backticks.
 
 Remember, these env vars are substituted at build time. So, when building the app make sure you pass it the
-production env var, so that a prod specific build is generated.
+production env var, so that a prod specific build is generated, ie, during the phase of `npm build`.
 
 ## Available Scripts
 
