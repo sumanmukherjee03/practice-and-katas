@@ -6,7 +6,7 @@ import Genres from './components/Genres';
 import Graphql from './components/Graphql';
 import Home from './components/Home';
 import Login from './components/Login';
-import Movies from './components/Movies';
+import MoviesFunc from './components/MoviesFunc';
 import OneGenre from './components/OneGenre';
 import OneMovie from './components/OneMovie';
 import OneMovieGraphql from './components/OneMovieGraphql';
@@ -110,7 +110,7 @@ export default class App extends Component {
 
               {/* This is another example of the react router rendering a component */}
               <Route path="/movies">
-                <Movies />
+                <MoviesFunc />
               </Route>
 
               {/* Note the use of keyword `exact` here in route matching. It is used because the order matters in react router */}
