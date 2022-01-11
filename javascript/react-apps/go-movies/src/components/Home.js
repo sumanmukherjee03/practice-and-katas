@@ -9,8 +9,6 @@ export default class Home extends Component {
         <h2>Home</h2>
         <hr />
         <img src={Ticket} alt="movie ticket" />
-        <hr />
-        <div className="ticket"></div>
       </div>
     );
   }

@@ -89,7 +89,7 @@ export default class Graphql extends Component {
     this.setState((prevState) => ({
       searchTerm: val,
     }));
-    if (val.length > 0) {
+    if (val.length > 2) {
       this.performSearch();
     } else {
       this.loadAllMovies();

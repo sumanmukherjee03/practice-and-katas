@@ -18,6 +18,7 @@ export default class OneMovieGraphql extends Component {
         mpaa_rating
         created_at
         updated_at
+        poster
       }
     }
     `;
@@ -83,7 +84,12 @@ export default class OneMovieGraphql extends Component {
       if (!error) {
         return (
           <Fragment>
-            <h2>Movie: {movie.title}</h2>
+            <h2>Movie: {movie.title} ({movie.year})</h2>
+            {movie.poster.length > 0 && (
+              <div>
+                <img src={`https://image.tmdb.org/t/p/w200${movie.poster}`} alt="poster" />
+              </div>
+            )}
             <div className="float-start">
               <small>Rating: {movie.mpaa_rating}</small>
             </div>

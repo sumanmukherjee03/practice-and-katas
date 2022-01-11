@@ -118,6 +118,7 @@ func (app *application) editMovie(w http.ResponseWriter, r *http.Request) {
 	movie.Description = payload.Description
 	movie.MPAARating = payload.MPAARating
 
+	// Only get the poster url if there isn't one
 	if len(movie.Poster) == 0 {
 		app.getPoster(&movie)
 	}
