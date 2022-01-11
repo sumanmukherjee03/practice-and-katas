@@ -1,19 +1,13 @@
 import React, { Fragment, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-function MoviesFunc(props) {
-  // This const declaration follows the pattern
-  //    const [<state_variable>, <settter_func_name_for_state_variable>] = useState(<initialization_value_of_state_variable>);
-  const [movies, setMovies] = useState([]);
+function GenresFunc(props) {
+  const [genres, setGenres] = useState([]);
   const [error, setError] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // useEffect is a React hook that has the same functionality as componentDidMount.
-  // It runs before the component renders
-  // useEffect takes an optional argument for a default value.
-  // Here we must set a default value for useEffect to empty array so as to prevent an endless loop of fetch requests for movies
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/v1/movies`)
+    fetch(`${process.env.REACT_APP_API_URL}/v1/genres`)
       .then((response) => {
         let status = parseInt(response.status);
         if (status >= 400) {
@@ -32,34 +26,49 @@ function MoviesFunc(props) {
       })
       .then((data) => {
         // This is the success callback based on the returned http status
-        setMovies(data.movies);
+        setGenres(data.genres);
         setIsLoaded(true);
       }, (error) => {
         // This is the error callback based on the returned http status
         setError(error);
         setIsLoaded(true);
       });
-  }, []);
+  }, [])
 
-  // useEffect does what componentDidMount does. It's a hook that runs before the component renders.
+
   if (!isLoaded) {
     return (
       <Fragment>
-        <p>Loading...</p>
+        <p>Loading genres ...</p>
       </Fragment>
     );
   } else {
     if (!error) {
       return (
         <Fragment>
-          <h2>Choose a movie</h2>
+          <h2>Choose a genre</h2>
           <div className="list-group">
-            {/* Note the syntax of javascript templating here */}
-            {movies.map((m) => (
-                <Link key={m.id} to={`/movies/${m.id}`} className="list-group-item list-group-item-action">{m.title}</Link>
+            {/*
+              Note the syntax of javascript templating here.
+              Also, worth noting is the fact that the Link to property can be an object.
+              The "pathname" key/value in that object is mandatory for the link to work.
+              However, you can add other additional pproperties as necessary.
+              In the component that Link calls, these values are available under `this.props.location`.
+            */}
+            {genres.map((g) => (
+              <Link
+                to={
+                  {
+                    pathname: `/genre/${g.id}`,
+                    genreName: g.genre_name,
+                  }
+                }
+                className="list-group-item list-group-item-action"
+                key={g.id}
+              >{g.genre_name}</Link>
             ))}
-        </div>
-          </Fragment>
+          </div>
+        </Fragment>
       );
     } else {
       return (
@@ -71,4 +80,4 @@ function MoviesFunc(props) {
   }
 }
 
-export default MoviesFunc;
+export default GenresFunc

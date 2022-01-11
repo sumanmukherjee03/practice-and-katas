@@ -2,13 +2,13 @@ import React, { Component, Fragment } from 'react';
 import { BrowserRouter as Router, Link, Route, Switch } from 'react-router-dom';
 import AddOrEditMovie from './components/AddOrEditMovie';
 import Admin from './components/Admin';
-import Genres from './components/Genres';
+import GenresFunc from './components/GenresFunc';
 import Graphql from './components/Graphql';
 import Home from './components/Home';
 import Login from './components/Login';
 import MoviesFunc from './components/MoviesFunc';
 import OneGenre from './components/OneGenre';
-import OneMovie from './components/OneMovie';
+import OneMovieFunc from './components/OneMovieFunc';
 import OneMovieGraphql from './components/OneMovieGraphql';
 
 export default class App extends Component {
@@ -105,7 +105,7 @@ export default class App extends Component {
           <div className="col-md-10">
             <Switch>
               {/* This is an example of the react router rendering a component */}
-              <Route path="/movies/:id" component={OneMovie} />
+              <Route path="/movies/:id" component={OneMovieFunc} />
               <Route path="/graphql/movies/:id" component={OneMovieGraphql} />
 
               {/* This is another example of the react router rendering a component */}
@@ -115,7 +115,7 @@ export default class App extends Component {
 
               {/* Note the use of keyword `exact` here in route matching. It is used because the order matters in react router */}
               <Route exact path="/genres">
-                <Genres />
+                <GenresFunc />
               </Route>
 
               <Route exact path="/graphql">
