@@ -10,24 +10,24 @@ import Alert from './ui-components/Alert';
 
 function AddOrEditMovieFunc(props) {
   const defaultMovie = {
-        id: 0,
-        title: "",
-        release_date: "",
-        runtime: "",
-        mpaa_rating: "",
-        rating: "",
-        description: "",
+    id: 0,
+    title: "",
+    release_date: "",
+    runtime: "",
+    mpaa_rating: "",
+    rating: "",
+    description: "",
   };
   const mpaaOptions = {
-        G: "G",
-        PG: "PG",
-        PG13: "PG13",
-        R: "R",
-        NC17: "NC17",
+    G: "G",
+    PG: "PG",
+    PG13: "PG13",
+    R: "R",
+    NC17: "NC17",
   };
   const defaultAlert = {
-        type: "d-none",
-        message: "",
+    type: "d-none",
+    message: "",
   };
 
   // This const declaration follows the pattern
@@ -168,8 +168,8 @@ function AddOrEditMovieFunc(props) {
         // This is the error callback based on the returned http status
         const errorMsg = error.error_type + " : " + error.message;
         setAlert({
-            type: "alert-danger",
-            message: errorMsg,
+          type: "alert-danger",
+          message: errorMsg,
         });
       });
   };
@@ -180,8 +180,8 @@ function AddOrEditMovieFunc(props) {
     // Notice how we are using the javascript spread operator here to grab the values from the previous version of the state variable movie
     // and using that to update the value of the current state of the variable movie with the name and value of the input that just changed.
     setMovie({
-        ...movie,
-        [name]: val,
+      ...movie,
+      [name]: val,
     });
   };
 
@@ -230,8 +230,8 @@ function AddOrEditMovieFunc(props) {
         // This is the error callback based on the returned http status
         const errorMsg = error.error_type + " : " + error.message;
         setAlert({
-            type: "alert-danger",
-            message: errorMsg,
+          type: "alert-danger",
+          message: errorMsg,
         });
       });
   };
@@ -339,16 +339,16 @@ function AddOrEditMovieFunc(props) {
 
             {/* NOTICE the way conditional rendering is being done in React. Also, note that we arent using the Link tag. Instead using the "a" tag. */}
             {movie.id > 0 && (
-              <a href="#!" onClick={() => confirmDelete()} className="btn btn-danger ms-1">Delete</a>
+                <a href="#!" onClick={() => confirmDelete()} className="btn btn-danger ms-1">Delete</a>
             )}
-          </form>
+        </form>
 
           {/*
             One easy way to visualize the current state is via this :
                 <div className="mt-3">
                   <pre>{JSON.stringify(this.state, null, 3)}</pre>
                 </div>
-          */}
+                */}
         </Fragment>
       );
     } else {

@@ -1,11 +1,11 @@
 import React, { Component, Fragment } from 'react';
 import { BrowserRouter as Router, Link, Route, Switch } from 'react-router-dom';
 import AddOrEditMovieFunc from './components/AddOrEditMovieFunc';
-import Admin from './components/Admin';
+import AdminFunc from './components/AdminFunc';
 import GenresFunc from './components/GenresFunc';
 import Graphql from './components/Graphql';
 import Home from './components/Home';
-import Login from './components/Login';
+import LoginFunc from './components/LoginFunc';
 import MoviesFunc from './components/MoviesFunc';
 import OneGenreFunc from './components/OneGenreFunc';
 import OneMovieFunc from './components/OneMovieFunc';
@@ -139,7 +139,7 @@ export default class App extends Component {
               {/* When adding a movie, the id would be 0 in this path and when editing a movie it will have a proper id. */}
               <Route path="/admin/movie/:id" component={(props) => <AddOrEditMovieFunc {...props} jwt={this.state.jwt} />} />
 
-              <Route path="/admin" component={(props) => <Admin {...props} jwt={this.state.jwt} />} />
+              <Route path="/admin" component={(props) => <AdminFunc {...props} jwt={this.state.jwt} />} />
 
               {/*
                 This is an example of the react router rendering a component with properties passed to the component.
@@ -147,7 +147,7 @@ export default class App extends Component {
                 Also, we need to pass a function via the props to share the jwt token and set the state for jwt in the parent component of Login, ie, App
                 (through lifting state like we have done here with the handleJwtChange function here).
               */}
-              <Route exact path="/login" component={(props) => <Login {...props} handleJwtChange={this.handleJwtChange} />} />
+              <Route exact path="/login" component={(props) => <LoginFunc {...props} handleJwtChange={this.handleJwtChange} />} />
 
               <Route path="/">
                 <Home />
