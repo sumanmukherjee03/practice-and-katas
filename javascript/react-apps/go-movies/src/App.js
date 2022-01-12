@@ -1,13 +1,13 @@
 import React, { Component, Fragment } from 'react';
 import { BrowserRouter as Router, Link, Route, Switch } from 'react-router-dom';
-import AddOrEditMovie from './components/AddOrEditMovie';
+import AddOrEditMovieFunc from './components/AddOrEditMovieFunc';
 import Admin from './components/Admin';
 import GenresFunc from './components/GenresFunc';
 import Graphql from './components/Graphql';
 import Home from './components/Home';
 import Login from './components/Login';
 import MoviesFunc from './components/MoviesFunc';
-import OneGenre from './components/OneGenre';
+import OneGenreFunc from './components/OneGenreFunc';
 import OneMovieFunc from './components/OneMovieFunc';
 import OneMovieGraphql from './components/OneMovieGraphql';
 
@@ -134,10 +134,10 @@ export default class App extends Component {
                             */
               }
 
-              <Route exact path="/genre/:id" component={OneGenre} />
+              <Route exact path="/genre/:id" component={OneGenreFunc} />
 
               {/* When adding a movie, the id would be 0 in this path and when editing a movie it will have a proper id. */}
-              <Route path="/admin/movie/:id" component={(props) => <AddOrEditMovie {...props} jwt={this.state.jwt} />} />
+              <Route path="/admin/movie/:id" component={(props) => <AddOrEditMovieFunc {...props} jwt={this.state.jwt} />} />
 
               <Route path="/admin" component={(props) => <Admin {...props} jwt={this.state.jwt} />} />
 

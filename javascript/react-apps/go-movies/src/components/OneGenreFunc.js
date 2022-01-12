@@ -1,13 +1,13 @@
 import React, { Fragment, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-function MoviesFunc(props) {
+function OneGenreFunc(props) {
   // This const declaration follows the pattern
   //    const [<state_variable>, <settter_func_name_for_state_variable>] = useState(<initialization_value_of_state_variable>);
   const [movies, setMovies] = useState([]);
+  const [genreName, setGenreName] = useState("");
   const [error, setError] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-
 
   // useEffect is a React hook that has the same functionality as componentDidMount and componentDidUpdate.
   // As in, if you performed the same side effect in both of those lifecycle methods in React Component class then
@@ -23,9 +23,11 @@ function MoviesFunc(props) {
   //
   // Read more about the useEffect hook here - https://reactjs.org/docs/hooks-effect.html
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/v1/movies`)
+    // Notice how we retrieve the genre_name from the url.
+    // The react router makes it available to us with the property called match.
+    fetch(`${process.env.REACT_APP_API_URL}/v1/genre/`+props.match.params.id+"/movies")
       .then((response) => {
-        let status = parseInt(response.status);
+        const status = parseInt(response.status);
         if (status >= 400) {
           const contentType = response.headers.get("content-type");
           if (contentType && contentType.indexOf("application/json") < 0) {
@@ -42,34 +44,37 @@ function MoviesFunc(props) {
       })
       .then((data) => {
         // This is the success callback based on the returned http status
+        // NOTE : Notice how the genreName came from the Link to property in Genres.js
         setMovies(data.movies);
         setIsLoaded(true);
+        setGenreName(props.location.genreName);
       }, (error) => {
         // This is the error callback based on the returned http status
+        // NOTE : Notice how the genreName came from the Link to property in Genres.js
         setError(error);
         setIsLoaded(true);
+        setGenreName(props.location.genreName);
       });
-  }, []);
+  }, [props]); // Note : We are passing the entire props in the dependencies array because we extract the id from url match as well as genreName from location
 
-  // useEffect does what componentDidMount does. It's a hook that runs before the component renders.
   if (!isLoaded) {
     return (
       <Fragment>
-        <p>Loading...</p>
+        <p>Loading movies for genre... </p>
       </Fragment>
     );
   } else {
     if (!error) {
       return (
         <Fragment>
-          <h2>Choose a movie</h2>
+          <h2>Genre: {genreName}</h2>
           <div className="list-group">
-            {/* Note the syntax of javascript templating here */}
+            { /* Note the syntax of javascript templating here. Also, each child in a list has to have a unique value for the key property. */ }
             {movies.map((m) => (
-                <Link key={m.id} to={`/movies/${m.id}`} className="list-group-item list-group-item-action">{m.title}</Link>
+              <Link key={m.id} to={`/movies/${m.id}`} className="list-group-item list-group-item-action">{m.title}</Link>
             ))}
-        </div>
-          </Fragment>
+          </div>
+        </Fragment>
       );
     } else {
       return (
@@ -81,4 +86,4 @@ function MoviesFunc(props) {
   }
 }
 
-export default MoviesFunc;
+export default OneGenreFunc;

@@ -294,8 +294,8 @@ export default class AddOrEditMovie extends Component {
                 name={"release_date"}
                 value={movie.release_date}
                 handleChange={this.handleChange}
-                className={this.hasError("title") ? "is-invalid" : ""}
-                errorDiv={this.hasError("title") ? "text-danger" : "d-none"}
+                className={this.hasError("release_date") ? "is-invalid" : ""}
+                errorDiv={this.hasError("release_date") ? "text-danger" : "d-none"}
                 errorMsg={"Please enter a valid release date"}
               />
 
@@ -305,8 +305,8 @@ export default class AddOrEditMovie extends Component {
                 name={"runtime"}
                 value={movie.runtime}
                 handleChange={this.handleChange}
-                className={this.hasError("title") ? "is-invalid" : ""}
-                errorDiv={this.hasError("title") ? "text-danger" : "d-none"}
+                className={this.hasError("runtime") ? "is-invalid" : ""}
+                errorDiv={this.hasError("runtime") ? "text-danger" : "d-none"}
                 errorMsg={"Please enter a valid runtime"}
               />
 
@@ -332,8 +332,8 @@ export default class AddOrEditMovie extends Component {
                 name={"description"}
                 value={movie.description}
                 handleChange={this.handleChange}
-                className={this.hasError("title") ? "is-invalid" : ""}
-                errorDiv={this.hasError("title") ? "text-danger" : "d-none"}
+                className={this.hasError("description") ? "is-invalid" : ""}
+                errorDiv={this.hasError("description") ? "text-danger" : "d-none"}
                 errorMsg={"Please enter a description"}
               />
 
