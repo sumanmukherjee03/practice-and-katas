@@ -10,6 +10,7 @@ Example:
     """
     print(desc)
 
+#  Time complexity is O(n)
 def two_sum(arr, k):
     head = 0
     tail = len(arr) - 1
