@@ -18,17 +18,20 @@ NOTE : In this sliding window example the window size is not fixed but based on 
 #  The sliding window moves like a caterpillar
 #  If local sum is less than k, move right side forward
 #  If local sum is more than or equal to k move left side forward and keep doing that until the sum goes down below k
+#  Although this looks like 2 loops the inner loop only goes through a very limited number of iterations. Total complexity is O(n)
 def find_smallest_subarr_sum_gt_num(arr, k):
     window_sum = 0
-    min_length = math.inf
+    min_length = math.inf # NOTE : This is the way to represent infinity in python
     window_start = 0
     for window_end in range(0, len(arr)):
         window_sum += arr[window_end]  # add the next element
-        # shrink the window as small as possible until the 'window_sum' is smaller than 's'
+        # shrink the window as small as possible until the 'window_sum' is smaller than 's', all the time while moving the start pointer forward by 1
+        # This movement is similar to that of a caterpillar.
         while window_sum >= k:
-            min_length = min(min_length, window_end - window_start + 1)
+            min_length = min(min_length, window_end - window_start + 1) # NOTE : To find subarray length, always add 1 to the diff of indexes
             window_sum -= arr[window_start]
             window_start += 1
+    # If at the end, no such subarray was found, return 0
     if min_length == math.inf:
         return 0
     return min_length

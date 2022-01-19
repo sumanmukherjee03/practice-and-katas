@@ -30,7 +30,7 @@ def find_max_sum_of_subarrays(arr, k):
     for tail in range(len(arr)):
         elm = arr[tail]
         localSum += elm
-        if tail - head >= k - 1:
+        if tail - head + 1 >= k:
             maxSum = max(localSum, maxSum)
             localSum -= arr[head]
             head += 1
