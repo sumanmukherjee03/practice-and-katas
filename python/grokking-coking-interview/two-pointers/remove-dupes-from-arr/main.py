@@ -21,6 +21,8 @@ def remove_dupes(arr):
     tail = 0 # Pointer for iteration
     for tail in range(1, len(arr)):
         if arr[head] != arr[tail]:
+            #  Make the next non-dupe element as the tail and make the tail as the element after the non-dupe
+            #  ie swap the element next to non-dupe and tail
             arr[head+1], arr[tail] = arr[tail], arr[head+1]
             head += 1
     return head
