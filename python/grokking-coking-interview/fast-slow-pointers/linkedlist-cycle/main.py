@@ -17,7 +17,7 @@ Example :
     """
     print(desc)
 
-
+#  Time complexity is O(n)
 def has_cycle(head):
     slow = head
     fast = head
@@ -29,6 +29,40 @@ def has_cycle(head):
         if slow == fast:
             return True
     return False
+
+def find_cycle_length(head):
+    slow, fast = head, head
+    while fast is not None and fast.next is not None:
+        slow = slow.next
+        fast = fast.next.next
+        if slow == fast:
+            return calculate_cycle_length(slow)
+    return 0
+
+def calculate_cycle_length(slow):
+    ptr = slow.next
+    count = 1
+    while ptr != slow:
+        ptr = ptr.next
+        count += 1
+    return count
+
+
+
+
+
+def alternate_implementation_calculate_cycle_length(slow):
+  current = slow
+  cycle_length = 0
+  while True:
+    current = current.next
+    cycle_length += 1
+    if current == slow:
+      break
+  return cycle_length
+
+
+
 
 def main():
     describe()
@@ -45,5 +79,6 @@ def main():
 
     head.next.next.next.next.next.next = head.next.next.next
     print("LinkedList has cycle: " + str(has_cycle(head)))
+    print("LinkedList has cycle of length: " + str(find_cycle_length(head)))
 
 main()
