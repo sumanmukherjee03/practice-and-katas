@@ -30,6 +30,10 @@ def has_cycle(head):
             return True
     return False
 
+#  Time complexity O(n)
+#  To find the cycle length, first find the cycle. That means the slow and fast pointers must meet.
+#  Once they meet keep the slow pointer intact and use another pointer that proceeds one node at a time
+#  and goes through the cycle and meets the slow pointer again. That will give us the length of the cycle.
 def find_cycle_length(head):
     slow, fast = head, head
     while fast is not None and fast.next is not None:
