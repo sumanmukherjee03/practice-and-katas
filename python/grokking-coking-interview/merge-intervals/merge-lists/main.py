@@ -18,6 +18,7 @@ Example :
     """
     print(desc)
 
+#  Time complexity is O(nlog(n))
 def merge(intervals):
     if len(intervals) < 2:
         return intervals
