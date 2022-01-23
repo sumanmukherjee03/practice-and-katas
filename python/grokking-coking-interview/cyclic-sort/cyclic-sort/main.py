@@ -21,10 +21,10 @@ Example :
 def cyclic_sort(nums):
     i = 0
     while i < len(nums):
-        if i+1 == nums[i]:
+        j = nums[i]
+        if i+1 == j:
             i += 1
         else:
-            j = nums[i]
             nums[j-1], nums[i] = j, nums[j-1]
     return nums
 
