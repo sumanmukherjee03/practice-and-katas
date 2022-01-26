@@ -32,12 +32,15 @@ def has_path(root, target):
     return has_path(root.left, target) or has_path(root.right, target)
 
 
+#  Think of this traversal as - at each node it puts nodes from right to left into the stack. That
+#  way the leftmost nodes are at the top of the stack. Then it picks up and process nodes from the left, ie the top of the stack.
+#  This process essentially also ensure that at any level the nodes in the stack are from right to left in the stack, ie the left most in that level will get popped and processed first
 def dfs_traversal(root):
     visited = []
     stack = deque()
     stack.append(root)
     while stack:
-        node = stack.pop()
+        node = stack.pop() # Always be popping the top of the stack
         visited.append(node.value)
         # For a tree DFS traversal, push the right node first so that it gets popped from the stack first
         #  At any point the stack has newer nodes at the right hand end and those will get popped first and that is desirable
