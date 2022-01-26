@@ -16,6 +16,7 @@ Problem : Given a binary tree and a number S, find if the tree has a path from r
     """
     print(desc)
 
+#  Time complexity is O(n) where n is the number of nodes in the tree
 def has_path(root, target):
     #  If the root is empty return False
     #  If at any point the value of root is  larger than the current target then also return false
@@ -31,6 +32,24 @@ def has_path(root, target):
     return has_path(root.left, target) or has_path(root.right, target)
 
 
+def dfs_traversal(root):
+    visited = []
+    stack = deque()
+    stack.append(root)
+    while stack:
+        node = stack.pop()
+        visited.append(node.value)
+        # For a tree DFS traversal, push the right node first so that it gets popped from the stack first
+        #  At any point the stack has newer nodes at the right hand end and those will get popped first and that is desirable
+        if node.right is not None:
+            stack.append(node.right)
+        if node.left is not None:
+            stack.append(node.left)
+        #  print(visited, map(lambda x: x.value, stack))
+    return visited
+
+
+
 def main():
     describe()
     root = TreeNode(12)
@@ -41,5 +60,6 @@ def main():
     root.right.right = TreeNode(5)
     print("Tree has path: " + str(has_path(root, 23)))
     print("Tree has path: " + str(has_path(root, 16)))
+    print("Tree has DFS: ", dfs_traversal(root))
 
 main()
