@@ -23,6 +23,10 @@ def find_paths_recursive(root, target, currentPath, allPaths):
 
     currentPath.append(root.value)
     if root.left is None and root.right is None and root.value == target:
+        #  If a path is found at this point append it to the list of possible paths
+        #  But do not return from here. Continue on in the function. You want to remove this node from
+        #  the currrentPath before you return so that other paths can also be explored.
+        #  Remember that recursion does not stop as soon as a match is found.
         allPaths.append(list(currentPath)) # This is just a nuisance i think - having to convert the currentPath to a list before appending
     else:
         find_paths_recursive(root.left, target - root.value, currentPath, allPaths)
