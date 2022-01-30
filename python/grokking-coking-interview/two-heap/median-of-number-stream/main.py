@@ -36,6 +36,8 @@ Remember that the median is the middle value in an ordered integer list.
 
 class MedianOfAStream():
     def __init__(self):
+        # Start with simple arrays as the collecting data structures
+        #  And as you insert elements, it will heapify and form the heaps
         self.maxheap = []
         self.minheap = []
 
