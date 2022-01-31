@@ -10,6 +10,7 @@ Example:
     """
     print(desc)
 
+#  Follow the BFS approach
 #  start with an empty set.
 #  Iterate over the given list of numbers and add the number at current index to all the elements of the existing subsets.
 #
