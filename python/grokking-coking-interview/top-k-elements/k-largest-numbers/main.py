@@ -34,7 +34,9 @@ def find_k_largest_numbers(nums, k):
         if len(minheap) < k:
             heapq.heappush(minheap, nums[i])
         else:
-            heapq.heappush(minheap, max(heapq.heappop(minheap), nums[i]))
+            if nums[i] > minheap[0]:
+                heapq.heappop(minheap)
+                heapq.heappush(minheap, nums[i])
     return minheap
 
 def main():
