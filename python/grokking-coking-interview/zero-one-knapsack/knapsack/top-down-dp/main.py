@@ -15,20 +15,38 @@ Problem :
 #            recursively process the remaining capacity and the rest of the items
 #       return the solution set with the highest profit
 def solve_knapsack(profits, weights, capacity):
-    return solve_knapsack_recursive(profits, weights, capacity)
+    #  Create a 2d array with each cell initialized to -1.
+    #  The rows represent index of the element being considered in the solution set.
+    #  The columns here represent each capacity broken down by an integer value.
+    #  And a cell represents a recursive call for a <index,capacity> combination.
+    #  As we will be solving the subproblems for a capacity value and index, we can store them in the dp array and later use those values
+    dp = [[-1 for x in range(capacity+1)] for y in range(len(profits))]
+    return solve_knapsack_recursive(dp, profits, weights, capacity)
 
-#  Time complexity of this solution is O(2^n) because of the recursive calls
-def solve_knapsack_recursive(profits, weights, capacity, index = 0):
+#  Time complexity of this solution is O(n * c) because of the recursive calls are memoized.
+#  Here n is the number of items and c is the capacity of the knapsack.
+def solve_knapsack_recursive(dp, profits, weights, capacity, index = 0):
     if index >= len(profits) or capacity <= 0:
         return 0
 
+    if dp[index][capacity] != -1:
+        return dp[index][capacity]
+
     p1, p2 = 0, 0
     if weights[index] <= capacity:
-        p1 = profits[index] + solve_knapsack_recursive(profits, weights, capacity-weights[index], index+1)
+        p1 = profits[index] + solve_knapsack_recursive(dp, profits, weights, capacity-weights[index], index+1)
 
-    p2 = solve_knapsack_recursive(profits, weights, capacity, index+1)
-    return max(p1, p2)
+    p2 = solve_knapsack_recursive(dp, profits, weights, capacity, index+1)
 
+    dp[index][capacity] = max(p1, p2)
+    return dp[index][capacity]
+
+
+
+#  In the recursive solution above we can see that in the recursive calls, profits and weights remain constant.
+#  The thing that keeps changing is the capacity and the current index. Now, there are overlapping sub problems that we are solving
+#  multiple times repeatedly for the same capacity and current index. In the top down dynamic programming approach, we will store the results
+#  of these subproblems in a 2d array so that we can use the memoized results to more easily calculate the final outcome.
 
 def main():
     describe()
