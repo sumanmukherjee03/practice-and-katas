@@ -35,7 +35,7 @@ def solve_knapsack(profits, weights, capacity):
     #  The rows represent index of the element upto which the subset of elements is being considered in the solution set.
     #  The columns here represent each capacity broken down by an integer value.
     #  And a cell represents the max profit from considering a subset of elements upto that index and for that max capacity.
-    dp = [[0 for x in range(capacity+1)] for y in range(len(profits))]
+    dp = [[0 for x in range(capacity+1)] for y in range(n)]
 
     #  For capacity 0 populate the first column of all rows with 0 as profit
     for i in range(0, n):
@@ -46,6 +46,8 @@ def solve_knapsack(profits, weights, capacity):
         if weights[0] <= c:
             dp[0][c] = profits[0]
 
+    #  Now that the first row and first column is taken care of - ie 0th item considered and 0 capacity considered for all items
+    #  iterate through the rest of the rows and columns
     for i in range(1, n):
         for c in range(1, capacity+1):
             p1, p2 = 0, 0
