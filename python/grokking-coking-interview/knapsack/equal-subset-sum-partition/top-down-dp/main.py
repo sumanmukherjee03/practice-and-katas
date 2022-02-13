@@ -25,22 +25,31 @@ def can_partition(nums):
     s = sum(nums)
     if s % 2 != 0:
         return False
-    return recursive_partition(nums, s/2, 0)
+    # initialize the 'dp' array, -1 for default, 1 for true and 0 for false
+    dp = [[-1 for x in range(0, s//2 + 1)] for y in range(0, len(nums))]
+    val = recursive_partition(dp, nums, s//2, 0)
+    return True if val == 1 else False
 
 #  Time complexity is O(2^n) because at each iteration there are 2 choices, either include the current element in set 1 or set 2 and there are only 2 sets.
-def recursive_partition(nums, sum, currentIndex):
+def recursive_partition(dp, nums, sum, currentIndex):
     #  If the remaining sum you are trying to find is down to 0, then you have already found all the numbers for 1 subset
     if sum == 0:
-        return True
+        return 1
     if len(nums) == 0 or currentIndex >= len(nums):
-        return False
-    #  If the current number is less than the remaining sum, then there are only 2 choices, either include it or not include it
-    #  If including it gives us true, then return that
-    #  otherwise dont include the number and continue with the next number
-    if nums[currentIndex] <= sum:
-        if recursive_partition(nums, sum - nums[currentIndex], currentIndex+1):
-            return True
-    return recursive_partition(nums, sum, currentIndex+1)
+        return 0
+    if dp[currentIndex][sum] < 0:
+        #  If the current number is less than the remaining sum, then there are only 2 choices, either include it or not include it
+        #  If including it gives us true, then return that
+        #  otherwise dont include the number and continue with the next number
+        if nums[currentIndex] <= sum:
+            #  If including this number and moving forward with the next number ultimately produces desired result then this function call should return True
+            if recursive_partition(dp, nums, sum - nums[currentIndex], currentIndex+1) == 1:
+                dp[currentIndex][sum] = 1
+                return 1
+        #  Otherwise dont include this number and moving forward with the next number
+        #  and this function call should return whatever the next iteration produces
+        dp[currentIndex][sum] = recursive_partition(dp, nums, sum, currentIndex+1)
+    return dp[currentIndex][sum]
 
 
 def main():
@@ -62,3 +71,4 @@ def main():
     print("------------------")
 
 main()
+
