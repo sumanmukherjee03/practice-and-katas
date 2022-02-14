@@ -15,7 +15,7 @@ Example :
     """
     print(desc)
 
-#  Time complexity of the recursive algo is O(2^n)
+#  Time complexity of the recursive algo is O(n * s) where n is the total number of numbers and s is the sum we want to find
 def can_partition(nums):
     #  If we partition the given set of numbers into 2 sets such that their sums are equal
     #  then the sum of those sets must be half of the sum of the all the numbers in nums, ie s/2.
@@ -23,34 +23,40 @@ def can_partition(nums):
     #  From that point onwards, this problem becomes similar to the 0/1 knapsack problem,
     #  because it is a matter of finding a subset of numbers such that their total sum is s/2.
     s = sum(nums)
-    if s % 2 != 0:
+    if s % 2 != 0 or len(nums) == 0:
         return False
-    targetSum = s // 2
-    # initialize the 'dp' array, -1 for default, 1 for true and 0 for false
-    dp = [[-1 for x in range(0, targetSum + 1)] for y in range(0, len(nums))]
-    val = recursive_partition(dp, nums, targetSum, 0)
-    return True if val == 1 else False
 
-#  Time complexity of the recursive algo is O(n * s) where n is the total number of numbers and s is the sum we want to find
-def recursive_partition(dp, nums, sum, currentIndex):
-    #  If the remaining sum you are trying to find is down to 0, then you have already found all the numbers for 1 subset
-    if sum == 0:
-        return 1
-    if len(nums) == 0 or currentIndex >= len(nums):
-        return 0
-    if dp[currentIndex][sum] < 0:
-        #  If the current number is less than the remaining sum, then there are only 2 choices, either include it or not include it
-        #  If including it gives us true, then return that
-        #  otherwise dont include the number and continue with the next number
-        if nums[currentIndex] <= sum:
-            #  If including this number and moving forward with the next number ultimately produces desired result then this function call should return True
-            if recursive_partition(dp, nums, sum - nums[currentIndex], currentIndex+1) == 1:
-                dp[currentIndex][sum] = 1
-                return 1
-        #  Otherwise dont include this number and moving forward with the next number
-        #  and this function call should return whatever the next iteration produces
-        dp[currentIndex][sum] = recursive_partition(dp, nums, sum, currentIndex+1)
-    return dp[currentIndex][sum]
+    targetSum = s // 2
+
+    # initialize the 'dp' array, -1 for default, 1 for true and 0 for false
+    #  Each cell dp[i][ts] in the dp array represents if the target sum ts can be reached by considering elements upto index i
+    dp = [[-1 for x in range(0, targetSum + 1)] for y in range(0, len(nums))]
+
+    # For target sum of 0, dont include any of the numbers
+    for i in range(0, len(nums)):
+        dp[i][0] = 0
+
+    # For any target sum, if you are only considering the first element, then find the dp entries
+    for ts in range(0, targetSum+1):
+        if nums[0] == ts:
+            dp[0][ts] = 1
+        else:
+            dp[0][ts] = 0
+
+    #  Now you are filling up the dp array by considering elements upto index i and target sum of ts
+    #  ie, can we reach target sum ts by considering elements upto i
+    for i in range(1, len(nums)):
+        for ts in range(1, targetSum+1):
+            #  Now, we decide if the target sum ts can be reached by considering elements upto index i
+            #  by either including element at index i or not including it.
+            #  Either ways, can we reach the target sum or not.
+            if dp[i-1][ts] == 1 or dp[i-1][ts-nums[i]] == 1:
+                dp[i][ts] = 1
+            else:
+                dp[i][ts] = 0
+
+    #  The result in a bottom up approach is the last element because that means you have considered all the elements and the final target sum you want to reach
+    return True if dp[len(nums)-1][targetSum] == 1 else False
 
 
 def main():
@@ -72,4 +78,3 @@ def main():
     print("------------------")
 
 main()
-
