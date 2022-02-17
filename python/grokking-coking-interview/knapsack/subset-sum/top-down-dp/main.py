@@ -20,7 +20,9 @@ Example :
 
 def can_partition(nums, sum):
     #  Initially default the dp array to -1 for each cell
-    #  In dp, each cell dp[i][ts] stores the information if target sum can be reached by considering elements at index i
+    #  In dp, each cell dp[i][ts] stores the information if target sum ts can be reached by considering elements at index i
+    #  whether that is including element at index i or not. As long as the subproblem has considered the element at index i it is fine.
+    #  This is to memoize the recursive calls from the basic solution.
     dp = [[-1 for x in range(0, sum+1)] for y in range(0,len(nums))]
     val = can_partition_recursive(dp, nums, sum)
     return True if val == 1 else False

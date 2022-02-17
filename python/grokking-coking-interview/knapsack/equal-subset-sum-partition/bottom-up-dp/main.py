@@ -50,7 +50,9 @@ def can_partition(nums):
             #  Now, we decide if the target sum ts can be reached by considering elements upto index i
             #  by either including element at index i or not including it.
             #  Either ways, can we reach the target sum or not.
-            if dp[i-1][ts] == 1 or dp[i-1][ts-nums[i]] == 1:
+            if dp[i-1][ts] == 1:
+                dp[i][ts] = 1
+            elif nums[i] <= ts and dp[i-1][ts-nums[i]] == 1:
                 dp[i][ts] = 1
             else:
                 dp[i][ts] = 0
