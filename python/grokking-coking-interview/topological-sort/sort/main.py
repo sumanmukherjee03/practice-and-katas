@@ -93,8 +93,10 @@ def topological_sort(numOfVertices, edges):
                 if inDegrees[v] == 0:
                     q.append(v)
 
-    #  IMPORTANT NOTE : If there is a cycle then the length of the sortedOrder array will be more than numOfVertices
+    #  IMPORTANT NOTE : If there is a cycle then the length of the sortedOrder array will be less than numOfVertices
     #  This condition can be used to determine if a directed graph has a cycle or not
+    #  This is because where there is a cycle, we wouldnt be able to find any sources, so the queue would be empty.
+    #  We would only be able to sort the vertices before the cycle.
     if len(sortedOrder) != numOfVertices:
         return []
 
