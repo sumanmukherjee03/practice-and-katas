@@ -38,6 +38,10 @@ def waysToDecode(s):
 #  Pass around result as a reference and keep appending the final decoded strings to it.
 #  currentIndex holds the current index being processed.
 #  currentResult holds the state of the current decoded string.
+#  Time complexity of this recursive solution :
+#    T(0) = 1
+#    T(n) = T(n-1) + T(n-2)
+#    which makes it a combinatorial series. So final T(n) = O(phi ^ n) where phi is the golden ratio
 def recursiveWaysToDecode(result, digits, currentIndex = 0, currentResult = ""):
     letters = [""] + list(string.ascii_uppercase)
 
@@ -57,7 +61,10 @@ def recursiveWaysToDecode(result, digits, currentIndex = 0, currentResult = ""):
 
 
 
-def optimizedWaysToDecode(s, i = 0):
+
+#  This is the same recusive solution as before, just slightly smaller and more optimized code.
+#  This is also of time complexity O(phi ^ n)
+def betterWaysToDecode(s, i = 0):
     n = len(s)
     if n == 0 or (i < n and s[i] == "0"):
         return 0
@@ -69,17 +76,75 @@ def optimizedWaysToDecode(s, i = 0):
         return optimizedWaysToDecode(s, i+1)
 
 
+
+
+#  by applying dynamic programming to the slution above we can reduce the recalculation of the subproblems that we are solving recursively
+#  Time complexity is O(n)
+def bottomUpDP(s):
+    digits = [int(c) for c in list(s)]
+
+    n = len(digits)
+    if n == 0 or digits[0] == 0:
+        return 0
+
+    #  At each index we are going to consider the number of ways to decode the string upto that current index only.
+
+    #  We initialize beforePrevious to 1 instead of 0 like the fibinacci solution below because consider the case of 1 2.
+    #  When we are considering the number 2 at index 1, the previous would have been 1 but if beforePrevious was 0 then the number of ways to decode would have been 1 and not 2 for the number at index 1
+    #  That is why we initialize the beforePrevious with 1
+    beforePrevious = 1
+    previous = 1 # For only 1 char, the number of ways to decode the string is only 1
+    for i in range(1, n):
+        # Lets say at this current index the number of ways to decode the string is 0.
+        #  Now there are 2 possibilities
+        #  -  One is we consider just adding this digit.
+        #  -    In this case, we get an additional number of ways to decode the same as the number of ways to decode up until the last character
+        #  -  Other is if we join with the previous digit and get a number less than 26.
+        #  -    In this case, we get an additional number of ways to decode the same as the number of ways to decode up until the before last character
+        #  Say for a string 6 3 2 4
+        #    The ways to decode up until each char would be 1 1 1 2
+        current = 0
+        if digits[i] > 0:
+            current += previous
+        if 10 <= digits[i-1]*10 + digits[i] <= 26:
+            current += beforePrevious
+        beforePrevious = previous
+        previous = current
+    return previous
+
+
+#  The solution above follows the similar pattern as solving fibinacci with dynamic programming
+def fibonacci(n):
+    dp = [0] * (n+1)
+    dp[0] = 0
+    dp[1] = 1
+    for i in range(2, n+1):
+        dp[i] = dp[i-1] + dp[i-2]
+    return dp[n]
+
+#  Same fibonacci numbers but without the use of array
+def fibonacciNoArray(n):
+    beforePrevious = 0
+    previous = 1
+    for i in range(2, n+1):
+        current = beforePrevious + previous
+        beforePrevious = previous
+        previous = current
+    return previous
+
+
+
 def main():
     describe()
 
     input = '6324120129'
     print("Input : " + input)
-    print("Output : " + str(waysToDecode(input)))
+    print("Output : " + str(bottomUpDP(input)))
     print("\n\n")
 
     input = '12'
     print("Input : " + input)
-    print("Output : " + str(waysToDecode(input)))
+    print("Output : " + str(bottomUpDP(input)))
     print("\n\n")
 
 main()
