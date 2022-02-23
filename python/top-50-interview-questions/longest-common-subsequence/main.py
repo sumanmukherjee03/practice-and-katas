@@ -65,13 +65,10 @@ def more_concise_recursive_lcs(str1, str2, ptr1=0, ptr2=0):
 
 
 
-
+#  This has time complexity of O(n*m)
 def top_down_dp(str1, str2):
-    #  Initialize a dp array such that in each cell it stores the max length of subsequence
-    #  for indexes considered for str1 and str2 from poition i and j to the end
-    #  ie, if i = 2, j = 3, then cell <i, j> will contain max subsequence length from postion i to end for string 1 and from position j to end for string 2
-    #  Another way to think about this is that dp is storing the values of the sub problems of when iterating on positions <i,j> for string 1 and string 2
-    #  This means that dp[0][0] will always contain the final result
+    #  Initialize a dp array such that in each cell it stores the result (ie, the max length of subsequence) for the recursive calls.
+    #  This means that dp[0][0] will always contain the final result because that's how the recursive calls start.
     #  The initial values of the cells is 0
     dp = [[0 for j in range(len(str2))] for i in range((len(str1)))]
     top_down_dp_recursive_lcs(dp, str1, str2)
@@ -94,23 +91,84 @@ def top_down_dp_recursive_lcs(dp, str1, str2, i=0, j=0, maxlen = 0):
                 dp[i][j] = val
                 return val
 
+
+
+#  Time complexity is O(nm)
+def bottom_up_dp(str1, str2):
+    if len(str1) == 0 or len(str2) == 0:
+        return 0
+
+    #  In the bottom up dynamic programming solution of this problem, we assume that we are considering substrings from 0 upto index i and j.
+    #  ie, cell dp[i][j] will represent the longest subsequence possible for substrings 0 to i of string 1 and 0 to j of string 2.
+    #  That way, dp[len(str1)-1][len(str2)-1] will represent the final solution
+    dp = [[0 for j in range(len(str2))] for i in range(len(str1))]
+
+    #  First prefill the first row and first column of the dp array
+
+    #  For 1st character of string 2 and any char of string 1 if there is a match then that would indicate a subsequence of length 1
+    for i in range(len(str1)):
+        if str1[i] == str2[0]:
+            dp[i][0] = 1
+
+    #  For 1st character of string 1 and any char of string 2 if there is a match then that would indicate a subsequence of length 1
+    for j in range(len(str2)):
+        if str1[0] == str2[j]:
+            dp[0][j] = 1
+
+    #  Now that the first row and first column are filled, go through the rest of the chars of both the strings
+    for i in range(1,len(str1)):
+        for j in range(1,len(str2)):
+            if str1[i] == str2[j]:
+                #  If the char at the current pointer of string 1 and the current pointer of string 2 are the same
+                #  then we consider both i and j pointers to have moved forward
+                #  So the length of the longest subsequence will be the length of the longest susequence upto index i-1,j-1 of string 1 and string 2 plus 1
+                dp[i][j] = 1 + dp[i-1][j-1]
+            else:
+                #  If the char at the current pointer of string 1 and the current pointer of string 2 are NOT same
+                #  then we consider either i and j pointers to have moved forward for the optimal solution.
+                #  This means we have to account for both, ie take the max of (chars upto i-1 for string 1 and j for string 2, chars upto i for string 1 and j-1 for string 2)
+                dp[i][j] = max(dp[i-1][j], dp[i][j-1])
+
+    return dp[len(str1)-1][len(str2)-1]
+
+
+#  This is the same solution as above. The only difference is that the dp array is n+1, m+1 because then we dont need to
+#  prepopulate the first row and first column. The condition inside the nested loop takes care of that.
+def bottom_up_dp_improved(str1, str2):
+    if len(str1) == 0 or len(str2) == 0:
+        return 0
+    n = len(str1)
+    m = len(str2)
+    dp = [[0 for j in range(m+1)] for i in range(n+1)]
+    for i in range(1,n+1):
+        for j in range(1,m+1):
+            if str1[i] == str2[j]:
+                dp[i][j] = 1 + dp[i-1][j-1]
+            else:
+                dp[i][j] = max(dp[i-1][j], dp[i][j-1])
+    return dp[len(str1)-1][len(str2)-1]
+
+
+
+
+
 #  This solution can be improved further by memoization or dynamic programming
 def main():
     describe()
 
     inputs = ["abdacbab", "acebfca"]
     print("Inputs : " + str(inputs))
-    print("Outputs : " + str(top_down_dp(inputs[0], inputs[1])))
+    print("Outputs : " + str(bottom_up_dp(inputs[0], inputs[1])))
     print("\n\n")
 
     inputs = ["cbebaff", "aeddbggf"]
     print("Inputs : " + str(inputs))
-    print("Outputs : " + str(top_down_dp(inputs[0], inputs[1])))
+    print("Outputs : " + str(bottom_up_dp(inputs[0], inputs[1])))
     print("\n\n")
 
     inputs = ["abebafba", "cddghcd"]
     print("Inputs : " + str(inputs))
-    print("Outputs : " + str(top_down_dp(inputs[0], inputs[1])))
+    print("Outputs : " + str(bottom_up_dp(inputs[0], inputs[1])))
     print("\n\n")
 
 main()
