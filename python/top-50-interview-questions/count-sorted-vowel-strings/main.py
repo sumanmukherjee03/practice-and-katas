@@ -117,7 +117,7 @@ def count(n, lastChar=''):
 
 
 
-
+#  Time complexity is O(5 * n) ie O(n)
 def bottom_up_dp(n):
     #  Here each cell dp[i][j] represents the number of valid strings of size i that start with the vowel j
     #  ie strings of size dp[2][2] represents strings of size 2 that start with character e. NOT with character i.
@@ -135,10 +135,32 @@ def bottom_up_dp(n):
     for row in dp:
         print(row)
 
-    result = 0
-    for j in range(0, 5+1):
-        result += dp[n][j]
-    return result
+    return sum(dp[n][0:])
+
+
+def bottom_up_dp_slightly_concise(n):
+    N_VOWELS = 5
+
+    #  Here each cell dp[i][j] represents the number of valid strings of size i+1 that start with the vowel j
+    #  ie strings of size dp[2][2] represents strings of size 2 that start with character 'i'. NOT with character 'o' or 'e'. Only strings that start with 'i'
+    dp = [[0]*N_VOWELS for i in range(n)]
+
+    #  number of strings of size 1 that start with each different vowels
+    dp[0] = [1] * N_VOWELS
+
+    for i in range(1, n):
+        #  number of strings of size i that start with character j
+        dp[i][0] = sum(dp[i-1][0:])
+        dp[i][1] = sum(dp[i-1][1:])
+        dp[i][2] = sum(dp[i-1][2:])
+        dp[i][3] = sum(dp[i-1][3:])
+        dp[i][4] = sum(dp[i-1][4:])
+
+    for row in dp:
+        print(row)
+
+    return sum(dp[n-1][0:])
+
 
 
 
