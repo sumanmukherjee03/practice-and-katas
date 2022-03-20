@@ -44,6 +44,8 @@ print(eggs) # spam
 
 ```
 mylist = otherlist[:] # slicing the entire list performs a copy of the list
+
+newArr = sorted(arr, key = lambda x : x[2]) # sort an array of arrays (n x 3) by the last element of the inner arrays and get back a copy of the original array
 ```
 
 
