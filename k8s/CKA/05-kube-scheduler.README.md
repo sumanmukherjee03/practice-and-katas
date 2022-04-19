@@ -120,7 +120,7 @@ subjects:
   namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: system:kube-scheduler                 # We have bound the system cluster role for kube-scheduler to this custom service account so that it gets the same privileges as the custom scheduler
+  name: system:kube-scheduler                 # We have bound the system cluster role for kube-scheduler to this custom service account so that it gets the same privileges as the kube-scheduler
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -134,7 +134,7 @@ subjects:
   namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: system:volume-scheduler               # We have bound the system cluster role for kube-scheduler to this custom service account so that it gets the same privileges as the custom scheduler
+  name: system:volume-scheduler               # We have bound the system cluster role for kube-scheduler to this custom service account so that it gets the same privileges as the kube-scheduler
   apiGroup: rbac.authorization.k8s.io
 
 ---
