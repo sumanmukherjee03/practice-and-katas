@@ -113,7 +113,7 @@ kubectl get all --no-headers --selector env=prod
 kubectl get pods --no-headers --selector env=prod,bu=finance,tier=frontend
 kubectl set image deployments/frontend simple-webapp=kodekloud/webapp-color:v2
 kubectl create job throw-dice-job --image=kodekloud/throw-dice
-kubectl create cronjob throw-dice-cron-job --image=kodekloud/throw-dice --schedule="30 21 * * *"
+<!-- kubectl create cronjob throw-dice-cron-job --image=kodekloud/throw-dice --schedule="30 21 * * *" -->
 
 
 kubectl create configmap app-config --from-literal=APP_COLOR=blue --from-literal=APP_MODE=prod
