@@ -3,7 +3,7 @@
 By default pods can get scheduled on any worker node.
 To make certain pods get scheduled only on certain nodes or not get scheduled on certain nodes you can use affinity and anti-affinity.
 
-For example one way to make the data-processing pod to get scheduled to a node with `labels` - `size: large`,
+For example one way to make data-processing pods to get scheduled to a node with `labels` - `size: large`,
 we can make use of the `nodeSelector` property in the pod definition yaml.
 ```
 apiVersion: v1

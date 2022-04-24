@@ -1,5 +1,9 @@
 ## cheatsheet
 ```
+kubectl api-resources --namespaced=true
+kubectl api-resources --namespaced=false
+kubectl api-resources --api-group=extensions
+
 kubectl cluster-info
 kubectl cluster-info dump
 kubectl config view
@@ -39,6 +43,106 @@ kubectl describe pvc pv-vol1-claim
 kubectl delete pvc pv-vol1-claim
 kubectl get storageclass portworx-vol
 kubectl logs web -f
+
+
+kubectl describe pod <pod_name> | grep -i node
+kubectl describe pod <pod_name> | grep -i image
+kubectl run redis --image=redis123 --dry-run=client -o yaml
+kubectl get replicasets
+kubectl describe replicaset new-replica-set | grep -i -E '(image|container)'
+kubectl api-resources --namespaced=true | grep -i replicaset
+kubectl delete -f replicaset-definitions.yaml
+kubectl get replicaset new-replica-set -o yaml > replicaset-def.yaml
+kubectl scale replicaset new-replica-set --replicas=0
+kubectl scale replicaset new-replica-set --replicas=4
+kubectl edit replicaset new-replica-set
+kubectl get deployments
+kubectl describe deployment frontend-deployment | grep -i image
+kubectl create deployment http-frontend --image=httpd:2.4-alpine --dry-run=client -o yaml > deployment-httpd.yaml
+kubectl get ns --no-headers | wc -l
+kubectl run redis --image=redis -n finance
+kubectl get pods -A -o wide | grep -i blue
+kubectl describe svc kubernetes | grep -i type
+kubectl describe svc kubernetes | grep -i targetport
+kubectl get endpoints kubernetes
+kubectl describe deployment simple-webapp-deployment | grep -i image
+kubectl run nginx-pod --image=nginx:alpine
+kubectl run redis --image=redis:alpine --labels=tier=db
+kubectl run redis --image=redis:alpine -l tier=db
+kubectl expose pod redis --name redis-service --port 6379 --target-port 6379 --type ClusterIP
+kubectl expose pod redis --name redis-service --port 6379 --target-port 6379 --type ClusterIP --dry-run=client -o yaml
+kubectl create deployment webapp --image=kodekloud/webapp-color --replicas=3
+kubectl run custom-nginx --image=nginx --port=8080 --expose
+kubectl create deployment redis-deploy -n dev-ns --image=redis --replicas=2
+kubectl run httpd --image=httpd:alpine --port=80 --expose
+kubectl describe pod ubuntu-sleeper | grep -C 5 -i command
+kubectl describe pod webapp-color | grep -C 4 -i environment
+kubectl get pods --field-selector=status.phase=Running
+kubectl explain pod.spec.containers.envFrom.configMapRef
+kubectl get secret
+kubectl get secret <secret> -o yaml
+kubectl describe secret <secret> | grep -i type
+kubectl create secret generic db-secret --from-literal=DB_Host=sql01 --from-literal=DB_User=root --from-literal=DB_Password=<whatever>
+kubectl explain pod.spec.containers.securityContext.capabilities
+kubectl explain pod.spec.containers.securityContext.runAsUser
+kubectl describe pod elephant | grep -C 5 -i terminated
+kubectl describe sa default
+kubectl get pod <pod_name> -o yaml | grep -C 3 -i serviceaccount
+kubectl exec <pod_name> -c <container_name> -it -- cat /var/run/secrets/kubernetes.io/serviceaccount/token
+kubectl get secret dashboard-sa-token -o jsonpath='{.data.token}'
+kubectl explain deployment.spec.template.spec | grep -i serviceaccount
+kubectl explain pod --recursive | grep -C5 tolerations
+kubectl explain deployment --recursive | less
+kubectl taint node node01 color=blue:NoExecute
+kubectl taint node node01 color=blue:NoExecute-
+kubectl describe node kubemaster | grep -i taint
+kubectl label nodes node01 size=large
+kubectl get nodes
+kubectl taint node node01 spray=mortein:NoSchedule
+kubectl describe node node01 | grep -i taints
+kubectl taint node controlplane node-role.kubernetes.io/master=:NoSchedule-
+kubectl -n elastic-stack logs kibana
+kubectl -n elastic-stack exec app -c app -it -- tail -f /log/app.log
+kubectl explain pod.spec.containers.readinessProbe --recursive
+kubectl explain pod.spec.containers.livenessProbe --recursive
+kubectl logs webapp-2 -c simple-webapp -f | grep -i -E '(fail|error)'
+kubectl top node
+kubectl top pod
+kubectl get pods --no-headers --selector env=dev | wc -l
+kubectl get all --no-headers --selector env=prod
+kubectl get pods --no-headers --selector env=prod,bu=finance,tier=frontend
+kubectl set image deployments/frontend simple-webapp=kodekloud/webapp-color:v2
+kubectl create job throw-dice-job --image=kodekloud/throw-dice
+kubectl create cronjob throw-dice-cron-job --image=kodekloud/throw-dice --schedule="30 21 * * *"
+
+
+kubectl create configmap app-config --from-literal=APP_COLOR=blue --from-literal=APP_MODE=prod
+kubectl create configmap app-config --from-file=app_config.properties
+kubectl describe configmap app-config
+kubectl create secret generic app-secret --from-literal=USER=foo --from-literal=ENGINE=mysql
+kubectl create secret generic app-secret --from-file=app_secret.properties
+
+
+kubectl create serviceaccount dashboard-sa
+kubectl get serviceaccount
+kubectl describe serviceaccount dashboard-sa | grep -i token
+kubectl describe secret dashboard-sa-token-kubeddm
+curl https://apiserverurl/api -insecure --header "Authorization: Bearer <token_value_from_above>"
+kubectl describe pod dashboard-app | grep -i secrets | grep -i serviceaccount
+kubectl exec -it dashboard-app cat /var/run/secrets/kubernetes.io/serviceaccount/token
+
+
+echo -n 'mysecretvalue' | base64
+echo -n 'mysecretfromk8s' | base64 -d
+
+
+ls /usr/include/linux.capability.h
+docker run --user 1000 ubuntu sleep 3600
+docker run --cap-add MAC_ADMIN ubuntu
+docker run --cap-drop KILL ubuntu
+docker run --privileged ubuntu
+
+
 
 kubectl get pods --server https://master-loadbalancer:6443 --client-key kube-admin.key --client-certificate kube-admin.crt --certificate-authority ca.crt
 kubectl get pods --kubeconfig /path/to/kubeconfig
@@ -140,4 +244,9 @@ kubectl get events | grep -i 'scheduled'
 kubectl exec busybox -it -- nslookup nginx-resolver-service
 kubectl exec busybox -it -- nslookup 10-244-1-7.default.pod.cluster.local
 kubectl expose pod nginx-resolver --name=nginx-resolver-service --port=80 --target-port=80
+
+for i in {1..35}; do
+   kubectl exec --namespace=kube-public curl -- sh -c 'test=`wget -qO- -T 2  http://webapp-service.default.svc.cluster.local:8080/info 2>&1` && echo "$test OK" || echo "Failed"';
+   echo ""
+done
 ```

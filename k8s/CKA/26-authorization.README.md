@@ -212,3 +212,41 @@ You can set multiple modes too like `--authorization-mode=Node,RBAC,Webhook`.
 Authorization happens in the order in which it is specified when the kube-apiserver is started,
 ie Node -> RBAC -> Webhook . If a module denies the request, it asks the next module in order.
 As soon as a module allows a request, it breaks from the chain.
+
+
+
+
+
+Example of RBAC for querying pod information:
+```
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: read-pods
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: dashboard-sa # Name is case sensitive
+  namespace: default
+roleRef:
+  kind: Role #this must be Role or ClusterRole
+  name: pod-reader # this must match the name of the Role or ClusterRole you wish to bind to
+  apiGroup: rbac.authorization.k8s.io
+
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: default
+  name: pod-reader
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - get
+  - watch
+  - list
+```
