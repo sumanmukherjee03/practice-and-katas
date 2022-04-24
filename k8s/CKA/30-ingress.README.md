@@ -7,7 +7,7 @@ For clients to not have to remember the port 35000, we can add a proxy server li
 This is where an ingress comes into play. Ingress does what the proxy server does. Point your DNS to the ingress proxy server.
 
 In the cloud, a service of type `loadbalancer` will create a loadbalancer per service.
-So, external DNS -> loadbalancer:35000 -> pod:5000 is how traffic flows.
+So, external DNS will resolve to -> loadbalancer:35000 -> pod:5000 is how traffic flows.
 If you add another service that will need a loadbalancer as well.
 But you would want to forward traffic to the appropriate loadbalancer based on path.
 You also want to handle SSL at one place only and not multiple times, ie one per load balancer.
@@ -40,7 +40,7 @@ This is an example of an ingress controller deployment for nginx.
 You need a configmap first to manage the configuration for the nginx server and that is passed along to the binary when starting the nginx server.
 This configmap contains nginx specific configuration like timeouts.
 For the nginx deployment we use a special image from kubernetes.
-The image needs the POD_NAME and POD_NAMESPACE env vars to operate at runtime as the container.
+The image needs the POD_NAME and POD_NAMESPACE env vars to operate at runtime in the container.
 Expose the ports 80 and 443 via a service.
 The ingress controller monitors the ingress resources and configures the nginx server as things change in our cluster.
 However, to be able to do this the ingress controller needs additional permissions.
@@ -272,9 +272,9 @@ If you dont have a hostname it will match anything (or wildcard) for the hostnam
 
 Take note of the annotation `nginx.ingress.kubernetes.io/rewrite-target` which can be used to rewrite urls before forwarding it to the backend service.
 Here the urls are getting rewritten before being forwarded to the services.
-  - accessories.bestdeals.com/watches rewrites to <watch-store-service>:8080/
-  - accessories.bestdeals.com/hats rewrites to <hat-store-service>:8081/
-  - accessories.bestdeals.com/belts rewrites to <belt-store-service>:8082/
+  - accessories.bestdeals.com/watches gets rewriten to <watch-store-service>:8080/
+  - accessories.bestdeals.com/hats gets rewriten to <hat-store-service>:8081/
+  - accessories.bestdeals.com/belts gets rewriten to <belt-store-service>:8082/
 
 
 Here's another example with a rewrite

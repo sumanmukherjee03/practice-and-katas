@@ -61,3 +61,11 @@ To expose a port from a running container via a service with a cluster IP
 ```
 kubectl expose deployment nginx --port 80
 ```
+
+In the pod specs for a deployment if you provide alongside a headless service, like this
+```
+      subdomain: frontend # Keep this the same name as the headless service name that is pointing to the deployment
+      hostname: nginx-pod
+```
+then all pods will get an A record like so - `nginx-pod.frontend.default.svc.cluster.local`.
+Thus there will be `n` (read: no of replicas) IPs pointed to by the same A record.

@@ -80,6 +80,22 @@ spec:
 ```
 This form of volume mount isnt useful in a cluster though because the directory is not being shared across multiple hosts.
 
+If we were to have a similar persistent volume on the host, that would look something like this
+```
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-log
+spec:
+  persistentVolumeReclaimPolicy: Retain
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 100Mi
+  hostPath:
+    path: /pv/log
+```
+
 To fix this in aws for instance you could store the data in ebs volumes by doing something like this.
 Remember however that ebs volumes are zone specific. In kubernetes that is accounted for with allowed topologies, as in node affinity for particular zones.
 However, this is pre-provisioned storage in ebs, for example something created with terraform.

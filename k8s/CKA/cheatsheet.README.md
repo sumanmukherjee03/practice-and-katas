@@ -98,6 +98,7 @@ kubectl taint node node01 color=blue:NoExecute-
 kubectl describe node kubemaster | grep -i taint
 kubectl label nodes node01 size=large
 kubectl get nodes
+kubectl explain deployment --recursive | grep -C 5 -i nodeselector
 kubectl taint node node01 spray=mortein:NoSchedule
 kubectl describe node node01 | grep -i taints
 kubectl taint node controlplane node-role.kubernetes.io/master=:NoSchedule-
@@ -114,6 +115,22 @@ kubectl get pods --no-headers --selector env=prod,bu=finance,tier=frontend
 kubectl set image deployments/frontend simple-webapp=kodekloud/webapp-color:v2
 kubectl create job throw-dice-job --image=kodekloud/throw-dice
 <!-- kubectl create cronjob throw-dice-cron-job --image=kodekloud/throw-dice --schedule="30 21 * * *" -->
+kubectl get networkpolicies
+kubectl describe networkpolicy payroll-policy
+kubectl exec internal -c internal -it -- nc -v -z 10-50-0-6.default.pod.cluster.local 8080
+kubectl explain networkpolicy.spec --recursive
+kubectl get all -A | grep -v -i kube-system
+kubectl get deployments -n app-space --no-headers
+kubectl describe ingress -n app-space ingress-wear-watch
+kubectl describe svc default-http-backend -n app-space
+kubectl edit ingress -n app-space ingress-wear-watch
+kubectl explain pod.spec.containers.volumeMount --recursive
+kubectl explain pod.spec.volumes --recursive
+kubectl explain persistentvolume.spec --recursive
+kubectl explain persistentvolumeclaim.spec --recursive | grep -i 'persistentvolumereclaimpolicy'
+kubectl get persistentvolumeclaim
+kubectl delete persistentvolumeclaim myclaim
+kubectl explain storageclass --recursive
 
 
 kubectl create configmap app-config --from-literal=APP_COLOR=blue --from-literal=APP_MODE=prod
@@ -130,6 +147,22 @@ kubectl describe secret dashboard-sa-token-kubeddm
 curl https://apiserverurl/api -insecure --header "Authorization: Bearer <token_value_from_above>"
 kubectl describe pod dashboard-app | grep -i secrets | grep -i serviceaccount
 kubectl exec -it dashboard-app cat /var/run/secrets/kubernetes.io/serviceaccount/token
+
+
+kubectl get ingress
+kubectl describe ingress test-ingress
+kubectl create ingress test-ingress --rule="wear.onlinestore.com/wear=wear-service:80"
+
+
+kubectl create ns ingress-space
+kubectl config set-context --current --namespace=ingress-space
+kubectl create configmap nginx-configuration
+kubectl create serviceaccount ingress-serviceaccount
+kubectl describe rolebinding ingress-role-binding
+kubectl describe role ingress-role
+kubectl describe deployment ingress-controller
+kubectl expose deployment ingress-controller --name=ingress --port=80 --target-port=80 --type=NodePort --dry-run=client -o yaml > ingress-svc.yaml
+kubectl create ingress app-ingress -n app-space --rule="/wear*=wear-service:8080" --rule="/watch*=video-service:8080" --annotations 'nginx.ingress.kubernetes.io/rewrite-target=/'
 
 
 echo -n 'mysecretvalue' | base64
@@ -153,7 +186,7 @@ kubectl run --rm --restart=Never ubuntu --image ubuntu --command sleep 900 --dry
 kubectl run --rm --restart=Never busybox --image=gcr.io/google-containers/busybox --command sleep 900 --overrides='{"apiVersion": "v1", "spec": {"template": {"spec": {"nodeSelector": {"kubernetes.io/hostname": "node01"}}}}}'
 kubectl exec -it webapp -c app -- nslookup db-service
 kubectl run --rm --restart=Never --image=nikola/netshoot --command /bin/sh -c 'while true; do echo "HTTP/1.1 200 OK\n SUCCESS" | nc -l -p 80 -q 1; done' --port 80 --expose
-kubectl get pods -l tier=webapp -o jsonpath='{range .items[*]}{.status.podIP}{"\n"}{end}'
+<!-- kubectl get pods -l tier=webapp -o jsonpath='{range .items[*]}{.status.podIP}{"\n"}{end}' -->
 kubectl create deployment frontend --image nginx --replicas=2
 kubectl scale deployment frontend --replicas=3
 kubectl set image deployment/frontend nginx=nginx:1.18 --record
@@ -212,8 +245,8 @@ cat /var/lib/kubelet/kubelet-config.yaml | grep '--pod-manifest-path'
 
 kubectl get events | grep -i <custom-scheduler-name>
 
-kubectl get nodes -o jsonpath='{range .items[*]}{.status.nodeInfo.osImage}{"\n"}{end}'
-kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.capacity.cpu}{"\n"}{end}'
+<!-- kubectl get nodes -o jsonpath='{range .items[*]}{.status.nodeInfo.osImage}{"\n"}{end}' -->
+<!-- kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.capacity.cpu}{"\n"}{end}' -->
 kubectl get nodes -o custom-columns=NODE:.metadata.name,CPU:.status.capacity.cpu
 kubectl get pv -o custom-columns=NAME:.metadata.name,CAPACITY:.spec.capacity.storage --sort-by=.spec.capacity.storage
 kubectl config view --kubeconfig=/path/to/kubeconfig -o jsonpath='{$.contexts[?(@.context.user == "aws-user")].name}{"\n"}'
