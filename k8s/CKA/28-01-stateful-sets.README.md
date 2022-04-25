@@ -13,6 +13,7 @@ So, in essence stateful sets maintain a sticky identity.
 Here's an example of a stateful set.
 It is important to remember that deployment of stateful sets are ordered and graceful, ie one after the other.
 In the Service object definition, notice how clusterIP is set to None. That's what creates a headless service for us.
+
 ```
 apiVersion: storage.k8s.io/v1
 kind: StorageClass

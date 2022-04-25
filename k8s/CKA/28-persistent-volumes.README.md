@@ -162,6 +162,7 @@ kubectl describe persistentvolume pv-vol1
 ```
 
 Persistent volume claim is matched with a persistent volume object based on accessModes, resource requests and also labels if provided.
+It does not match merely based on the name of the persistent volume.
 You can this use this persistent volume claim in your pod definition to actually use the storage.
 `cat pvc-definition.yaml`
 ```

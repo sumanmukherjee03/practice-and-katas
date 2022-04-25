@@ -131,6 +131,17 @@ kubectl explain persistentvolumeclaim.spec --recursive | grep -i 'persistentvolu
 kubectl get persistentvolumeclaim
 kubectl delete persistentvolumeclaim myclaim
 kubectl explain storageclass --recursive
+kubectl get persistentvolume
+kubectl describe persistentvolume pv-vol1
+kubectl describe storageclass local-storage
+kubectl get nodes -o wide
+kubectl explain statefulset.spec --recursive
+kubectl explain statefulset.spec.volumeclaimtemplates --recursive
+kubectl explain networkpolicy.spec --recursive | grep -C 10 -i -E '(ingress|egress)'
+kubectl logs web --previous
+kubectl run -it --rm --restart=Never busybox --image=busybox sh
+kubectl get pods -l app=hostnames -o jsonpath='{{range .items}}{{.status.podIP}}{{"\n"}}{{end}}'
+
 
 
 kubectl create configmap app-config --from-literal=APP_COLOR=blue --from-literal=APP_MODE=prod
@@ -278,8 +289,80 @@ kubectl exec busybox -it -- nslookup nginx-resolver-service
 kubectl exec busybox -it -- nslookup 10-244-1-7.default.pod.cluster.local
 kubectl expose pod nginx-resolver --name=nginx-resolver-service --port=80 --target-port=80
 
+kubectl describe pod kube-apiserver-controlplane
+kubectl get pods -n kube-system | grep -i dns
+kubectl get svc kube-dns -n kube-system
+kubectl get pods -n kube-system -l k8s-app=kube-dns
+kubectl describe configmap coredns -n kube-system
+kubectl -n kube-system describe deployment coredns | grep -C3 -i args | grep -i corefile
+kubectl exec test-pod -c test -it -- nc -v -z web-service 80
+kubectl exec test-pod -c test -it -- nslookup <another_pod_ip>
+kubectl exec hr -c web -it -- nslookup mysql.payroll
+
+kubectl run ubuntu --image ubuntu --overrides='{"apiVersion": "v1", "spec": {"template": {"spec": {"nodeSelector": {"kubernetes.io/hostname": "node01"}}}}}' --restart=Never --command sleep 300
+kubectl get pods --show-labels
+kubectl get pods --selector app=nginx
+kubectl get pods -l app=nginx
+kubectl get pod nginx --watch
+kubectl get pods --no-headers --selector env=prod,bu=finance,tier=frontend
+
+
+kubectl logs -n kube-system <weave-net-pod> -c weave | grep -i range
+
 for i in {1..35}; do
    kubectl exec --namespace=kube-public curl -- sh -c 'test=`wget -qO- -T 2  http://webapp-service.default.svc.cluster.local:8080/info 2>&1` && echo "$test OK" || echo "Failed"';
    echo ""
 done
+
+kubectl exec busybox -- /bin/bash -c 'until nslookup db-service; do echo waiting for db to be up and running; sleep 3; done;';
+kubectl exec nikola/netshoot -- /bin/bash -c 'while true; do echo -e "HTTP/1.1 200 OK\n SUCCESS" | nc -l -p 80 -q 1; done';
+kubectl set image deployment/nginx nginx=nginx:1.18 --record
+kubectl explain resourcequota
+kubectl create quota dev-ns-counts --hard=count/deployments.apps=2,count/replicasets.apps=4,count/pods=10,count/secrets=4 --namespace=dev
+kubectl get pods -o jsonpath='{.items[0].spec.containers[*].image}'
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.capacity.cpu}{"\n"}{end}'
+kubectl get persistentvolume --sort-by=.spec.capacity.storage -o custom-columns=NAME:.metadata.name,CAPACITY:.spec.capacity.storage
+kubectl taint node controlplane node-role.kubernetes.io/master:NoSchedule-
+kubectl explain limitrange.spec --recursive
+kubectl rollout status deployment/webapp-deployment
+kubectl rollout history deployment/webapp-deployment
+kubectl rollout undo deployment/webapp-deployment
+kubectl rollout undo deployment/frontend --to-revision=2
+kubectl drain node01 --ignore-daemonsets
+kubectl drain node01 --ignore-daemonsets --force
+kubectl cordon node01
+kubectl uncordon node01
+kubectl get all --all-namespaces -o yaml > everything.yaml
+kubectl get pods --server <kubernetes-api-server-url>:6443 --client-key kube-admin.key --client-certificate kube-admin.crt --certificate-authority ca.crt
+kubectl config use-context engineer@kubernetes-cluster
+
+kubectl proxy && curl http://localhost:6443 -k
+kubectl proxy && curl http://localhost:6443/apis -k
+
+kubectl create role engineer --verb=list --verb=create --verb=delete --resource=pods --dry-run=client -o yaml
+kubectl get roles
+kubectl get rolebindings
+kubectl describe role engineer
+kubectl create rolebinding engineering-user-role-binding --role=engineer --user=engineering-user --dry-run=client -o yaml
+kubectl describe rolebinding engineering-user-role-binding
+
+kubectl auth can-i create deployments
+kubectl auth can-i delete nodes
+kubectl auth can-i create deployments --as john
+kubectl auth can-i create pods --as john --namespace test
+kubectl api-resources --namespaced=true
+kubectl api-resources --namespaced=false
+kubectl describe pod kube-apiserver-controlplane -n kube-system | grep -C 7 -i -E '(authorization-mode)'
+kubectl explain pod.spec.containers.securityContext --recursive | grep -i privilege
+kubectl patch svc http-svc -p '{"spec":{"type": "ClusterIP"}}'
+kubectl patch svc http-svc -p '{"spec":{"type": "NodePort"}}'
+
+
+aws ssm start-session --target <instance_id>
+METADATA_API_TOKEN="$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")"
+curl -H "X-aws-ec2-metadata-token: $METADATA_API_TOKEN" http://169.254.169.254/latest/meta-data/
+aws-iam-authenticator token -i web-k8s-eks --region us-west-2
+cat /etc/kubernetes/kubelet/kubelet-config.json
+kubectl describe daemonset aws-node -n kube-system
+kubectl port-forward pods/<pod-name> 28015:27017
 ```

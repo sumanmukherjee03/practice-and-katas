@@ -15,6 +15,80 @@ https://kubernetes.io/docs/concepts/cluster-administration/addons/
 https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/#steps-for-the-first-control-plane-node
 
 
+### Controlplane
+
+If you are on a controlplane node and run netstat you will find an output like so
+- `root@controlplane:~# netstat -tulpe` OR `root@controlplane:~# netstat -ntulpe`
+
+```
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       User       Inode      PID/Program name
+tcp        0      0 localhost:10248         0.0.0.0:*               LISTEN      root       9544937    4586/kubelet
+tcp        0      0 localhost:10249         0.0.0.0:*               LISTEN      root       9560353    5707/kube-proxy
+tcp        0      0 localhost:39657         0.0.0.0:*               LISTEN      root       9524110    4586/kubelet
+tcp        0      0 localhost:2379          0.0.0.0:*               LISTEN      root       9514815    3853/etcd
+tcp        0      0 controlplane:2379       0.0.0.0:*               LISTEN      root       9514814    3853/etcd
+tcp        0      0 127.0.0.11:33867        0.0.0.0:*               LISTEN      nobody     9489915    -
+tcp        0      0 controlplane:2380       0.0.0.0:*               LISTEN      root       9514813    3853/etcd
+tcp        0      0 localhost:2381          0.0.0.0:*               LISTEN      root       9526843    3853/etcd
+tcp        0      0 0.0.0.0:http-alt        0.0.0.0:*               LISTEN      root       9492874    733/ttyd
+tcp        0      0 localhost:10257         0.0.0.0:*               LISTEN      root       9543713    3845/kube-controlle
+tcp        0      0 localhost:10259         0.0.0.0:*               LISTEN      root       9501689    3382/kube-scheduler
+tcp        0      0 127.0.0.53:domain       0.0.0.0:*               LISTEN      systemd-resolve 9508960    492/systemd-resolve
+tcp        0      0 0.0.0.0:ssh             0.0.0.0:*               LISTEN      root       9477047    736/sshd
+tcp6       0      0 [::]:10250              [::]:*                  LISTEN      root       9537017    4586/kubelet
+tcp6       0      0 [::]:6443               [::]:*                  LISTEN      root       9517667    3833/kube-apiserver
+tcp6       0      0 [::]:10256              [::]:*                  LISTEN      root       9564417    5707/kube-proxy
+tcp6       0      0 [::]:ssh                [::]:*                  LISTEN      root       9477049    736/sshd
+tcp6       0      0 [::]:8888               [::]:*                  LISTEN      root       9559050    4898/kubectl
+udp        0      0 127.0.0.53:domain       0.0.0.0:*                           systemd-resolve 9508959    492/systemd-resolve
+udp        0      0 0.0.0.0:8472            0.0.0.0:*                           root       9538545    -
+udp        0      0 127.0.0.11:36257        0.0.0.0:*                           nobody     9489914    -
+```
+
+If you wanna find out which device is getting used for node to node communication
+`ip route show to match <node_ip>/32` OR `ip addr | grep -C3 <node_ip>`
+
+To see the state of the bridge network on a node
+`ip link show docker0`
+
+To see the default gateway, as in how packets from a node leave the system and go out
+`ip route show default`
+
+To find the port a component is listening to in master
+`netstat -ntuple | grep -i kube-scheduler`
+
+etcd listens to 2379/2380 (both ports). To find the number of open connections for etcd on port 2379
+`netstat -anp | grep -i etcd | grep 2379 | wc -l`
+In etcd 2380 is for peer-to-peer connectivity.
+
+How to check the network partition of the nodes
+```
+ip addr | grep eth0
+apt-get -y -qq update; apt-get install -y ipcalc
+ipcalc 10.3.122.6/24
+```
+
+Quite often the kube-system controlplane pods scheduled on the controlplane nodes get the same IP as the node itself.
+Make sure to check for this. But you might see some other pods on the controlplane not have the same IP as the controlplane node.
+For example the coredns pod. Check the IP of these pods. If the IP seems to be on a different CIDR than the node ip,
+then there is a overlay network in play here. To get an idea of the CIDR range of that network partition try this command.
+This will give you an idea of what device is used + the ip range as well.
+`ip route show to match <pod_ip>/32`
+
+However, if weave has been deployed as the networking solution, then specifically you could be looking for something like this
+`kubectl logs -n kube-system <weave-net-pod> -c weave | grep -i range`
+
+Use these to get information like the ip range of the k8s services, the cluster CIDR range, what mode kube-proxy is running as etc.
+```
+kubectl config set-context --current --namespace=kube-system
+kubectl describe pod kube-apiserver-controlplane
+kubectl logs kube-apiserver-controlplane -c kube-apiserver
+kubectl logs <kube-proxy-pod-name> -c kube-proxy
+kubectl get configmaps kube-proxy -o yaml
+kubectl get daemonset
+```
+
 ### Pod networking
 
 Pods must each get an unique IP

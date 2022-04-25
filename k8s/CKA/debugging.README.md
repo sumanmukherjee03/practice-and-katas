@@ -248,11 +248,11 @@ This is what iptables would look like for a service with NodePort if things are 
 node01 $ iptables-save | grep webapp-service
 -A KUBE-NODEPORTS -p tcp -m comment --comment "application/webapp-service" -m tcp --dport 30081 -j KUBE-MARK-MASQ
 -A KUBE-NODEPORTS -p tcp -m comment --comment "application/webapp-service" -m tcp --dport 30081 -j KUBE-SVC-QB3GCEADICMX7L52
--A KUBE-SEP-WHCOKKDP6FNJV2JR -s 10.32.0.4/32 -m comment --comment "application/webapp-service" -j KUBE-MARK-MASQ
+-A KUBE-SVC-QB3GCEADICMX7L52 -m comment --comment "application/webapp-service" -j KUBE-SEP-WHCOKKDP6FNJV2JR
 -A KUBE-SEP-WHCOKKDP6FNJV2JR -p tcp -m comment --comment "application/webapp-service" -m tcp -j DNAT --to-destination 10.32.0.4:8080
+-A KUBE-SEP-WHCOKKDP6FNJV2JR -s 10.32.0.4/32 -m comment --comment "application/webapp-service" -j KUBE-MARK-MASQ
 -A KUBE-SERVICES ! -s 10.244.0.0/16 -d 10.107.112.64/32 -p tcp -m comment --comment "application/webapp-service cluster IP" -m tcp --dport 8080 -j KUBE-MARK-MASQ
 -A KUBE-SERVICES -d 10.107.112.64/32 -p tcp -m comment --comment "application/webapp-service cluster IP" -m tcp --dport 8080 -j KUBE-SVC-QB3GCEADICMX7L52
--A KUBE-SVC-QB3GCEADICMX7L52 -m comment --comment "application/webapp-service" -j KUBE-SEP-WHCOKKDP6FNJV2JR
 ```
 
 This is what a routing table looks like from a host

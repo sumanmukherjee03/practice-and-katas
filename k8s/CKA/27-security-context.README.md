@@ -107,8 +107,8 @@ The kubelets load them into a pod that the pod can refer to for use by the conta
         "getuid",
         "open",
         "poll",
-        ......
-          "ioctl"
+        ......,
+        "ioctl"
       ],
       "action": "SCMP_ACT_ALLOW"
     }
