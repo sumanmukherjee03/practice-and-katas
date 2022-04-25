@@ -328,6 +328,9 @@ kubectl rollout status deployment/webapp-deployment
 kubectl rollout history deployment/webapp-deployment
 kubectl rollout undo deployment/webapp-deployment
 kubectl rollout undo deployment/frontend --to-revision=2
+kubectl rollout history deployment/frontend
+kubectl annotate pods my-pod color=blue
+kubectl autoscale deployment foo --min=2 --max=10
 kubectl drain node01 --ignore-daemonsets
 kubectl drain node01 --ignore-daemonsets --force
 kubectl cordon node01
@@ -335,6 +338,9 @@ kubectl uncordon node01
 kubectl get all --all-namespaces -o yaml > everything.yaml
 kubectl get pods --server <kubernetes-api-server-url>:6443 --client-key kube-admin.key --client-certificate kube-admin.crt --certificate-authority ca.crt
 kubectl config use-context engineer@kubernetes-cluster
+kubectl cp /tmp/foo_dir my-pod:/tmp/bar_dir
+kubectl cp my-namespace/my-pod:/tmp/foo /tmp/bar
+
 
 kubectl proxy && curl http://localhost:6443 -k
 kubectl proxy && curl http://localhost:6443/apis -k
