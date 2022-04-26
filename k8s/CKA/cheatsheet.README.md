@@ -364,6 +364,7 @@ kubectl patch svc http-svc -p '{"spec":{"type": "ClusterIP"}}'
 kubectl patch svc http-svc -p '{"spec":{"type": "NodePort"}}'
 
 
+aws eks --region us-west-2 update-kubeconfig --name <cluster_name>
 aws ssm start-session --target <instance_id>
 METADATA_API_TOKEN="$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")"
 curl -H "X-aws-ec2-metadata-token: $METADATA_API_TOKEN" http://169.254.169.254/latest/meta-data/
@@ -371,4 +372,6 @@ aws-iam-authenticator token -i web-k8s-eks --region us-west-2
 cat /etc/kubernetes/kubelet/kubelet-config.json
 kubectl describe daemonset aws-node -n kube-system
 kubectl port-forward pods/<pod-name> 28015:27017
+journalctl -u kubelet
+journalctl -u kube-proxy
 ```
