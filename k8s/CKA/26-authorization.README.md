@@ -59,8 +59,7 @@ curl http://localhost:6443/apis -k
 
 ### Node Authorizer
 
-kubelets interact with the kube-apiserver to Read Services, Endpoints, Nodes, Pods etc and
-also to Write Node Status, Pod Status, Events etc.
+kubelets talk to kube-apiserver to read Services, Endpoints, Nodes, Pods etc and also to write Node Status, Pod Status, Events etc.
 To be able to perform these actions the kube-apiserver authorizes the kubelet via the NodeAuthorizer mechanism.
 In the kubelet client certificate, the cert should have the group specified via `/O=system:nodes` in the `-subj` parameter of the cert
 and the cert name to be something like `CN=system:node:node01`.
@@ -68,7 +67,8 @@ Meaning any user which has a name prefix of `system:node:` and a group of `syste
 
 ### ABAC
 
-You can create a policy for an user in this way via a policy file
+You can create a policy file for multiple users in this way via a policy file.
+This for example can be the contents of a policy file :
 ```
 {"kind": "Policy", "spec": {"user": "eng-user", "namespace": "*", "resource": "pods", "apiGroup": "*"}}
 {"kind": "Policy", "spec": {"user": "qa-user", "namespace": "test", "resource": "pods", "apiGroup": "*"}}
@@ -82,8 +82,9 @@ As such this is not the preferred solution for authorization in kubernetes.
 ### Webhook
 
 If you want an external authorization mechanism, that's where the webhook mechanism of kubernetes authorization comes into play.
-For example `eng-user` requests access for a resource to `kube-apiserver`. The `kube-apiserver` asks `Open Policy Agent` if the user can access a resource or not
-and that response is returned back and the user is allowed access or NOT based on that response.
+For example `eng-user` requests access for a resource to `kube-apiserver`.
+The `kube-apiserver` for example asks `Open Policy Agent` if the user can access a resource or not
+and based on that response the user is either allowed access or NOT.
 
 
 ### AlwaysAllow
@@ -208,7 +209,7 @@ To create the resources `kubectl apply -f cluster-admin-role-with-binding.yaml`
 The mode of authorization is set on the kube-apiserver as an option at start.
 `--authorization-mode=AlwaysAllow`. The value is set to `AlwaysAllow` by default.
 
-You can set multiple modes too like `--authorization-mode=Node,RBAC,Webhook`.
+You can set multiple modes too, like `--authorization-mode=Node,RBAC,Webhook`.
 Authorization happens in the order in which it is specified when the kube-apiserver is started,
 ie Node -> RBAC -> Webhook . If a module denies the request, it asks the next module in order.
 As soon as a module allows a request, it breaks from the chain.

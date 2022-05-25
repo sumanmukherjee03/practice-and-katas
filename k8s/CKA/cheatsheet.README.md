@@ -71,6 +71,7 @@ kubectl run redis --image=redis:alpine --labels=tier=db
 kubectl run redis --image=redis:alpine -l tier=db
 kubectl expose pod redis --name redis-service --port 6379 --target-port 6379 --type ClusterIP
 kubectl expose pod redis --name redis-service --port 6379 --target-port 6379 --type ClusterIP --dry-run=client -o yaml
+kubectl run --restart=Never --image=busybox static-busybox --dry-run=client -o yaml --command -- sleep 1000 > /etc/kubernetes/manifests/static-busybox.yaml
 kubectl create deployment webapp --image=kodekloud/webapp-color --replicas=3
 kubectl run custom-nginx --image=nginx --port=8080 --expose
 kubectl create deployment redis-deploy -n dev-ns --image=redis --replicas=2
@@ -261,6 +262,7 @@ kubectl get events | grep -i <custom-scheduler-name>
 kubectl get nodes -o custom-columns=NODE:.metadata.name,CPU:.status.capacity.cpu
 kubectl get pv -o custom-columns=NAME:.metadata.name,CAPACITY:.spec.capacity.storage --sort-by=.spec.capacity.storage
 kubectl config view --kubeconfig=/path/to/kubeconfig -o jsonpath='{$.contexts[?(@.context.user == "aws-user")].name}{"\n"}'
+<!-- kubectl get nodes -o jsonpath='{range .items[*]}{range .status.addresses}{"InternalIP of "}{@[1].address}{" "}{@[0].address}{" "}{end}{end}' > /root/CKA/node_ips -->
 
 kubectl create quota dev-ns-count --hard=count/deployments.apps=2,count/replicasets.apps=4,count/pods=10,count/secrets=4 --namespace=dev
 
@@ -298,6 +300,8 @@ kubectl -n kube-system describe deployment coredns | grep -C3 -i args | grep -i 
 kubectl exec test-pod -c test -it -- nc -v -z web-service 80
 kubectl exec test-pod -c test -it -- nslookup <another_pod_ip>
 kubectl exec hr -c web -it -- nslookup mysql.payroll
+
+kubectl run curl --image=alpine/curl --rm -it -- sh
 
 kubectl run ubuntu --image ubuntu --overrides='{"apiVersion": "v1", "spec": {"template": {"spec": {"nodeSelector": {"kubernetes.io/hostname": "node01"}}}}}' --restart=Never --command sleep 300
 kubectl get pods --show-labels
@@ -341,6 +345,9 @@ kubectl config use-context engineer@kubernetes-cluster
 kubectl cp /tmp/foo_dir my-pod:/tmp/bar_dir
 kubectl cp my-namespace/my-pod:/tmp/foo /tmp/bar
 
+kubectl get pods -l app=blue -o=custom-columns='NAME:.metadata.name' --no-headers=true
+
+kubectl --kubeconfig /etc/kubernetes/kubelet.conf run nginx-critical --image=nginx --dry-run=client -o yaml > /etc/kubernetes/manifests/nginx-critical.yaml
 
 kubectl proxy && curl http://localhost:6443 -k
 kubectl proxy && curl http://localhost:6443/apis -k
@@ -351,6 +358,9 @@ kubectl get rolebindings
 kubectl describe role engineer
 kubectl create rolebinding engineering-user-role-binding --role=engineer --user=engineering-user --dry-run=client -o yaml
 kubectl describe rolebinding engineering-user-role-binding
+
+kubectl create clusterrole pvviewer-role --verb=list --resource=persistentvolumes
+kubectl create clusterrolebinding pvviewer-role-binding --clusterrole=pvviewer-role --serviceaccount=default:pvviewer
 
 kubectl auth can-i create deployments
 kubectl auth can-i delete nodes

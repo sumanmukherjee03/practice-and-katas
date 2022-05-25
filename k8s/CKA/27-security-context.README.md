@@ -88,7 +88,7 @@ Relevant section to reconfigure is
 ```
 
 Here's an example of a seccomp profile definition json file.
-The kubelets load them into a pod that the pod can refer to for use by the containers.
+The kubelets load them into a pod that the pod can then refer to for use by the containers.
 ```
 {
   "defaultAction": "SCMP_ACT_ERRNO",

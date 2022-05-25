@@ -34,7 +34,7 @@ Another way to configure this is by passing the kubelet startup option for confi
 for the kubelet - `--config`. Then in the config file you can setup the dir with the `staticPodPath` key/value pair.
 
 Static pods are reflected in the cluster state because the kubelet provides this information afterwards to the api-server.
-However the static pod definitions can be edited using kubectl outside the host where the pod
+However the static pod definitions can NOT be edited using kubectl outside the host where the pod
 manifest was placed for the kubelet of that host to pick up. Static pods are useful to
 deploy control plane components of a kubernetes cluster like controller-manager.yaml, api-server.yaml etc.
 Static pods are restarted by the kubelet if they crash. This mechanism is used by the kubeadm tool.
@@ -42,6 +42,8 @@ Static pods are restarted by the kubelet if they crash. This mechanism is used b
 Kubelet contains another important component called the `cAdvisor`. The `cAdvisor` is responsible
 for collecting pod level metrics and exposing them to the metrics server. The metrics server is an
 in-memory metrics aggregation server in kubernetes which is also used for horizontal and vertical pod autoscaling.
+
 The metrics-server can be installed via
 `kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml`
+
 Having the metrics server enables us to run the `kubernetes top node` or `kubernetes top pod` command to view cluster metrics.

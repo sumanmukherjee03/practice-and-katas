@@ -48,7 +48,7 @@ kind: StatefulSet
 metadata:
   name: db
 spec:
-  serviceName: "mysql"
+  serviceName: "mysql" # This is very important for headless service definition
   replicas: 3
   selector:
     matchLabels:
@@ -122,5 +122,5 @@ This is where the `volumeClaimTemplates` field comes into play. It allows creati
 So, as the first pod is created, it provisions a pvc, which provisions a pv internally for the storage class and a storage is created in gcp
 and finally that gets bound to the first pod. Then the same happens for the 2nd pod and so on.
 
-When pods gets deleted, the pvc is not automatically deleted. But when a new pod takes it's place, the pvc is reattached to the
+When pods get deleted, the pvc is not automatically deleted. But when a new pod takes it's place, the pvc is reattached to the
 new pod. This enables stable storage for pods.

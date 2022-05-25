@@ -38,13 +38,15 @@ system_u:object_r:admin_home_t:s0
 selinux user accounts are different from linux user accounts. You cant create them through the cli.
 They are defnined in the policy file and only loaded in memory at startup.
 These users do not have server logins. They end with `_u`.
+Several selinux users can be mapped to a single selinux user.
 
 selinux roles define what a user can do in a certain domain. They are also defined in the policy files.
+selinux users can have multiple roles but only one role can be active and that too it could just be limited to a few selinux resource types.
 
 selinux types part defines what kind of file the resource is identified as, ie directory, file, network file etc.
 
-selinux sensitivity part defines the security behavior. security levels vary between c0 to c3 with c3 being top secret.
-The levels in c3 range can go up to c1023.
+selinux sensitivity part defines the security behavior. sensitivity levels vary between s0 to s3 with s3 being top secret.
+The security levels in each sensitivity level can then range from c1 to c1023.
 
 When new objects like files are created selinux automatically assigns security context to it based on location.
 When you copy a file over to a new location a new security context is assigned based on the location.
@@ -124,5 +126,5 @@ getcap /bin/ping
 
 The execve system call can grant a newly-started program privileges that its parent did not have.
 This can be dangerous. To reduce the attack surface, a generic mechanism has been provided - set `no_new_privs` bit.
-Once this is set on a proc, it is inherited across fork, clone and execve and cant be unset.
+Once this is set on a proc, it is inherited across fork, clone and execve and this flag cant be unset.
 This way forked procs wont be able to alter the setuid bit or add new capabilities.

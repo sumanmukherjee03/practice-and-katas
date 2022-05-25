@@ -79,7 +79,7 @@ To view the services
 `kubectl get services`
 
 Services use `Algorithm: Random` to forward requests to pods.
-Also, services have `SessionAffinity: Yes`.
+Also, services can have session affinity via the attribute `SessionAffinity: Yes`.
 
 A service spanning multiple nodes in a multi node cluster have the NodePort exposed on the same port in all hosts.
 So, all hosts expose 30008 and forward requests to the cluster ip of the service which in turn forwards it to the pods.

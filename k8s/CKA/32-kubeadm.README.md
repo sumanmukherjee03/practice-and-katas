@@ -2,7 +2,7 @@
 
 We are assuming that you already have 3 VMs ready with ubuntu bionic base image.
 The very bare minimum required for the VMs is 2 GB RAM, 2 CPUs, Linux (Debian/Rhel), Unique hostnames and Swap disabled (for kubelet to work).
-The sample cluster we talk about creating here consists of a single master and 2 workers.
+The sample cluster we will be creating here consists of a single master and 2 workers.
 The nodes have been setup in the `192.168.56.0/24` CIDR range.
 
 ### Pre-requisites before creating cluster with kubeadm
@@ -16,6 +16,7 @@ This is a set of instructions provided in this documentation for setting up a ku
 ```
 lsmod | grep 'br_netfilter'
 modprobe --dry-run br_netfilter
+modprobe overlay
 modprobe br_netfilter
 ```
 
@@ -25,6 +26,7 @@ sysctl is the linux utility that allows for setting and getting attributes for t
 cat <<EOF | tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-iptables = 1
 net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward = 1
 EOF
 sysctl --system
 ```
@@ -32,6 +34,7 @@ Another way to update the required sysctl settings is via
 ```
 sysctl net.bridge.bridge-nf-call-iptables = 1
 sysctl net.bridge.bridge-nf-call-ip6tables = 1
+sysctl net.ipv4.ip_forward = 1
 ```
 
 3. Install docker container runtime
@@ -44,6 +47,10 @@ apt-get update; apt-get install -y containerd.io docker-ce docker-ce-cli
 
 4. Setup the configuration for the docker daemon (See the link here - https://kubernetes.io/docs/setup/production-environment/container-runtimes/#docker)
 In particular configure the docker daemon to use systemd for the management of container's cgroups.
+In linux systems where systemd is the init system for the processes, then systemd acts as the cgroup manager.
+So, it is prudent to use the same cgroup manager for the docker daemon. You could use something like `cgroupfs` for the cgroup manager of kubelet and container runtime.
+But that can cause 2 panes of system resources and the system can become unstable under pressure.
+That's why it is best to choose systemd as the cgroup manager for the container runtime.
 ```
 cat <<EOF | sudo tee /etc/docker/daemon.json
 {
@@ -72,7 +79,8 @@ echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https:/
 apt-get update
 ```
 
-7. Install kubelet, kubeadm and kubectl and mark them as hold to prevent automatic upgrades in ubuntu machines
+7. Install kubelet, kubeadm and kubectl and mark them as hold to prevent automatic upgrades in ubuntu machines.
+By default ubuntu systems upgrade packages automatically and that's a problem for kubernetes. So, this step is necessary.
 ```
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
@@ -107,7 +115,7 @@ kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
 ```
 
 4. Create the calico custom resources for pod networking. More details here - https://docs.projectcalico.org/getting-started/kubernetes/quickstart
-Calico uses a different pod cidr by default. Make sure what you put in the calico custom-resources.yaml is what you have provided to kubeadm.
+Calico uses a different pod cidr by default. Make sure what you put in the calico custom-resources.yaml is what you have provided to kubeadm for pod network cidr.
 ```
 cat << EOF | tee $HOME/calico-custom-resources.yaml
 # This section includes base Calico installation configuration.
@@ -135,6 +143,7 @@ Then run `kubectl create -f $HOME/calico-custom-resources.yaml`
 kubeadm join 192.168.56.2:6443 --token st1zft.1eh6dk8ygvpx2eym --discovery-token-ca-cert-hash sha256:94d4d8184229faa660259cf35b294367c3659be3368f570ae8e8b6d12d135b41
 ```
 How to list/create the kubeadm join token that can be used by the worker nodes to join a kubernetes cluster if you lost the one from before.
+This needs to be run on the master.
 ```
 kubeadm init
 kubeadm token list

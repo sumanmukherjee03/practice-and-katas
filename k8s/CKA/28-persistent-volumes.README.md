@@ -71,7 +71,7 @@ spec:
       args: ["shuf -i 0-100 -n 1 >> /opt/numbers.out"]
       volumeMounts:
         - mountPath: /opt
-          name: data-volume
+          name: data-vol
   volumes:
     - name: data-vol
       hostPath:
@@ -98,7 +98,7 @@ spec:
 
 To fix this in aws for instance you could store the data in ebs volumes by doing something like this.
 Remember however that ebs volumes are zone specific. In kubernetes that is accounted for with allowed topologies, as in node affinity for particular zones.
-However, this is pre-provisioned storage in ebs, for example something created with terraform.
+However, this is pre-provisioned storage in ebs, for example, something created with terraform.
 ```
 apiVersion: v1
 kind: Pod

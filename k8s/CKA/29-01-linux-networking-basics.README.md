@@ -86,12 +86,13 @@ Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 
 
 
-
+---------------------------
 ..... Continuing on from earlier
+
 In our example of a machine from `192.168.1.0/24` network wanting to connect to another machine on `192.168.2.0/24`
 just having the routes defined is not enough for bidirectional communication. ip routes do not forward traffic by default.
-Now, packet forwarding is enabled on the router through the network ip_forward setting.
-`cat /proc/sys/net/ipv4/ip_forward` . If it is 0, no forward, changing to 1 will allow packet forwarding.
+Packet forwarding is enabled on the router through the network ip_forward setting.
+`cat /proc/sys/net/ipv4/ip_forward` . If it is 0, dont forward. Changing to 1 will allow packet forwarding.
 To persist this setting across reboots on the router, also update the `/etc/sysctl.conf` file
 ```
 ...
@@ -133,7 +134,7 @@ every request it cant resolve to 8.8.8.8
 
 Another useful directive in `/etc/resolve.conf` is the search directive.
 For internal domains, like app.example.com, internally you would like to resolve `app` -> `app.example.com`,
-ie, `ping app` will actually result in `ping app.example.com`. This can be achieved with the search directive.
+ie, `ping app` will actually result in `ping app.example.com`. This can be achieved with the `search` directive.
 ```
 nameserver 192.168.1.101
 search example.com live.example.com
@@ -184,7 +185,7 @@ ip -n blue link set veth-blue up
 ip netns exec red ping 192.168.15.2
 ip netns exec red arp
 ```
-You can sever the connection above by deleting one end of the cable (ie, by deleting one veth device) like so
+You can severe the connection above by deleting one end of the cable (ie, by deleting one veth device) like so
 `ip -n red link del veth-red`
 It automatically delete the other end of the cable, ie the veth-blue.
 

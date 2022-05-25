@@ -1,7 +1,7 @@
 ## deployment
 
 A deployment is a kubernetes object which is at a level above the pods and replicasets.
-This object controls how you want to rollout a new image for a container or rollback etc.
+This object controls how you want to rollout a new image for a container or rollback to an older image version.
 
 A deployment definition looks the same as a ReplicaSet except for the kind which is different.
 
@@ -10,7 +10,7 @@ deployment-definition.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-replicaset
+  name: app-deployment
   labels:
     app: frontend
 spec:
@@ -22,7 +22,7 @@ spec:
     metadata:
       name: nginx-pod
       labels:
-        app: nginx
+        app: frontend
     spec:
       containers:
         - name: nginx-container
@@ -62,7 +62,7 @@ To expose a port from a running container via a service with a cluster IP
 kubectl expose deployment nginx --port 80
 ```
 
-In the pod specs for a deployment if you provide alongside a headless service, like this
+In the pod specs for a deployment if you provide a headless service, like this
 ```
       subdomain: frontend # Keep this the same name as the headless service name that is pointing to the deployment
       hostname: nginx-pod

@@ -70,7 +70,7 @@ OR if you want to place the pod on any node that is not labelled small
                 - small
 ```
 
-OR if you want to place the pod on any node that has the size label
+OR if you want to place the pod on any node that has any value for the label size
 
 ```
 ....

@@ -22,11 +22,11 @@ ExecStart=/usr/local/bin/etcd \\
   --cert-file=/etc/kubernetes/pki/etcd/server.crt \\
   --key-file=/etc/kubernetes/pki/etcd/server.key \\
   --trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt \\
+  --client-cert-auth \\
   --peer-cert-file=/etc/kubernetes/pki/etcd/server.crt \\
   --peer-key-file=/etc/kubernetes/pki/etcd/server.key \\
   --peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt \\
-  --per-client-cert-auth \\
-  --client-cert-auth \\
+  --peer-client-cert-auth \\
   --initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
   --listen-peer-urls https://{INTERNAL_IP}:2380 \\
   --listen-client-urls https://{INTERNAL_IP}:2379,https://127.0.0.1:2379 \\

@@ -7,7 +7,7 @@ Follow the section below if you want to put your node into maintenance to perfor
 If a node goes offline and then came back online almost immediately, then the kubelet starts and restarts the pods on that node.
 
 However, if the node was offline for 5 mins or more then the pods are terminated from that node.
-If the pods on the node above were part of a replica set or a deployment then they are recreated or scheduled on other nodes.
+If the pods on the node above were part of a replica set or a deployment then they are recreated or rescheduled on other nodes.
 
 The time it takes for the controller manager to deem a pod as dead is known as the pod eviction timeout and is set on the kube-controller-manager.
 `kube-controller-manager --pod-eviction-timeout=5m0s ...`
@@ -18,6 +18,12 @@ The better way to upgrade a node is to start by draining the node.
 `kubectl drain node01 --ignore-daemonsets`.
 This evicts pods on a node and are recreated on other nodes.
 Along with that, the node is also marked as cordoned or unschedulable.
+
+As a side note, sometimes you might be switching to a different networking solution for your cluster for example from aws vpc cni to calico.
+While making that change, you can scale everything down and bring down the node count to a single node.
+You can then change the networking solution and bring up new nodes. But this will render the old node in a partitioned network because the kubelet on it would still use the old networking solution.
+In that case the best way to drain that node is with the `--force` option like so :
+`kubectl drain node01 --ignore-daemonsets --force`
 
 If there are pods on this node that are not controlled by a replica set or deployment, then the node needs to be drained by force.
 But remember, that standalone pod running in that node will be lost forever.
@@ -41,15 +47,15 @@ OR
 You can backup the data of the etcd cluster itself by backing up the dir where etcd stores it's data.
 When you configure etcd in the master, you choose a data directory `--data-dir=/var/lib/etcd` .
 That's the dir you can choose to backup etcd with your backup tool.
-This however runs the risk that when the etcd cluster is being restored
-if the IPs of the nodes are different, the state of the cluster wont match the IP of the nodes and can cause problems.
-This is especially true in the case of a HA etcd cluster.
+This however runs the risk that when the etcd cluster is being restored, if the IPs of the etcd nodes are different
+the state of the cluster wont match the IP of the nodes and can cause problems.
+This is true in the case of a HA etcd cluster.
 
 OR
 
 You can take a snapshot of the etcd database.
 
-To interact with etcd first you need a etcd-client - `apt-get install -y etcd-client`.
+To interact with etcd first you need a etcd-client : `apt-get install -y etcd-client`.
 To interact with etcd server via etcdctl you can setup an alias to make life easier.
 The paths for the certs and keys here are just examples.
 You can find them from describing the etcd pod or by looking at the etcd systemd file which is used to run the etcd service.
@@ -64,7 +70,7 @@ ETCDCTL_API=3 etcdctl snapshot status snapshot.db --cacert /etc/kubernetes/pki/e
 
 ### cluster upgrade
 
-Permissible versions of components during a cluster upgrade. The version is controlled by the kube-apiserver.
+Permissible versions of components during a cluster upgrade. The version of the cluster is mainly controlled by the kube-apiserver.
 Here if X is 1.16, then X-1 will be 1.15 and X+1 will be 1.17
 ```
 kube-apiserver : X
@@ -87,7 +93,7 @@ kubeadm upgrade apply v1.20.0
 Remember, kubeadm does not install or upgrade kubelets. So, that needs to be done manually.
 kubeadm will upgrade all the controlplane components (master components) for us.
 
-kubeadm tool follows the same versioning as kubernetes. So, it needs to be upgraded before upgrading the cluster.
+kubeadm tool follows the same versioning as kubernetes. So, the tool itself needs to be upgraded before upgrading the cluster.
 
 NECESSARY STEPS FOR UPGRADES :
 ____________________________________
@@ -167,19 +173,24 @@ If etcd is running as a linux service then :
   ```
   systemctl daemon-reload
   systemctl etcd restart
-  systemctl kube-apiserver restart
   ```
+
+Then restart kube-apiserver again
+```
+service kube-apiserver start
+systemctl kube-apiserver restart
+```
 
 If etcd is running as a static pod in the controlplane, then update the static pod definition
   Edit `vim /etc/kubernetes/manifests/etcd.yaml`
-  And change the host path of the volume mount for data dir to be `/var/lib/etcd-from-backup` - the dir where the cluster was restored to.
+  And change the host path in the volume mount for data dir to be `/var/lib/etcd-from-backup` - the dir where the cluster was restored to.
 
   This will recreate the etcd pod
 
 
 ### certs
 
-The certificates are important to be preserved so that the cluster can be fully restored if we loose the master completely
+The certificates are important to be preserved so that the cluster can be fully restored if we loose the master completely.
 If you dont keep a backup of the certs, you might need to regenerate the entire thing.
 
 These are the sample locations of the kubernetes apiserver certs, cacert and server key.

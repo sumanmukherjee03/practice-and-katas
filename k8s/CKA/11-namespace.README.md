@@ -15,7 +15,7 @@ In this DNS above, the `cluster.local` is the default domain name of the kuberne
 
 ```
 name-of-service.namespace.subdomain-of-services.domain-of-cluster
-  db-service    database     svc                  cluster.local
+  db-service    database         svc              cluster.local
 ```
 
 To create pods in a namespace

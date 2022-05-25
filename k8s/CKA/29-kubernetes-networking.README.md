@@ -18,7 +18,7 @@ https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-avail
 ### Controlplane
 
 If you are on a controlplane node and run netstat you will find an output like so
-- `root@controlplane:~# netstat -tulpe` OR `root@controlplane:~# netstat -ntulpe`
+- `root@controlplane:~# netstat -tuple` OR `root@controlplane:~# netstat -ntuple`
 
 ```
 Active Internet connections (only servers)
@@ -231,7 +231,7 @@ It is not just an IP. It is the IP and port combination whether that's ClusterIP
 or NodePort for external communication. Iptable rules get created and deleted whenever a service gets created or deleted.
 
 When configuring the `kube-proxy` service the `--proxy-mode` can be set to one of userspace|ipvs|iptables.
-iptables is the default mode.
+`iptables` is the default mode.
 You can find the `Proxier` mode in the logs of the kube-proxy pod.
 Or inspect the pod in yaml format and get it's config and cat the config from inside the pod to see if the mode has been overriden.
 
@@ -313,11 +313,9 @@ An example Corefile would look like this
 The directives like `errors`, `health`, `kubernetes` etc are all plugins of coredns.
 The plugin that makes coredns work with kubernetes is `kubernetes` and as you can see that's where the top level
 domain name for the cluster is being set as arguments passed to that plugin.
-In the options passed to the kubernetes plugin, the `pods` option is what tells coredns kubernetes plugin to create
-DNS records for pods.
+In the options passed to the kubernetes plugin, the `pods` option is what tells coredns kubernetes plugin to create DNS records for pods.
 The Corefile of coredns is passed as a configmap to the coredns deployment.
-You can get the configmap via
-`kubectl get configmap coredns -n kube-system -o yaml`.
+You can get the configmap via - `kubectl get configmap coredns -n kube-system -o yaml`.
 Everytime a new pod or service is created or deleted the DNS entries are created or deleted simultaneously by coredns.
 
 When coredns is deployed in the cluster it creates a `service` by the name of `kube-dns` by default.

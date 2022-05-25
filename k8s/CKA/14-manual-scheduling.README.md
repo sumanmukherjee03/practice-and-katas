@@ -17,7 +17,7 @@ spec:
   nodeName: worker-01
 ```
 
-Without a scheduler, the easiest way is to assign a `nodeName` to the pod at creation time.
+Without a scheduler, this is the easiest way is to assign a `nodeName` to the pod at creation time.
 But if you want to move the pod to a different node, you wont be allowed to do that because
 kubernetes does not allow you to modify the nodeName property.
 

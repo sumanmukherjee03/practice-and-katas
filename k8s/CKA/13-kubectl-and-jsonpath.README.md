@@ -5,7 +5,7 @@ Some sample jsonpath queries to help with querying the kubernetes api later on.
 ### jsonpath
 
 JSONPath can be used to query data from json or yaml both.
-Remember all results if a jsonpath query are wrapped within a pair of [].
+Remember all results of a jsonpath query are wrapped within a pair of [].
 ```
 $.vehicles.car.color                                # Use the dot notation to query dictionaries and $ represents the root element
 $[0]                                                # Gets the first element of a list
@@ -13,6 +13,7 @@ $[-1]                                               # Gets the last element of a
 $[0,3]                                              # Gets you the first and fourth element in the list
 $[0:3]                                              # Gets you the first till third element, ie not including the fourth element in the list
 $.car.wheels[1].model
+
 $[?(@ > 4)]                                         # ?() -> means a criteria. @ -> means each item in the list that is being iterated upon.
 $.car.wheels[?(@.location == "rear-right")].model
 $.*.color                                           # * -> means all elements. So here it means all objects in the root object

@@ -29,7 +29,6 @@ If kube-proxy is running as a linux service in each of the worker nodes, you can
 kube-proxy.service definition is available in
 `cat /etc/systemd/system/kube-proxy.service`
 
-Configuration for kube-proxy is generally available in.
 The path of the kube-proxy config is usually passed as an option to the kube-proxy binary.
 `cat /var/lib/kube-proxy/kube-proxy-config.yaml`
 
@@ -40,6 +39,6 @@ If deployed it via the kubeadm tool, you can view the kube-proxy pods via
 
 `kubectl get pods -n kube-system | grep kube-proxy`
 
-When deployed via kubeadm, kube-proxy is deployed as a daemonset so that it runs on every node.
+When deployed via kubeadm, kube-proxy is in fact deployed as a daemonset so that it runs on every node.
 
 `kubectl get daemonset kube-proxy -n kube-system`

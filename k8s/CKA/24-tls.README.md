@@ -44,11 +44,13 @@ Asymetric encryption
     The client browser can use the public lock of the CA to validate if the certificate from the server was signed by the CA itself as it says.
         This is a bit of a difference from the public lock/private key analogy. In reality, the public lock is also a key.
         You can encrypt data with one key and decrypt with the other one. So, you can encrypt with the private key
-        And decrypt with the public key and vice versa. It all depends on what you are encrypting and what you are
+        and decrypt with the public key and vice versa. It all depends on what you are encrypting and what you are
         decrypting with. Only in case of the certs, are the certs encrypted by the CA's private key and validated
         with the CA's public key. But usually data is always encrypted with the public key and decrypted with the private key.
-    If it turns out to be valid, the client continues with encypting the symetric key with the servers public lock.
-    You can add the public lock of your private CA to the trusted public keys in your browser.
+    If it turns out to be valid, ie if the certificate presented by the server turns out to be a valid one,
+    then the client continues with encypting the symetric key with the servers public lock.
+    If your servers certificate was signed by a private CA authority, then you can add the public lock of your private CA to the trusted public keys in your browser.
+    Otherwise the clients browser will not be able to verify the cert presented by the server.
 
     The above is how a client validates a server. But the server cant know for sure that the client is who they say they are.
     This is where a client cert comes into picture. This is not something that's usually done though.

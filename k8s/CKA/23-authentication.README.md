@@ -322,6 +322,7 @@ kube-apiserver certs
     ```
     The api server needs the ca.crt to verify it's client. Also, note it is the same ca.crt that is passed as an option
     for the kube-apiserver to verify the server certs of the etcd cluster and the kubelets.
+    The options `etcd-ca-file` and `kubelet-certificate-authority` are to verify certificates presented by the etcd server and the kubelet.
     Note how the client certificates are separate for the kube-apiserver here.
 
 kubelet certs
@@ -335,7 +336,7 @@ kubelet certs
     openssl x509 -req -in node01.csr -CA ca.crt -CAkey ca.key -out node01.crt
     ```
     You can use this information in the kubelet-config.yaml
-    Again, in this config you can see we use the same ca.crt file for validating client cert that kube-apiserver would be using to talk to the kubelet.
+    Again, in this config you can see we use the same ca.crt file for validating client cert that kube-apiserver would be presenting to talk to the kubelet.
     ```
     apiVersion: kubelet.config.k8s.io/v1beta1
     kind: KubeletConfiguration
