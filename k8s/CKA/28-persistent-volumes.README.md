@@ -255,6 +255,10 @@ spec:
       storage: 500Mi
 ```
 
+If you create a PVC without a storage class and later describe that pvc you will notice that the pvc has a `StorageClass: default` assigned to it.
+This is done by the DefaultStorageClass Admission controller which is enabled by default on the kube-apiserver.
+This is a Mutating Admission Controller.
+
 
 A storage class internally creates a persistent volume but you got to attach the persistent volume claim to
 the storage class, not the internally created persistent volume.
