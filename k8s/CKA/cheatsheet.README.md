@@ -373,6 +373,9 @@ kubectl explain pod.spec.containers.securityContext --recursive | grep -i privil
 kubectl patch svc http-svc -p '{"spec":{"type": "ClusterIP"}}'
 kubectl patch svc http-svc -p '{"spec":{"type": "NodePort"}}'
 
+kubectl proxy 8001&
+curl localhost:8001/apis/networking.k8s.io
+kubectl convert -f ingress-old-api-spec.yaml --output-version networking.k8s.io/v1 | kubectl apply -f -
 
 aws eks --region us-west-2 update-kubeconfig --name <cluster_name>
 aws ssm start-session --target <instance_id>
