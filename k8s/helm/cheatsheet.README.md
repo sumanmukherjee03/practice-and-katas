@@ -2,7 +2,7 @@
 
 Cheatsheet commands to help with helm
 
-
+```
 helm env
 helm search hub wordpress
 
@@ -26,3 +26,4 @@ helm repo update
 helm install kong/kong --generate-name --set ingressController.installCRDs=false --set admin.enabled=true
 helm install sample-api-server sample-api-server/
 helm upgrade sample-api-server sample-api-server/
+```
