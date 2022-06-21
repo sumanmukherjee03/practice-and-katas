@@ -290,7 +290,7 @@ If enabled, a pod with an ip of 10.244.20.11 will have a DNS record of
 
 
 The PODS in the cluster have their `/etc/resolv.conf` files pointing to the coredns server so that
-other pod and service DNS records can be resolved. The DNS server stores service names to pod IP mapping
+other pod and service DNS records can be resolved. The DNS server stores service names to service IP mapping
 for service DNS entries and dashed ip name to ip mapping for pod DNS entries.
 
 The coredns pods run an executable called `./Coredns` with configuration contained in a file called Corefile.

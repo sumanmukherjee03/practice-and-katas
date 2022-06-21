@@ -279,3 +279,10 @@ node01 $ iptables-save | grep webapp-service
 -A KUBE-EXTERNAL-SERVICES -p tcp -m comment --comment "application/webapp-service has no endpoints" -m addrtype --dst-type LOCAL -m tcp --dport 30081 -j REJECT --reject-with icmp-port-unreachable
 -A KUBE-SERVICES -d 10.107.112.64/32 -p tcp -m comment --comment "application/webapp-service has no endpoints" -m tcp --dport 8080 -j REJECT --reject-with icmp-port-unreachable
 ```
+
+
+
+------------------------
+Sometimes containers might be stuck in container creation state because of lack of host resource limits
+
+`/proc/sys/fs/file-max`
