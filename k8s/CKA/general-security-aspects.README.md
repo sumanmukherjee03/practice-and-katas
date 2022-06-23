@@ -96,3 +96,58 @@ The users in these kubeconfigs are different though
   - `system:kube-controller-manager` for the controller-manager.conf
 
 In a kubeadm setup, the kubelet also runs in the master nodes and it runs other kubernetes components as static pods in the kube-system namespace.
+
+
+
+-------------------------
+
+### Containers in details
+
+There are 4 namespaces :
+  - PID : Pid 1 can exist multiple times inside the pid namespace, ie inside a container. The PID namespace isolates the processes running inside containers.
+  - Mount : Restricts access to mounts or the root file system
+  - Network : Each container can have different firewall rules, routing rules, not able to see all traffic, only have access to certain network devices etc.
+  - User : Each container have an user id of 0, which is root inside that container. And this means the user id 0 inside a container is different from the user 0 on the host.
+
+Containers use linux namespaces to restrict what the users can see and combines that with cgroups to restrict how much resources the containers can use.
+
+Different container tools :
+  - docker : container runtime + tool to manage containers and images
+  - containerd : container runtime
+  - crictl : cli for CRI compatible container runtimes. CRI means container runtime interface. crictl can work with docker, containerd etc.
+  - podman : tool to manage container and images
+
+podman behaves the same as docker but only for the management part of it, ie
+```
+podman ps
+podman images
+podman build -t simple .
+podman run simple
+```
+
+crictl is the tool used to communicate with the container runtime, for example if you have containerd as the runtime.
+You can check crictl config at `cat /etc/crictl.yaml`
+
+Also, your runtime can be different from docker. It can be containerd.
+containerd config is at `cat /etc/containerd/config.toml`
+
+An example of running a container while attaching to the PID namespace of another container :
+```
+docker run --name c2 -d ubuntu sh -c 'sleep 1d'
+docker run --name c2 --pid=container:c1 -d ubuntu sh -c 'sleep 9d'
+docker exec c2 ps aux
+docker exec c1 ps aux
+```
+If you list the processes inside the c1 or c2 container now, you will see both the processes for `sleep 1d` and `sleep 9d`.
+
+
+--------------------------
+
+### Network policies
+
+By default every pod can access every other pod with out doing any network address translation.
+This is a feature in the spec for CNI. So, CNI plugins like calico or weave have to implement it.
+
+You can define ingress and egress network policies with `podSelector` or `namespaceSelector`
+and these selectors are based on labels.
+Besides the ones above you can also have an `ipBlock` definition for to/from traffic.
