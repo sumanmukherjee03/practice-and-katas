@@ -37,6 +37,8 @@ Some useful kubeconfig commands
 ```
 kubectl config view
 kubectl config use-context engineer@kubernetes-cluster
+kubectl config set-credentials "$user" --certificate-authority="$KUBE_CERTS_DIR/ca.pem" --client-key="$KUBE_CERTS_DIR/key.pem" --client-certificate="$KUBE_CERTS_DIR/cert.pem"
+kubectl config set-cluster "$cluster" --server="$server" --certificate-authority="$KUBE_CERTS_DIR/ca.pem"
 ```
 
 Regarding the certificate for the cluster, instead of using the field `certificate-authority` and providing
