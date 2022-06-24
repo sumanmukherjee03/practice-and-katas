@@ -86,6 +86,63 @@ spec:
           endPort: 32010
 ```
 
+If we dont specify any rules in a network policy then it is deemed as default deny.
+This is an example policy to deny all egress traffic from pods labelled marketing.
+```
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-egress-marketing
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: marketing
+  policyTypes:
+    - Egress
+```
+
+This however is a more aggressive network policy to default deny all traffic from all pods.
+For security reasons this might be a good network policy to have in place in your cluster.
+```
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: default
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+    - Ingress
+```
+When you have a default deny all policy, DNS resolution from within pods wont work.
+So, make sure you enable that when allowing traffic for the pods via network policies.
+
+That's why a better `default-deny-all` policy is this.
+Also, keep in mind that the default deny is for that namespace only. It is not cluster wide.
+```
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: default
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+    - Ingress
+  egress:
+    - ports:
+        - port: 53
+          protocol: TCP
+        - port: 53
+          protocol: UDP
+```
+
+Remember that network policies always use labels. Make sure to add labels to pods, deployments, namespaces etc.
+This might mean that you will have to add labels to the default namespace as well when allowing incoming traffic from default namespace into another namespace.
+
 ----------------------------------------------------
 Pod networking solutions that support network policies
   - kube-router
@@ -95,3 +152,7 @@ Pod networking solutions that support network policies
 
 Network solutions that do not support network policies
   - flannel
+
+If a pod has multiple network policies then the UNION of all network policies is applied on the pod.
+And the order of the network policies on the pod doesn't matter.
+
