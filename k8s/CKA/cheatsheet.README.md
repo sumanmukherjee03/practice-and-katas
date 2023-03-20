@@ -373,6 +373,8 @@ kubectl explain pod.spec.containers.securityContext --recursive | grep -i privil
 kubectl patch svc http-svc -p '{"spec":{"type": "ClusterIP"}}'
 kubectl patch svc http-svc -p '{"spec":{"type": "NodePort"}}'
 
+kubectl annotate serviceaccount ebs-csi-controller-sa -n kube-system eks.amazonaws.com/role-arn=arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/AmazonEKS_EBS_CSI_DriverRole
+
 kubectl proxy 8001&
 curl localhost:8001/apis/networking.k8s.io
 kubectl convert -f ingress-old-api-spec.yaml --output-version networking.k8s.io/v1 | kubectl apply -f -
