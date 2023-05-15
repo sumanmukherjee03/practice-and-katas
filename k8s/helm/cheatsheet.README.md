@@ -4,11 +4,18 @@ Cheatsheet commands to help with helm
 
 ```
 helm env
+helm repo add jetstack https://charts.jetstack.io
+helm search repo cert-manager
+helm template cert-01 jetstack/cert-manager --namespace cert-manager --version 1.5.3 --values cert-manager-values.yaml --output-dir helm-generated-yaml
+
 helm search hub wordpress
 
 helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
 helm search repo joomla
 helm search repo joomla --debug --version 12
+
+helm fetch bitnami/postgresql --version 11.6.2
 
 helm repo list
 helm search repo drupal --versions
