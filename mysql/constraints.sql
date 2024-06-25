@@ -43,3 +43,10 @@ create table characters (
   index idx_race (race_id),
   constraint fk_character_race foreign key (race_id) references races(id) on update cascade on delete restrict
 ) engine = INNODB;
+
+
+-- This is a alter statement to remove and readd a foreign key constraint such that we can cascade delete related resources
+alter table kontakty
+   drop constraint foo_fk_1
+ , add  constraint foo_fk_1
+   foreign key (bar_id) references bar(id) on delete cascade;
