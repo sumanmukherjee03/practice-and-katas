@@ -9,7 +9,8 @@ CREATE TABLE buildings(
 )
 
 --  The ON DELETE CASCADE clause at the end is what causes the rooms to get deleted when the building is deleted
-CREATE TABLE rooms (
+
+CREATE TABLE rooms(
   room_no INT PRIMARY KEY AUTO_INCREMENT,
   room_name VARCHAR(255) NOT NULL,
   building_no INT NOT NULL,
